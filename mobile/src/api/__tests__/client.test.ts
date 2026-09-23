@@ -241,6 +241,24 @@ describe('client API : foyer', () => {
     });
   });
 
+  it('recipes.generate laisse 60 s à l\'IA, les autres requêtes 15 s', async () => {
+    const { api, RECIPE_GENERATION_TIMEOUT_MS } = setup(() => reply(201, { id: 'r1' }));
+    const timeouts: number[] = [];
+    const spy = jest.spyOn(globalThis, 'setTimeout').mockImplementation(((fn: () => void, ms?: number) => {
+      timeouts.push(ms ?? 0);
+      return 0 as unknown as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout);
+    try {
+      await api.recipes.generate('h1', { dinerUserIds: null, servings: null });
+      await api.recipes.quota();
+    } finally {
+      spy.mockRestore();
+    }
+
+    expect(RECIPE_GENERATION_TIMEOUT_MS).toBe(60_000);
+    expect(timeouts).toEqual([60_000, 15_000]);
+  });
+
   it('households.getMine propage les autres erreurs', async () => {
     const { api } = setup(() => reply(500));
 

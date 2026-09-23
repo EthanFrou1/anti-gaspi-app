@@ -10,9 +10,13 @@ import type {
   Invitation,
   KitchenEquipment,
   LoginRequest,
+  GenerateRecipeRequest,
   ProblemDetails,
   ProductSuggestion,
   Profile,
+  Recipe,
+  RecipePromptPreview,
+  RecipeQuota,
   RegisterRequest,
   SaveInventoryItemRequest,
   User,
@@ -29,6 +33,9 @@ import type {
  */
 
 const REQUEST_TIMEOUT_MS = 15_000;
+
+// La génération d'une recette par IA peut prendre plusieurs dizaines de secondes.
+export const RECIPE_GENERATION_TIMEOUT_MS = 60_000;
 
 let accessToken: string | null = null;
 
@@ -50,11 +57,13 @@ type RequestOptions = {
   body?: unknown;
   // false pour les endpoints publics (connexion, inscription…).
   authenticated?: boolean;
+  // Délai propre à une requête (ex. génération par IA, plus longue que la moyenne).
+  timeoutMs?: number;
 };
 
 async function send(path: string, options: RequestOptions, token: string | null): Promise<Response> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? REQUEST_TIMEOUT_MS);
 
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (options.body !== undefined) {
@@ -335,6 +344,44 @@ export const api = {
 
     save(profile: Profile): Promise<Profile> {
       return request<Profile>('/api/me/profile', { method: 'PUT', body: profile });
+    },
+  },
+
+  recipes: {
+    quota(): Promise<RecipeQuota> {
+      return request<RecipeQuota>('/api/me/recipe-quota');
+    },
+
+    generate(householdId: string, body: GenerateRecipeRequest): Promise<Recipe> {
+      return request<Recipe>(`/api/households/${householdId}/recipes`, {
+        method: 'POST',
+        body,
+        timeoutMs: RECIPE_GENERATION_TIMEOUT_MS,
+      });
+    },
+
+    /** Outil de développement : l'API ne l'expose qu'en environnement Development. */
+    previewPrompt(householdId: string, body: GenerateRecipeRequest): Promise<RecipePromptPreview> {
+      return request<RecipePromptPreview>(`/api/households/${householdId}/recipes/prompt-preview`, {
+        method: 'POST',
+        body,
+      });
+    },
+
+    list(householdId: string): Promise<Recipe[]> {
+      return request<Recipe[]>(`/api/households/${householdId}/recipes`);
+    },
+
+    get(householdId: string, recipeId: string): Promise<Recipe> {
+      return request<Recipe>(`/api/households/${householdId}/recipes/${recipeId}`);
+    },
+
+    /** « J'ai cuisiné cette recette » : marque comme consommés les produits cochés. */
+    markCooked(householdId: string, recipeId: string, finishedItemIds: string[]): Promise<{ consumedCount: number }> {
+      return request<{ consumedCount: number }>(`/api/households/${householdId}/recipes/${recipeId}/cooked`, {
+        method: 'POST',
+        body: { finishedItemIds },
+      });
     },
   },
 };

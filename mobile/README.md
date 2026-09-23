@@ -16,12 +16,13 @@ mobile/
     │   └── (app)/       → écrans de l'app (accessibles connecté)
     │       ├── onboarding.tsx → 5 questions après l'inscription (tant que le profil n'existe pas)
     │       ├── preferences.tsx → modification des préférences alimentaires
-    │       ├── (tabs)/  → onglets Frigo, Foyer, Compte
+    │       ├── (tabs)/  → onglets Frigo, Recettes, Foyer, Compte
+    │       ├── recipe/  → détail d'une recette, « J'ai cuisiné »
     │       └── item/    → ajout et modification d'un produit
     ├── api/             → client API : SEUL module qui appelle le serveur
     ├── auth/            → contexte de session, stockage sécurisé des jetons
     ├── components/      → composants d'interface réutilisables
-    ├── features/        → logique et vues par fonctionnalité (household/, inventory/, profile/, scan/)
+    ├── features/        → logique et vues par fonctionnalité (household/, inventory/, profile/, recipes/, scan/)
     ├── utils/           → utilitaires sans interface (dates « jour » en calendrier local)
     ├── config.ts        → nom de l'app, URL de l'API
     └── theme.ts         → couleurs et espacements provisoires
@@ -110,6 +111,14 @@ considère chaque fichier de ce dossier comme un écran. Chaque fichier de test 
   le message de demande est celui d'Expo Go ; le nôtre s'affiche dans un build de l'app.
 - La recherche passe par l'API (jamais directement vers Open Food Facts). L'image du produit
   n'est affichée que sur l'écran de confirmation du scan.
+
+## Recettes par IA
+
+- La génération passe par l'API (aucune clé dans l'app) avec un délai de 60 s et un écran d'attente.
+- En développement, l'API utilise un générateur factice (gratuit). Pour tester le vrai modèle :
+  ranger la clé (voir `api/README.md`), puis lancer avec `$env:Ai__Provider = "Claude"; .dev.cmd`.
+- Le bouton 🤖 (visible seulement en build de développement, `__DEV__`) copie le prompt exact
+  dans le presse-papiers, pour le mettre au point dans une console d'IA sans consommer de quota.
 
 ## Sessions et sécurité
 

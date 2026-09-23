@@ -18,6 +18,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="recipes"
+        options={{
+          title: 'Recettes',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🍳" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
         name="household"
         options={{
           title: 'Foyer',

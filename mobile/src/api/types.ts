@@ -172,3 +172,44 @@ export type Profile = {
   goal: NutritionGoal;
   defaultServings: number;
 };
+
+// ---------- Recettes (IA) ----------
+
+export type GenerateRecipeRequest = {
+  // Membres du foyer qui mangent ; null = moi seul.
+  dinerUserIds: string[] | null;
+  servings: number | null;
+};
+
+export type RecipeIngredient = {
+  name: string;
+  quantity: string;
+  // Renseigné quand l'ingrédient vient du frigo du foyer.
+  inventoryItemId: string | null;
+};
+
+export type Recipe = {
+  id: string;
+  title: string;
+  prepMinutes: number;
+  servings: number;
+  ingredients: RecipeIngredient[];
+  steps: string[];
+  createdAt: string;
+};
+
+export type RecipeQuota = {
+  used: number;
+  limit: number;
+  remaining: number;
+  resetsAt: string;
+};
+
+// Prompt exact (outil de développement uniquement).
+export type RecipePromptPreview = {
+  model: string;
+  maxOutputTokens: number;
+  system: string;
+  userContent: string;
+  clipboardText: string;
+};

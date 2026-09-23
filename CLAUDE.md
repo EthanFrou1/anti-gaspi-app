@@ -143,6 +143,16 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Compte → « Mes préférences » : les réponses de l'onboarding sont reprises, modifiables et enregistrées.
 - [ ] Foyer → « Équipement de la cuisine » : un changement fait par un membre est visible par un autre après rafraîchissement.
 
+### Recettes par IA
+
+- [ ] En développement (générateur Fake) : « Proposer une recette » affiche l'écran d'attente puis une recette qui utilise les produits qui périment en premier.
+- [ ] Le compteur passe de 3 à 0 ; la 4e demande affiche « reviens demain » et le bouton est désactivé.
+- [ ] Avec un colocataire végétarien sélectionné comme convive, la recette ne contient pas de viande.
+- [ ] Bouton 🤖 (build de développement uniquement) : le prompt est copié dans le presse-papiers.
+- [ ] « J'ai cuisiné cette recette » : les produits cochés disparaissent du frigo ; un produit perso d'un autre membre n'est pas cochable.
+- [ ] Avec la vraie clé (`Ai__Provider=Claude`) : une recette est générée en moins d'une minute, en français, concise.
+- [ ] API arrêtée pendant la génération : message d'erreur, le quota n'est pas décompté.
+
 ## Scan du ticket de caisse (V2)
 
 Flux :
