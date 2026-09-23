@@ -9,6 +9,8 @@ export type User = {
   displayName: string;
   // null tant que l'utilisateur n'a ni créé ni rejoint de foyer.
   householdId: string | null;
+  // false tant que l'onboarding (préférences alimentaires) n'est pas terminé.
+  hasProfile: boolean;
 };
 
 export type AuthResponse = {
@@ -52,6 +54,8 @@ export type Household = {
   name: string;
   createdAt: string;
   myRole: HouseholdRole;
+  // Équipement de la cuisine commune (modifiable par tout membre).
+  equipment: KitchenEquipment[];
   // Triés par ancienneté dans le foyer (le premier après le propriétaire hérite de la propriété).
   members: HouseholdMember[];
 };
@@ -123,4 +127,48 @@ export type ProductSuggestion = {
   // Affichée uniquement sur l'écran de confirmation du scan, jamais stockée.
   imageUrl: string | null;
   source: string;
+};
+
+// ---------- Profil (préférences alimentaires) ----------
+// Listes fermées, miroir des énumérations de l'API (Entities/ProfileEnums.cs).
+
+export type CookingTime = 'Under15Minutes' | 'Under30Minutes' | 'Under60Minutes' | 'NoLimit';
+
+export type MealBudget = 'Under2Euros' | 'From2To4Euros' | 'From4To7Euros' | 'NoLimit';
+
+export type Diet = 'Omnivore' | 'Flexitarian' | 'Pescatarian' | 'Vegetarian' | 'Vegan';
+
+export type IngredientExclusion = 'Pork' | 'Beef' | 'Offal' | 'Seafood' | 'Alcohol';
+
+// Les 14 allergènes à déclaration obligatoire en Europe.
+export type Allergen =
+  | 'Gluten'
+  | 'Crustaceans'
+  | 'Eggs'
+  | 'Fish'
+  | 'Peanuts'
+  | 'Soybeans'
+  | 'Milk'
+  | 'TreeNuts'
+  | 'Celery'
+  | 'Mustard'
+  | 'Sesame'
+  | 'Sulphites'
+  | 'Lupin'
+  | 'Molluscs';
+
+export type NutritionGoal = 'Balanced' | 'MuscleGain' | 'LightMeals' | 'SimpleAntiWaste';
+
+export type KitchenEquipment = 'Hob' | 'Oven' | 'Microwave' | 'AirFryer' | 'Blender';
+
+export type Profile = {
+  cookingTime: CookingTime;
+  budget: MealBudget;
+  diet: Diet;
+  exclusions: IngredientExclusion[];
+  allergens: Allergen[];
+  // Consentement explicite au stockage des allergies (donnée de santé).
+  healthDataConsent: boolean;
+  goal: NutritionGoal;
+  defaultServings: number;
 };

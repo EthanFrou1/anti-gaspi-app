@@ -14,7 +14,7 @@ import type { AuthResponse, User } from '../types';
 
 const API_URL = 'http://api.test';
 
-const user: User = { id: 'u1', email: 'alice@example.com', displayName: 'Alice', householdId: null };
+const user: User = { id: 'u1', email: 'alice@example.com', displayName: 'Alice', householdId: null, hasProfile: true };
 
 function session(n: number): AuthResponse {
   return {

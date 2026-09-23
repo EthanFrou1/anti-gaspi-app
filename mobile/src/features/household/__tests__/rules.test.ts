@@ -16,7 +16,7 @@ const bob: HouseholdMember = { userId: 'bob', displayName: 'Bob', role: 'Member'
 const carol: HouseholdMember = { userId: 'carol', displayName: 'Carol', role: 'Member', joinedAt: '2026-01-03T10:00:00Z' };
 
 function household(myRole: Household['myRole'], members: HouseholdMember[]): Household {
-  return { id: 'h1', name: 'Coloc', createdAt: '2026-01-01T10:00:00Z', myRole, members };
+  return { id: 'h1', name: 'Coloc', createdAt: '2026-01-01T10:00:00Z', myRole, equipment: ['Hob'], members };
 }
 
 function invitation(createdByUserId: string | null): Invitation {

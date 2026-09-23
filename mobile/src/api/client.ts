@@ -8,9 +8,11 @@ import type {
   InventoryItem,
   InventoryItemStatus,
   Invitation,
+  KitchenEquipment,
   LoginRequest,
   ProblemDetails,
   ProductSuggestion,
+  Profile,
   RegisterRequest,
   SaveInventoryItemRequest,
   User,
@@ -238,6 +240,11 @@ export const api = {
       return request<Household>('/api/households/join', { method: 'POST', body: { code } });
     },
 
+    // Équipement de la cuisine commune.
+    updateEquipment(householdId: string, equipment: KitchenEquipment[]): Promise<Household> {
+      return request<Household>(`/api/households/${householdId}/equipment`, { method: 'PUT', body: { equipment } });
+    },
+
     // Quitter le foyer (userId = soi-même) ou exclure un membre (propriétaire).
     removeMember(householdId: string, userId: string): Promise<void> {
       return request<void>(`/api/households/${householdId}/members/${userId}`, { method: 'DELETE' });
@@ -310,6 +317,24 @@ export const api = {
         }
         throw error;
       }
+    },
+  },
+
+  profile: {
+    /** Préférences de l'utilisateur, ou null tant que l'onboarding n'est pas fait. */
+    async get(): Promise<Profile | null> {
+      try {
+        return await request<Profile>('/api/me/profile');
+      } catch (error) {
+        if (error instanceof ApiError && error.code === 'profile.none') {
+          return null;
+        }
+        throw error;
+      }
+    },
+
+    save(profile: Profile): Promise<Profile> {
+      return request<Profile>('/api/me/profile', { method: 'PUT', body: profile });
     },
   },
 };
