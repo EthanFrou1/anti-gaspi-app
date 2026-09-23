@@ -97,3 +97,9 @@ Authorization: Bearer {{accessToken}}
 ### Révoquer une invitation (la sienne, ou n'importe laquelle pour le propriétaire)
 DELETE {{Api_HostAddress}}/api/households/{{householdId}}/invitations/{{invitationId}}
 Authorization: Bearer {{accessToken}}
+
+### ---------- Inventaire ----------
+
+### Catégories de produits (durée de conservation par défaut, DLC ou DDM)
+GET {{Api_HostAddress}}/api/categories
+Authorization: Bearer {{accessToken}}

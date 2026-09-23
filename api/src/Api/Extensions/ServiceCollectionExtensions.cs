@@ -4,6 +4,7 @@ using Api.Entities;
 using Api.Options;
 using Api.Services.Auth;
 using Api.Services.Households;
+using Api.Services.Inventory;
 using Api.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -124,6 +125,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IHouseholdAccessService, HouseholdAccessService>();
         services.AddScoped<IHouseholdService, HouseholdService>();
         services.AddScoped<IInvitationService, InvitationService>();
+        services.AddScoped<ICategoryService, CategoryService>();
 
         return services;
     }

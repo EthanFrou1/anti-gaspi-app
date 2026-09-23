@@ -1,6 +1,8 @@
 using Api.Data;
 using DotNet.Testcontainers.Images;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Testcontainers.PostgreSql;
 
 namespace Api.Tests.Infrastructure;
@@ -30,15 +32,26 @@ public sealed class DatabaseFixture : IAsyncLifetime
         // Applique les vraies migrations : les tests vérifient donc aussi qu'elles fonctionnent.
         await db.Database.MigrateAsync();
 
-        // Construit une seule fois la commande qui vide toutes les tables
-        // (sauf l'historique des migrations).
+        // Tables de référence (catégories…) : remplies par la migration via HasData,
+        // elles doivent survivre à la remise à zéro. On les déduit du modèle EF pour
+        // ne pas avoir à maintenir une liste à la main.
+        // Les données HasData ne figurent que dans le modèle « design-time » (celui des migrations).
+        var referenceTables = db.GetService<IDesignTimeModel>().Model.GetEntityTypes()
+            .Where(e => e.GetSeedData().Any())
+            .Select(e => e.GetTableName())
+            .OfType<string>()
+            .Append("__EFMigrationsHistory")
+            .ToArray();
+
+        // Construit une seule fois la commande qui vide toutes les autres tables.
         var tables = await db.Database
             .SqlQueryRaw<string>(
                 """
                 SELECT format('%I.%I', schemaname, tablename) AS "Value"
                 FROM pg_tables
-                WHERE schemaname = 'public' AND tablename <> '__EFMigrationsHistory'
-                """)
+                WHERE schemaname = 'public' AND NOT (tablename = ANY({0}))
+                """,
+                [referenceTables])
             .ToListAsync();
 
         _resetSql = $"TRUNCATE TABLE {string.Join(", ", tables)} RESTART IDENTITY CASCADE";

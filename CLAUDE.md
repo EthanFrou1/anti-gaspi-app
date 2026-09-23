@@ -54,12 +54,16 @@ Recette générée ← produits du foyer + profil(s) des personnes qui mangent
 - **Invitations** : tout membre peut créer un code (valable 7 jours, 10 actifs maximum par foyer). Un membre peut révoquer ses propres invitations, le propriétaire peut toutes les révoquer. Seul le propriétaire peut exclure un membre ; une exclusion révoque toutes les invitations actives du foyer (sinon l'exclu pourrait revenir avec un code connu). Quand le propriétaire part, les invitations restent valables.
 - **Propriété du foyer** : si le propriétaire quitte le foyer ou supprime son compte, la propriété passe au membre le plus ancien (date d'arrivée dans le foyer). S'il n'y a plus aucun membre, le foyer et tout son contenu sont supprimés. Ces cas sont couverts par des tests.
 - **Produit** : nom, catégorie, quantité, unité, date d'achat, date de péremption (estimée ou saisie), code-barres optionnel, **propriétaire optionnel**. Propriétaire vide = produit commun au foyer ; renseigné = produit perso (cas des colocs).
+- **Produits perso** : visibles par tout le foyer, mais seul leur propriétaire peut les modifier, les marquer consommés/jetés ou les supprimer. Quand il quitte le foyer ou supprime son compte, ses produits deviennent communs (la nourriture reste dans le frigo).
+- **Statut d'un produit** : actif, consommé ou jeté. « Consommé » et « jeté » concernent le produit entier (la quantité se modifie par l'édition) et sont conservés en base pour le futur compteur de gaspillage ; la suppression sert seulement à corriger une erreur de saisie.
 - **Profil** : temps de cuisine souhaité, budget par repas, équipement disponible (plaques, four, air fryer, micro-ondes…), régime et allergies, objectif (équilibré, prise de muscle, anti-gaspi simple…), nombre de portions par défaut.
 - **Repas partagé** : quand plusieurs membres mangent ensemble, les contraintes de leurs profils se combinent (si l'un est végétarien, la recette l'est ; les allergies de tous sont exclues).
 
 ### Estimation des dates de péremption
 
 Chaque catégorie de produit a une durée de conservation par défaut (ex. viande fraîche ≈ 3 jours, yaourt ≈ 3 semaines). La date est estimée à l'ajout ; l'utilisateur peut la corriger. Les durées sont stockées en base (table de référence), pas en dur dans le code.
+
+Chaque catégorie indique aussi son type de date : **DLC** (« à consommer jusqu'au », à ne pas dépasser) ou **DDM** (« à consommer de préférence avant », encore consommable après). Une DDM dépassée ne doit jamais être présentée comme « périmée » : c'est un levier anti-gaspi. La correspondance entre catégories Open Food Facts et catégories de l'app est elle aussi en base.
 
 ## Périmètre du MVP (ordre de développement)
 
@@ -74,6 +78,11 @@ Chaque catégorie de produit a une durée de conservation par défaut (ex. viand
 - **Scan du ticket de caisse par IA** (voir la section dédiée).
 - Compteur de gaspillage évité et d'argent économisé.
 - Import des commandes drive.
+
+### Idées notées pour plus tard
+
+- Bouton rapide « −1 » sur les produits à la pièce (consommation partielle sans passer par l'édition).
+- Prix d'achat des produits (nécessaire au compteur « argent économisé » de la V2, non stocké au MVP).
 
 ## À faire avant publication
 

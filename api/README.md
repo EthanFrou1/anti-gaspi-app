@@ -67,4 +67,6 @@ dotnet ef database update --project src/Api
 | `ConnectionStrings:Default` | user-secrets (dev), variable d'env `ConnectionStrings__Default` (prod) | Connexion PostgreSQL |
 | `Jwt:SigningKey` | user-secrets (dev), variable d'env `Jwt__SigningKey` (prod) | Clé secrète de signature des JWT |
 | `Jwt:Issuer`, `Jwt:Audience`, durées | `appsettings.json` | Paramètres non secrets des jetons |
+| `OpenFoodFacts:ContactEmail` | user-secrets (dev), variable d'env `OpenFoodFacts__ContactEmail` (prod) | Contact inclus dans le User-Agent, exigé par Open Food Facts (hors repo : le dépôt est public) |
+| `OpenFoodFacts:BaseUrl` | `appsettings.json` | URL de l'API Open Food Facts |
 | `App:Name` | `appsettings.json` | Nom de l'application (provisoire, centralisé ici) |
