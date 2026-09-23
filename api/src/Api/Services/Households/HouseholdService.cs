@@ -212,7 +212,7 @@ public sealed class HouseholdService(AppDbContext db, TimeProvider time) : IHous
 
     /// <summary>
     /// Règle de propriété du foyer (voir CLAUDE.md) :
-    /// - ses produits perso deviennent communs ;
+    /// - ses produits perso deviennent communs, ses étoiles sur les recettes sont retirées ;
     /// - s'il ne reste personne, le foyer et tout son contenu sont supprimés ;
     /// - si le propriétaire part, la propriété passe au membre le plus ancien.
     /// Doit être appelée dans une transaction, foyer verrouillé.
@@ -224,6 +224,11 @@ public sealed class HouseholdService(AppDbContext db, TimeProvider time) : IHous
             .OrderBy(m => m.JoinedAt)
             .ThenBy(m => m.UserId) // départage stable en cas d'égalité parfaite
             .ToList();
+
+        // Ses étoiles sur les recettes du foyer sont retirées (il n'y a plus accès).
+        await db.RecipeFavorites
+            .Where(f => f.UserId == leaving.UserId && f.Recipe.HouseholdId == leaving.HouseholdId)
+            .ExecuteDeleteAsync(ct);
 
         // Ses produits perso deviennent communs : la nourriture reste dans le frigo.
         await db.InventoryItems

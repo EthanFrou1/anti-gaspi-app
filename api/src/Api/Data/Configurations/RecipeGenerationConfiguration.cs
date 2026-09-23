@@ -16,11 +16,11 @@ public class RecipeGenerationConfiguration : IEntityTypeConfiguration<RecipeGene
             .HasForeignKey(r => r.HouseholdId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Compte supprimé : ses générations disparaissent avec lui.
+        // Compte supprimé : la recette reste au foyer (carnet commun), l'auteur devient anonyme.
         builder.HasOne(r => r.RequestedBy)
             .WithMany()
             .HasForeignKey(r => r.RequestedByUserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Comptage des quotas du jour (par utilisateur, et global par date) et historique du foyer.
         builder.HasIndex(r => new { r.RequestedByUserId, r.CreatedAt });

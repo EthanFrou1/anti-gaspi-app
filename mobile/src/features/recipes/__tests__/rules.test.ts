@@ -3,7 +3,61 @@
 /// <reference types="jest" />
 
 import type { Recipe } from '@/api/types';
-import { formatPrepTime, fridgeIngredients, quotaLabel, toggleDiner } from '../rules';
+import {
+  favoriteLabel,
+  formatPrepTime,
+  formatRecipeForSharing,
+  fridgeIngredients,
+  quotaLabel,
+  toggleDiner,
+} from '../rules';
+
+describe('formatRecipeForSharing', () => {
+  it('produit un texte lisible : titre, infos, ingrédients, étapes numérotées, source', () => {
+    const recipe: Recipe = {
+      id: 'r1',
+      title: 'Riz sauté à la courgette',
+      prepMinutes: 20,
+      servings: 2,
+      ingredients: [
+        { name: 'Courgette', quantity: '1', inventoryItemId: 'i1' },
+        { name: 'Sel', quantity: '', inventoryItemId: null },
+      ],
+      steps: ['Cuire le riz.', 'Faire sauter la courgette.'],
+      createdAt: '2026-09-23T12:00:00Z',
+      isFavorite: false,
+      favoriteCount: 0,
+    };
+
+    expect(formatRecipeForSharing(recipe, 'Anti-Gaspi')).toBe(
+      [
+        'Riz sauté à la courgette',
+        '20 min · 2 portions',
+        '',
+        'Ingrédients :',
+        '- Courgette : 1',
+        '- Sel',
+        '',
+        'Préparation :',
+        '1. Cuire le riz.',
+        '2. Faire sauter la courgette.',
+        '',
+        'Recette anti-gaspi proposée par Anti-Gaspi.',
+      ].join('\n'),
+    );
+  });
+});
+
+describe('favoriteLabel', () => {
+  it.each([
+    [false, 0, 'Ajouter aux favoris'],
+    [true, 1, 'Dans tes favoris'],
+    [true, 3, 'Dans tes favoris (et ceux de 2 autres)'],
+    [false, 1, 'Favori de 1 membre : ajouter aussi'],
+  ])('étoile %s, %i au total → « %s »', (isFavorite, favoriteCount, expected) => {
+    expect(favoriteLabel({ isFavorite, favoriteCount })).toBe(expected);
+  });
+});
 
 const quota = (remaining: number) => ({ used: 3 - remaining, limit: 3, remaining, resetsAt: '2026-09-23T22:00:00Z' });
 

@@ -376,6 +376,19 @@ export const api = {
       return request<Recipe>(`/api/households/${householdId}/recipes/${recipeId}`);
     },
 
+    /** Carnet commun : recettes du foyer étoilées par au moins un membre. */
+    favorites(householdId: string): Promise<Recipe[]> {
+      return request<Recipe[]>(`/api/households/${householdId}/recipes/favorites`);
+    },
+
+    addFavorite(householdId: string, recipeId: string): Promise<Recipe> {
+      return request<Recipe>(`/api/households/${householdId}/recipes/${recipeId}/favorite`, { method: 'PUT' });
+    },
+
+    removeFavorite(householdId: string, recipeId: string): Promise<Recipe> {
+      return request<Recipe>(`/api/households/${householdId}/recipes/${recipeId}/favorite`, { method: 'DELETE' });
+    },
+
     /** « J'ai cuisiné cette recette » : marque comme consommés les produits cochés. */
     markCooked(householdId: string, recipeId: string, finishedItemIds: string[]): Promise<{ consumedCount: number }> {
       return request<{ consumedCount: number }>(`/api/households/${householdId}/recipes/${recipeId}/cooked`, {

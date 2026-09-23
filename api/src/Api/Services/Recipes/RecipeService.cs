@@ -34,6 +34,10 @@ public static class RecipeErrors
             [nameof(GenerateRecipeRequest.DinerUserIds)] = ["Les convives doivent être des membres du foyer."],
         });
 
+    public static readonly Error FavoriteLimitReached = new(
+        ErrorType.Conflict, "recipe.favorite_limit",
+        $"Tu as atteint la limite de {RecipeService.MaxFavoritesPerUser} recettes favorites. Retire une étoile pour en ajouter une.");
+
     public static readonly Error InvalidCookedItems = new(
         ErrorType.Validation, "recipe.invalid_items", "Ces produits ne font pas partie de la recette.",
         new Dictionary<string, string[]>
@@ -50,9 +54,16 @@ public interface IRecipeService
 
     Task<RecipeQuotaDto> GetQuotaAsync(Guid userId, CancellationToken ct);
 
-    Task<IReadOnlyList<RecipeDto>> ListAsync(Guid householdId, CancellationToken ct);
+    Task<IReadOnlyList<RecipeDto>> ListAsync(Guid viewerId, Guid householdId, CancellationToken ct);
 
-    Task<Result<RecipeDto>> GetAsync(Guid householdId, Guid recipeId, CancellationToken ct);
+    /// <summary>Carnet commun : recettes du foyer étoilées par au moins un membre.</summary>
+    Task<IReadOnlyList<RecipeDto>> ListFavoritesAsync(Guid viewerId, Guid householdId, CancellationToken ct);
+
+    Task<Result<RecipeDto>> GetAsync(Guid viewerId, Guid householdId, Guid recipeId, CancellationToken ct);
+
+    Task<Result<RecipeDto>> AddFavoriteAsync(Guid userId, Guid householdId, Guid recipeId, CancellationToken ct);
+
+    Task<Result<RecipeDto>> RemoveFavoriteAsync(Guid userId, Guid householdId, Guid recipeId, CancellationToken ct);
 
     Task<Result<int>> MarkCookedAsync(Guid actorId, Guid householdId, Guid recipeId, IReadOnlyList<Guid> finishedItemIds, CancellationToken ct);
 
@@ -70,6 +81,8 @@ public sealed class RecipeService(
     ILogger<RecipeService> logger) : IRecipeService
 {
     public static readonly TimeSpan HistoryRetention = TimeSpan.FromDays(30);
+
+    public const int MaxFavoritesPerUser = 200;
 
     // Une réservation encore vide après ce délai correspond à un crash pendant l'appel à l'IA.
     public static readonly TimeSpan StaleReservation = TimeSpan.FromMinutes(10);
@@ -148,7 +161,7 @@ public sealed class RecipeService(
             .Where(r => r.Id == reservation.Value)
             .ExecuteUpdateAsync(s => s.SetProperty(r => r.RecipeJson, json), ct);
 
-        return (await GetAsync(householdId, reservation.Value, ct)).Value!;
+        return (await GetAsync(actorId, householdId, reservation.Value, ct)).Value!;
     }
 
     public async Task<RecipeQuotaDto> GetQuotaAsync(Guid userId, CancellationToken ct)
@@ -159,30 +172,86 @@ public sealed class RecipeService(
         return new RecipeQuotaDto(used, limit, Math.Max(0, limit - used), end);
     }
 
-    public async Task<IReadOnlyList<RecipeDto>> ListAsync(Guid householdId, CancellationToken ct)
+    public async Task<IReadOnlyList<RecipeDto>> ListAsync(Guid viewerId, Guid householdId, CancellationToken ct)
     {
         var since = time.GetUtcNow() - HistoryRetention;
-        var rows = await db.RecipeGenerations
-            .AsNoTracking()
-            .Where(r => r.HouseholdId == householdId && r.RecipeJson != null && r.CreatedAt >= since)
+        var rows = await CompletedRecipes(householdId)
+            .Where(r => r.CreatedAt >= since)
             .OrderByDescending(r => r.CreatedAt)
             .Take(100)
+            .Select(Project(viewerId))
             .ToListAsync(ct);
         return rows.Select(ToDto).ToList();
     }
 
-    public async Task<Result<RecipeDto>> GetAsync(Guid householdId, Guid recipeId, CancellationToken ct)
+    public async Task<IReadOnlyList<RecipeDto>> ListFavoritesAsync(Guid viewerId, Guid householdId, CancellationToken ct)
     {
-        // Filtre sur le foyer de l'URL : la recette d'un autre foyer est « introuvable » (IDOR).
-        var row = await db.RecipeGenerations.AsNoTracking()
-            .SingleOrDefaultAsync(r => r.Id == recipeId && r.HouseholdId == householdId && r.RecipeJson != null, ct);
+        var rows = await CompletedRecipes(householdId)
+            .Where(r => r.Favorites.Any())
+            // La dernière étoile posée en premier.
+            .OrderByDescending(r => r.Favorites.Max(f => f.CreatedAt))
+            .Select(Project(viewerId))
+            .ToListAsync(ct);
+        return rows.Select(ToDto).ToList();
+    }
+
+    public async Task<Result<RecipeDto>> GetAsync(Guid viewerId, Guid householdId, Guid recipeId, CancellationToken ct)
+    {
+        var row = await CompletedRecipes(householdId)
+            .Where(r => r.Id == recipeId)
+            .Select(Project(viewerId))
+            .SingleOrDefaultAsync(ct);
         return row is null ? RecipeErrors.NotFound : ToDto(row);
+    }
+
+    public async Task<Result<RecipeDto>> AddFavoriteAsync(Guid userId, Guid householdId, Guid recipeId, CancellationToken ct)
+    {
+        var result = await db.InTransactionAsync(async () =>
+        {
+            // Verrou propre à l'utilisateur : deux ajouts simultanés ne dépassent pas le plafond.
+            await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock(hashtext({userId.ToString()}))", ct);
+
+            if (!await CompletedRecipes(householdId).AnyAsync(r => r.Id == recipeId, ct))
+            {
+                return (Result)RecipeErrors.NotFound;
+            }
+
+            if (await db.RecipeFavorites.AnyAsync(f => f.RecipeGenerationId == recipeId && f.UserId == userId, ct))
+            {
+                return Result.Success(); // déjà en favori : rien à faire
+            }
+
+            if (await db.RecipeFavorites.CountAsync(f => f.UserId == userId, ct) >= MaxFavoritesPerUser)
+            {
+                return RecipeErrors.FavoriteLimitReached;
+            }
+
+            db.RecipeFavorites.Add(new RecipeFavorite { RecipeGenerationId = recipeId, UserId = userId, CreatedAt = time.GetUtcNow() });
+            await db.SaveChangesAsync(ct);
+            return Result.Success();
+        }, ct);
+
+        return result.IsSuccess ? await GetAsync(userId, householdId, recipeId, ct) : result.Error;
+    }
+
+    public async Task<Result<RecipeDto>> RemoveFavoriteAsync(Guid userId, Guid householdId, Guid recipeId, CancellationToken ct)
+    {
+        if (!await CompletedRecipes(householdId).AnyAsync(r => r.Id == recipeId, ct))
+        {
+            return RecipeErrors.NotFound;
+        }
+
+        // Retire uniquement SON étoile : celles des autres membres restent.
+        await db.RecipeFavorites
+            .Where(f => f.RecipeGenerationId == recipeId && f.UserId == userId)
+            .ExecuteDeleteAsync(ct);
+        return await GetAsync(userId, householdId, recipeId, ct);
     }
 
     public async Task<Result<int>> MarkCookedAsync(
         Guid actorId, Guid householdId, Guid recipeId, IReadOnlyList<Guid> finishedItemIds, CancellationToken ct)
     {
-        var recipe = await GetAsync(householdId, recipeId, ct);
+        var recipe = await GetAsync(actorId, householdId, recipeId, ct);
         if (!recipe.IsSuccess)
         {
             return recipe.Error;
@@ -228,7 +297,9 @@ public sealed class RecipeService(
         var historyLimit = now - HistoryRetention;
         var staleLimit = now - StaleReservation;
         return await db.RecipeGenerations
-            .Where(r => r.CreatedAt < historyLimit || (r.RecipeJson == null && r.CreatedAt < staleLimit))
+            // Une recette en favori est conservée sans limite de durée.
+            .Where(r => (r.CreatedAt < historyLimit && !r.Favorites.Any())
+                        || (r.RecipeJson == null && r.CreatedAt < staleLimit))
             .ExecuteDeleteAsync(ct);
     }
 
@@ -313,8 +384,19 @@ public sealed class RecipeService(
 
     private TimeZoneInfo Zone() => TimeZoneInfo.FindSystemTimeZoneById(Settings.TimeZone);
 
-    private static RecipeDto ToDto(RecipeGeneration row)
+    // Recettes terminées du foyer de l'URL : la recette d'un autre foyer est « introuvable » (IDOR).
+    private IQueryable<RecipeGeneration> CompletedRecipes(Guid householdId) =>
+        db.RecipeGenerations.AsNoTracking().Where(r => r.HouseholdId == householdId && r.RecipeJson != null);
+
+    private sealed record RecipeRow(RecipeGeneration Row, int FavoriteCount, bool IsFavorite);
+
+    // Projection finale (après filtres et tris) : la recette, son nombre d'étoiles et la mienne.
+    private static System.Linq.Expressions.Expression<Func<RecipeGeneration, RecipeRow>> Project(Guid viewerId) =>
+        r => new RecipeRow(r, r.Favorites.Count, r.Favorites.Any(f => f.UserId == viewerId));
+
+    private static RecipeDto ToDto(RecipeRow data)
     {
+        var row = data.Row;
         var recipe = JsonSerializer.Deserialize<ValidatedRecipe>(row.RecipeJson!, JsonOptions)!;
         return new RecipeDto(
             row.Id,
@@ -323,6 +405,8 @@ public sealed class RecipeService(
             recipe.Servings,
             recipe.Ingredients.Select(i => new RecipeIngredientDto(i.Name, i.Quantity, i.InventoryItemId)).ToList(),
             recipe.Steps,
-            row.CreatedAt);
+            row.CreatedAt,
+            data.IsFavorite,
+            data.FavoriteCount);
     }
 }

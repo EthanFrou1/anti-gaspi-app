@@ -18,7 +18,10 @@ public sealed record RecipeDto(
     int Servings,
     IReadOnlyList<RecipeIngredientDto> Ingredients,
     IReadOnlyList<string> Steps,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    // Étoile posée par l'utilisateur qui consulte, et nombre d'étoiles dans le foyer.
+    bool IsFavorite,
+    int FavoriteCount);
 
 public sealed record RecipeQuotaDto(int Used, int Limit, int Remaining, DateTimeOffset ResetsAt);
 

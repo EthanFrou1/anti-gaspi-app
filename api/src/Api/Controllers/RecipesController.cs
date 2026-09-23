@@ -46,14 +46,41 @@ public sealed class RecipesController(IRecipeService recipeService) : ApiControl
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<RecipeDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<RecipeDto>>> List(Guid householdId, CancellationToken ct) =>
-        Ok(await recipeService.ListAsync(householdId, ct));
+        Ok(await recipeService.ListAsync(User.GetUserId(), householdId, ct));
+
+    /// <summary>Carnet commun du foyer : recettes étoilées, conservées sans limite de durée.</summary>
+    [HttpGet("favorites")]
+    [ProducesResponseType<IReadOnlyList<RecipeDto>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<RecipeDto>>> ListFavorites(Guid householdId, CancellationToken ct) =>
+        Ok(await recipeService.ListFavoritesAsync(User.GetUserId(), householdId, ct));
+
+    /// <summary>Ajoute mon étoile (sans effet si elle y est déjà).</summary>
+    [HttpPut("{recipeId:guid}/favorite")]
+    [ProducesResponseType<RecipeDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<RecipeDto>> AddFavorite(Guid householdId, Guid recipeId, CancellationToken ct)
+    {
+        var result = await recipeService.AddFavoriteAsync(User.GetUserId(), householdId, recipeId, ct);
+        return result.IsSuccess ? Ok(result.Value) : ToProblem(result.Error);
+    }
+
+    /// <summary>Retire mon étoile (celles des autres membres restent).</summary>
+    [HttpDelete("{recipeId:guid}/favorite")]
+    [ProducesResponseType<RecipeDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RecipeDto>> RemoveFavorite(Guid householdId, Guid recipeId, CancellationToken ct)
+    {
+        var result = await recipeService.RemoveFavoriteAsync(User.GetUserId(), householdId, recipeId, ct);
+        return result.IsSuccess ? Ok(result.Value) : ToProblem(result.Error);
+    }
 
     [HttpGet("{recipeId:guid}")]
     [ProducesResponseType<RecipeDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RecipeDto>> Get(Guid householdId, Guid recipeId, CancellationToken ct)
     {
-        var result = await recipeService.GetAsync(householdId, recipeId, ct);
+        var result = await recipeService.GetAsync(User.GetUserId(), householdId, recipeId, ct);
         return result.IsSuccess ? Ok(result.Value) : ToProblem(result.Error);
     }
 

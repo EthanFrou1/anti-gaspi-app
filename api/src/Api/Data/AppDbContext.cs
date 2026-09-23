@@ -21,6 +21,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<RecipeGeneration> RecipeGenerations => Set<RecipeGeneration>();
+    public DbSet<RecipeFavorite> RecipeFavorites => Set<RecipeFavorite>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

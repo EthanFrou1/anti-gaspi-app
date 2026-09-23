@@ -198,7 +198,7 @@ public class RecipeServiceTests(DatabaseFixture database) : HouseholdTestBase(da
         var recipe = (await GenerateAsync(alice, aliceHousehold)).Value!;
 
         var result = await WithServiceAsync<IRecipeService, Result<RecipeDto>>(s =>
-            s.GetAsync(malloryHousehold, recipe.Id, CancellationToken.None));
+            s.GetAsync(mallory, malloryHousehold, recipe.Id, CancellationToken.None));
 
         Assert.Equal(RecipeErrors.NotFound, result.Error);
     }
@@ -268,7 +268,144 @@ public class RecipeServiceTests(DatabaseFixture database) : HouseholdTestBase(da
         Assert.Equal(InventoryErrors.NotOwner, result.Error);
     }
 
+    // ---------- Favoris ----------
+
+    [Fact]
+    public async Task Favorite_IsVisibleToTheWholeHousehold_AsASharedCookbook()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        var bob = await CreateUserAsync("Bob");
+        await AddMemberAsync(alice, householdId, bob);
+        var recipe = (await GenerateAsync(alice, householdId)).Value!;
+
+        var starred = await AddFavoriteAsync(alice, householdId, recipe.Id);
+        var seenByBob = Assert.Single(await FavoritesAsync(bob, householdId));
+
+        Assert.True(starred.Value!.IsFavorite);
+        Assert.Equal(recipe.Id, seenByBob.Id);
+        Assert.False(seenByBob.IsFavorite); // pas SON étoile
+        Assert.Equal(1, seenByBob.FavoriteCount);
+    }
+
+    [Fact]
+    public async Task FavoriteRecipe_IsKeptBeyondThirtyDays_UntilItsLastStarIsRemoved()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        var recipe = (await GenerateAsync(alice, householdId)).Value!;
+        await AddFavoriteAsync(alice, householdId, recipe.Id);
+
+        Clock.Advance(TimeSpan.FromDays(45));
+        await PurgeAsync();
+        Assert.Single(await FavoritesAsync(alice, householdId));
+        Assert.Empty(await WithServiceAsync<IRecipeService, IReadOnlyList<RecipeDto>>(s =>
+            s.ListAsync(alice, householdId, CancellationToken.None))); // plus dans « récentes »
+
+        await WithServiceAsync<IRecipeService, Result<RecipeDto>>(s =>
+            s.RemoveFavoriteAsync(alice, householdId, recipe.Id, CancellationToken.None));
+        Assert.Equal(1, await PurgeAsync());
+    }
+
+    [Fact]
+    public async Task AddingTheSameFavoriteTwice_HasNoEffect()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        var recipe = (await GenerateAsync(alice, householdId)).Value!;
+
+        await AddFavoriteAsync(alice, householdId, recipe.Id);
+        var second = await AddFavoriteAsync(alice, householdId, recipe.Id);
+
+        Assert.Equal(1, second.Value!.FavoriteCount);
+    }
+
+    [Fact]
+    public async Task RemovingMyStar_KeepsTheOtherMembersStars()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        var bob = await CreateUserAsync("Bob");
+        await AddMemberAsync(alice, householdId, bob);
+        var recipe = (await GenerateAsync(alice, householdId)).Value!;
+        await AddFavoriteAsync(alice, householdId, recipe.Id);
+        await AddFavoriteAsync(bob, householdId, recipe.Id);
+
+        var afterRemoval = await WithServiceAsync<IRecipeService, Result<RecipeDto>>(s =>
+            s.RemoveFavoriteAsync(alice, householdId, recipe.Id, CancellationToken.None));
+
+        Assert.False(afterRemoval.Value!.IsFavorite);
+        Assert.Equal(1, afterRemoval.Value.FavoriteCount);
+    }
+
+    [Fact]
+    public async Task TwoHundredFirstFavorite_IsRefused()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        var recipe = (await GenerateAsync(alice, householdId)).Value!;
+        await using (var db = CreateDbContext())
+        {
+            var others = Enumerable.Range(0, RecipeService.MaxFavoritesPerUser)
+                .Select(_ => new RecipeGeneration { HouseholdId = householdId, RequestedByUserId = alice, CreatedAt = Clock.Now, RecipeJson = "{}" })
+                .ToList();
+            db.RecipeGenerations.AddRange(others);
+            db.RecipeFavorites.AddRange(others.Select(r => new RecipeFavorite { RecipeGenerationId = r.Id, UserId = alice, CreatedAt = Clock.Now }));
+            await db.SaveChangesAsync();
+        }
+
+        var result = await AddFavoriteAsync(alice, householdId, recipe.Id);
+
+        Assert.Equal(RecipeErrors.FavoriteLimitReached, result.Error);
+    }
+
+    [Fact]
+    public async Task FavoriteOnAnotherHouseholdsRecipe_IsNotFound()
+    {
+        var (alice, aliceHousehold) = await HouseholdWithFridgeAsync();
+        var mallory = await CreateUserAsync("Mallory");
+        var malloryHousehold = await CreateHouseholdAsync(mallory, "Chez Mallory");
+        var recipe = (await GenerateAsync(alice, aliceHousehold)).Value!;
+
+        var result = await AddFavoriteAsync(mallory, malloryHousehold, recipe.Id);
+
+        Assert.Equal(RecipeErrors.NotFound, result.Error);
+    }
+
+    [Fact]
+    public async Task LeavingTheHousehold_RemovesTheirStars()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        var bob = await CreateUserAsync("Bob");
+        await AddMemberAsync(alice, householdId, bob);
+        var recipe = (await GenerateAsync(alice, householdId)).Value!;
+        await AddFavoriteAsync(bob, householdId, recipe.Id);
+
+        await RemoveMemberAsync(bob, householdId, bob);
+
+        Assert.Empty(await FavoritesAsync(alice, householdId));
+    }
+
+    [Fact]
+    public async Task DeletingTheAuthorsAccount_KeepsTheRecipeInTheHouseholdCookbook()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        var bob = await CreateUserAsync("Bob");
+        await AddMemberAsync(alice, householdId, bob);
+        var recipe = (await GenerateAsync(alice, householdId)).Value!;
+        await AddFavoriteAsync(bob, householdId, recipe.Id);
+
+        await DeleteAccountAsync(alice);
+
+        Assert.Equal(recipe.Id, Assert.Single(await FavoritesAsync(bob, householdId)).Id);
+        await using var db = CreateDbContext();
+        Assert.Null((await db.RecipeGenerations.SingleAsync(r => r.Id == recipe.Id)).RequestedByUserId);
+    }
+
     // ---------- Helpers ----------
+
+    private Task<Result<RecipeDto>> AddFavoriteAsync(Guid userId, Guid householdId, Guid recipeId) =>
+        WithServiceAsync<IRecipeService, Result<RecipeDto>>(s =>
+            s.AddFavoriteAsync(userId, householdId, recipeId, CancellationToken.None));
+
+    private Task<IReadOnlyList<RecipeDto>> FavoritesAsync(Guid userId, Guid householdId) =>
+        WithServiceAsync<IRecipeService, IReadOnlyList<RecipeDto>>(s =>
+            s.ListFavoritesAsync(userId, householdId, CancellationToken.None));
 
     private async Task<(Guid UserId, Guid HouseholdId)> HouseholdWithFridgeAsync()
     {

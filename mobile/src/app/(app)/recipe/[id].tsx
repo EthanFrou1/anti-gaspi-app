@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
 import type { InventoryItem, Recipe } from '@/api/types';
@@ -8,8 +8,9 @@ import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
+import { APP_NAME } from '@/config';
 import { canModifyItem } from '@/features/inventory/rules';
-import { formatPrepTime, fridgeIngredients } from '@/features/recipes/rules';
+import { favoriteLabel, formatPrepTime, formatRecipeForSharing, fridgeIngredients } from '@/features/recipes/rules';
 import { colors, spacing } from '@/theme';
 
 export default function RecipeScreen() {
@@ -51,6 +52,23 @@ export default function RecipeScreen() {
     .map((ingredient) => ({ ingredient, item: activeItems.get(ingredient.inventoryItemId) }))
     .filter((c): c is { ingredient: (typeof c)['ingredient']; item: InventoryItem } => c.item !== undefined);
 
+  async function toggleFavorite() {
+    setError(null);
+    try {
+      const updated = recipe!.isFavorite
+        ? await api.recipes.removeFavorite(householdId!, recipe!.id)
+        : await api.recipes.addFavorite(householdId!, recipe!.id);
+      setRecipe(updated);
+    } catch (e) {
+      setError(asApiError(e).message);
+    }
+  }
+
+  function share() {
+    // Feuille de partage native (SMS, messagerie…) : la recette en texte simple.
+    void Share.share({ message: formatRecipeForSharing(recipe!, APP_NAME) });
+  }
+
   function startCooking() {
     // Par défaut, tout ce qui vient du frigo (et que je peux modifier) est coché.
     setChecked(candidates.filter((c) => canModifyItem(c.item, user!.id)).map((c) => c.item.id));
@@ -83,6 +101,22 @@ export default function RecipeScreen() {
       <Text style={styles.meta}>
         ⏱ {formatPrepTime(recipe.prepMinutes)} · {recipe.servings} portion{recipe.servings > 1 ? 's' : ''}
       </Text>
+
+      <View style={styles.actions}>
+        <Pressable
+          onPress={() => void toggleFavorite()}
+          style={[styles.actionButton, recipe.isFavorite && styles.actionButtonActive]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: recipe.isFavorite }}
+        >
+          <Text style={[styles.actionText, recipe.isFavorite && styles.actionTextActive]}>
+            {recipe.isFavorite ? '★' : '☆'} {favoriteLabel(recipe)}
+          </Text>
+        </Pressable>
+        <Pressable onPress={share} style={styles.actionButton} accessibilityRole="button">
+          <Text style={styles.actionText}>Partager</Text>
+        </Pressable>
+      </View>
 
       <Text style={styles.warning}>
         ⚠ Recette proposée par une IA : vérifie toujours les étiquettes, en particulier en cas d'allergie.
@@ -152,6 +186,17 @@ const styles = StyleSheet.create({
   loader: { marginTop: spacing.xl },
   title: { fontSize: 24, fontWeight: '700', color: colors.text },
   meta: { fontSize: 15, color: colors.mutedText },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  actionButton: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+  },
+  actionButtonActive: { backgroundColor: colors.primary },
+  actionText: { fontSize: 14, color: colors.primary, fontWeight: '600' },
+  actionTextActive: { color: colors.primaryText },
   warning: { backgroundColor: '#FFF8E1', color: colors.text, padding: spacing.md, borderRadius: 8, fontSize: 13 },
   heading: { fontSize: 18, fontWeight: '700', color: colors.text, marginTop: spacing.md },
   ingredient: { fontSize: 15, color: colors.text },

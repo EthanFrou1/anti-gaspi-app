@@ -87,6 +87,7 @@ Chaque catégorie indique aussi son type de date : **DLC** (« à consommer jusq
 
 - Bouton rapide « −1 » sur les produits à la pièce (consommation partielle sans passer par l'édition).
 - Prix d'achat des produits (nécessaire au compteur « argent économisé » de la V2, non stocké au MVP).
+- Système d'amis hors foyer, pour voir et partager les recettes favorites de ses proches.
 
 ## À faire avant publication
 
@@ -106,6 +107,8 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - Appel **uniquement depuis l'API**, derrière l'interface `IRecipeGenerator` (changer de fournisseur = une nouvelle implémentation). Deux modes, via `Ai:Provider` : `Fake` (recettes déterministes avec les vrais produits du foyer, par défaut en développement) et `Claude` (SDK officiel Anthropic, modèle dans `Ai:Model`).
 - **Garde-fou** : l'API refuse de démarrer avec `Fake` hors de l'environnement Development, ou avec `Claude` sans clé hors Development.
 - Format de sortie JSON imposé, puis **validation côté API** (bornes, références de produits) ; un refus du modèle, une réponse coupée ou invalide donnent une erreur 503, non décomptée du quota.
+- **Favoris** : une étoile conserve une recette sans limite de durée. Les favoris forment le carnet de recettes commun du foyer (visibles par tous ses membres) ; 200 favoris maximum par utilisateur. Quitter le foyer retire ses étoiles ; supprimer son compte ne supprime pas les recettes du foyer (l'auteur devient anonyme).
+- **Partage** : une recette se partage en texte via la feuille de partage native.
 - Quotas : 3 générations par jour et par utilisateur, 50 par jour pour toute l'API (journée en heure de Paris). Historique conservé 30 jours, en ne stockant que la recette.
 - Seuls les contraintes combinées et l'inventaire partent vers l'IA (aucune identité). Les noms de produits sont nettoyés et transmis comme données JSON (injection de prompt).
 
@@ -152,6 +155,8 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] « J'ai cuisiné cette recette » : les produits cochés disparaissent du frigo ; un produit perso d'un autre membre n'est pas cochable.
 - [ ] Avec la vraie clé (`Ai__Provider=Claude`) : une recette est générée en moins d'une minute, en français, concise.
 - [ ] API arrêtée pendant la génération : message d'erreur, le quota n'est pas décompté.
+- [ ] Étoile sur une recette : elle apparaît dans « Favoris » pour tous les membres du foyer, avec le bon libellé (« Dans tes favoris », « Favori de 1 membre »).
+- [ ] « Partager » ouvre la feuille de partage native avec la recette en texte lisible.
 
 ## Scan du ticket de caisse (V2)
 

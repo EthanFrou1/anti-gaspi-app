@@ -196,6 +196,9 @@ export type Recipe = {
   ingredients: RecipeIngredient[];
   steps: string[];
   createdAt: string;
+  // Mon étoile, et le nombre d'étoiles dans le foyer (carnet commun).
+  isFavorite: boolean;
+  favoriteCount: number;
 };
 
 export type RecipeQuota = {

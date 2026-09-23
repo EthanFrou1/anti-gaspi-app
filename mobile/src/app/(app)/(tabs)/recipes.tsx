@@ -7,6 +7,7 @@ import { asApiError } from '@/api/errors';
 import type { GenerateRecipeRequest, Recipe, RecipeQuota } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
+import { ChoiceChips } from '@/components/ChoiceChips';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { MultiChoiceChips } from '@/components/MultiChoiceChips';
 import { Screen } from '@/components/Screen';
@@ -27,6 +28,8 @@ export default function RecipesScreen() {
 
   const [quota, setQuota] = useState<RecipeQuota | null>(null);
   const [history, setHistory] = useState<Recipe[]>([]);
+  const [favorites, setFavorites] = useState<Recipe[]>([]);
+  const [view, setView] = useState<'recent' | 'favorites'>('recent');
   const [diners, setDiners] = useState<string[]>(user ? [user.id] : []);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,9 +37,14 @@ export default function RecipesScreen() {
   const load = useCallback(async () => {
     if (!householdId) return;
     try {
-      const [q, h] = await Promise.all([api.recipes.quota(), api.recipes.list(householdId)]);
+      const [q, h, f] = await Promise.all([
+        api.recipes.quota(),
+        api.recipes.list(householdId),
+        api.recipes.favorites(householdId),
+      ]);
       setQuota(q);
       setHistory(h);
+      setFavorites(f);
     } catch (e) {
       setError(asApiError(e).message);
     }
@@ -132,24 +140,40 @@ export default function RecipesScreen() {
       </View>
       {quota ? <Text style={styles.quota}>{quotaLabel(quota)}</Text> : null}
 
-      {history.length > 0 ? (
-        <View style={styles.section}>
-          <Text style={styles.subtitle}>Recettes récentes du foyer</Text>
-          {history.map((recipe) => (
-            <Pressable
-              key={recipe.id}
-              onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
-              style={styles.historyRow}
-              accessibilityRole="button"
-            >
-              <Text style={styles.historyTitle}>{recipe.title}</Text>
-              <Text style={styles.historyMeta}>
-                {formatPrepTime(recipe.prepMinutes)} · {formatShortDate(recipe.createdAt.slice(0, 10))}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
+      <View style={styles.section}>
+        <ChoiceChips
+          options={[
+            { value: 'recent', label: 'Récentes (30 jours)' },
+            { value: 'favorites', label: `★ Favoris (${favorites.length})` },
+          ]}
+          value={view}
+          onChange={setView}
+        />
+        {view === 'favorites' ? (
+          <Text style={styles.hint}>Le carnet de recettes du foyer : les favoris de chacun, conservés sans limite de durée.</Text>
+        ) : null}
+        {(view === 'recent' ? history : favorites).length === 0 ? (
+          <Text style={styles.hint}>
+            {view === 'recent' ? 'Aucune recette ces 30 derniers jours.' : 'Aucun favori pour l\'instant : mets une étoile sur une recette pour la garder.'}
+          </Text>
+        ) : null}
+        {(view === 'recent' ? history : favorites).map((recipe) => (
+          <Pressable
+            key={recipe.id}
+            onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
+            style={styles.historyRow}
+            accessibilityRole="button"
+          >
+            <Text style={styles.historyTitle}>
+              {recipe.favoriteCount > 0 ? '★ ' : ''}
+              {recipe.title}
+            </Text>
+            <Text style={styles.historyMeta}>
+              {formatPrepTime(recipe.prepMinutes)} · {formatShortDate(recipe.createdAt.slice(0, 10))}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
 
       {/* Écran d'attente : la génération peut prendre jusqu'à une minute. */}
       <Modal visible={generating} transparent animationType="fade">

@@ -79,6 +79,24 @@ public class RecipesEndpointsTests(DatabaseFixture database) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Favorite_PutThenListThenDelete()
+    {
+        var (client, householdId) = await SetupAsync(database.Api);
+        var created = await client.PostAsJsonAsync(RecipesUrl(householdId), new GenerateRecipeRequest(null, null), Json);
+        var recipe = await created.Content.ReadFromJsonAsync<RecipeDto>(Json);
+
+        var put = await client.PutAsync($"{RecipesUrl(householdId)}/{recipe!.Id}/favorite", null);
+        var favorites = await client.GetFromJsonAsync<List<RecipeDto>>($"{RecipesUrl(householdId)}/favorites", Json);
+        var delete = await client.DeleteAsync($"{RecipesUrl(householdId)}/{recipe.Id}/favorite");
+        var afterDelete = await client.GetFromJsonAsync<List<RecipeDto>>($"{RecipesUrl(householdId)}/favorites", Json);
+
+        Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+        Assert.True(Assert.Single(favorites!).IsFavorite);
+        Assert.Equal(HttpStatusCode.OK, delete.StatusCode);
+        Assert.Empty(afterDelete!);
+    }
+
+    [Fact]
     public async Task PromptPreview_DoesNotExistOutsideDevelopment()
     {
         var (client, householdId) = await SetupAsync(database.Api);
