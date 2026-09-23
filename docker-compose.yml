@@ -1,0 +1,26 @@
+# Base PostgreSQL pour le développement local.
+# Les identifiants sont lus depuis le fichier .env (non versionné) : copier .env.example en .env.
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-antigaspi}
+      POSTGRES_USER: ${POSTGRES_USER:-antigaspi}
+      # Obligatoire : Compose refuse de démarrer si la variable est absente.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Définir POSTGRES_PASSWORD dans .env}
+    ports:
+      # Exposé uniquement sur la machine locale, pas sur le réseau.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Depuis PostgreSQL 18, le volume se monte sur /var/lib/postgresql
+      # (les données vont dans un sous-dossier par version majeure, ex. 18/docker).
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
