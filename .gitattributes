@@ -1,0 +1,23 @@
+# Normalisation des fins de ligne : LF dans le dépôt ET dans les copies de travail,
+# quel que soit l'OS (outillage JS/Expo, Docker, scripts shell). Visual Studio,
+# Rider et VS Code gèrent LF sans problème.
+* text=auto eol=lf
+
+# Scripts Windows : CRLF obligatoire.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Fichiers binaires : jamais convertis.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.jar binary

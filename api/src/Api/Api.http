@@ -1,3 +1,45 @@
 @Api_HostAddress = http://localhost:5122
 
-# Les requêtes de test seront ajoutées au fil des étapes.
+# Requêtes de test manuelles (VS Code : extension REST Client ; Rider/Visual Studio : natif).
+# Copier les jetons des réponses dans les variables ci-dessous.
+@accessToken = colle-ici-le-accessToken
+@refreshToken = colle-ici-le-refreshToken
+
+### Inscription
+POST {{Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "un-mot-de-passe-solide",
+  "displayName": "Alice"
+}
+
+### Connexion
+POST {{Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "password": "un-mot-de-passe-solide"
+}
+
+### Utilisateur connecté
+GET {{Api_HostAddress}}/api/me
+Authorization: Bearer {{accessToken}}
+
+### Rafraîchir les jetons (l'ancien refresh token devient inutilisable)
+POST {{Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Déconnexion
+POST {{Api_HostAddress}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}

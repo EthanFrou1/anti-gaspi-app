@@ -33,11 +33,25 @@ dotnet tool restore
 dotnet user-secrets set "ConnectionStrings:Default" \
   "Host=localhost;Port=5432;Database=antigaspi;Username=antigaspi;Password=<mot de passe du .env>" \
   --project src/Api
+# Clé de signature des JWT (au moins 32 caractères aléatoires)
+dotnet user-secrets set "Jwt:SigningKey" "$(openssl rand -base64 64 | tr -d '\n')" --project src/Api
 
 # 3. Appliquer les migrations et lancer l'API
 dotnet ef database update --project src/Api
 dotnet run --project src/Api
 ```
+
+## Tests
+
+```bash
+dotnet test
+```
+
+Les tests qui touchent la base utilisent **Testcontainers** : un conteneur `postgres:18-alpine`
+est démarré automatiquement (Docker Desktop doit tourner), partagé par toute la série,
+et la base est vidée entre chaque test.
+
+Pour tester l'API à la main : [src/Api/Api.http](src/Api/Api.http).
 
 ## Migrations
 
@@ -51,4 +65,6 @@ dotnet ef database update --project src/Api
 | Clé | Où | Rôle |
 |---|---|---|
 | `ConnectionStrings:Default` | user-secrets (dev), variable d'env `ConnectionStrings__Default` (prod) | Connexion PostgreSQL |
+| `Jwt:SigningKey` | user-secrets (dev), variable d'env `Jwt__SigningKey` (prod) | Clé secrète de signature des JWT |
+| `Jwt:Issuer`, `Jwt:Audience`, durées | `appsettings.json` | Paramètres non secrets des jetons |
 | `App:Name` | `appsettings.json` | Nom de l'application (provisoire, centralisé ici) |

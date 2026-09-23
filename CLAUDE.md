@@ -80,6 +80,9 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 
 - **Confirmation de l'adresse email** à l'inscription (nécessite un service d'envoi d'emails).
 - **Mot de passe oublié** : réinitialisation par lien envoyé par email (même dépendance).
+- **Énumération de comptes** : à revoir avec la confirmation d'email. Aujourd'hui, l'inscription renvoie 409 si l'email est pris et le message de verrouillage n'apparaît que pour un compte existant.
+- **ForwardedHeaders** : à activer derrière le reverse proxy, sinon l'API voit l'IP du proxy pour tous les clients (rate limiting par IP faussé, logs inexacts).
+- **Nettoyage des refresh tokens** : tâche périodique qui supprime les jetons expirés ou révoqués.
 
 ## Scan du ticket de caisse (V2)
 
