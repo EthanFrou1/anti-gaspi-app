@@ -19,7 +19,7 @@ mobile/
     ├── api/             → client API : SEUL module qui appelle le serveur
     ├── auth/            → contexte de session, stockage sécurisé des jetons
     ├── components/      → composants d'interface réutilisables
-    ├── features/        → logique et vues par fonctionnalité (household/, inventory/)
+    ├── features/        → logique et vues par fonctionnalité (household/, inventory/, scan/)
     ├── utils/           → utilitaires sans interface (dates « jour » en calendrier local)
     ├── config.ts        → nom de l'app, URL de l'API
     └── theme.ts         → couleurs et espacements provisoires
@@ -99,6 +99,15 @@ npx expo-doctor        # compatibilité des dépendances avec le SDK
 Les tests sont dans des dossiers `__tests__/`, **jamais dans `src/app/`** : Expo Router
 considère chaque fichier de ce dossier comme un écran. Chaque fichier de test commence par
 `/// <reference types="jest" />` (TypeScript 6 ne charge plus les `@types` automatiquement).
+
+## Scan des codes-barres
+
+- `expo-camera` lit les codes EAN-13, EAN-8 et UPC-A ; la clé de contrôle est vérifiée avant
+  toute recherche (un code mal lu est ignoré).
+- Seule la permission caméra est demandée (micro désactivé dans `app.config.ts`). Dans Expo Go,
+  le message de demande est celui d'Expo Go ; le nôtre s'affiche dans un build de l'app.
+- La recherche passe par l'API (jamais directement vers Open Food Facts). L'image du produit
+  n'est affichée que sur l'écran de confirmation du scan.
 
 ## Sessions et sécurité
 

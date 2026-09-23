@@ -111,6 +111,17 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] « Mangé » et « Jeté » (avec confirmation) retirent le produit de la liste.
 - [ ] Une DDM dépassée s'affiche « à vérifier », jamais « périmé ».
 
+### Inventaire, étape 5 : scan du code-barres
+
+- [ ] Premier scan : la demande d'accès à l'appareil photo s'affiche ; après un refus, l'écran propose « Autoriser » ou la saisie manuelle.
+- [ ] Refus définitif : le bouton « Ouvrir les réglages » ouvre les réglages de l'app.
+- [ ] Scan d'un produit connu (ex. Nutella 3017620422003) : écran de confirmation avec image, nom, marque, mention « Données Open Food Facts », formulaire pré-rempli.
+- [ ] L'image n'apparaît nulle part ailleurs (liste du frigo, fiche du produit).
+- [ ] Scan d'un produit inconnu d'OFF : message, formulaire vide avec code-barres conservé.
+- [ ] API arrêtée pendant la recherche (ou OFF indisponible) : message « momentanément indisponible », saisie manuelle possible.
+- [ ] Un QR code est ignoré (« Code non reconnu »), un code-barres alimentaire est lu du premier coup.
+- [ ] Après « Ajouter au frigo », retour au frigo avec le produit dans la liste.
+
 ## Scan du ticket de caisse (V2)
 
 Flux :

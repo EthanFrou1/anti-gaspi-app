@@ -226,6 +226,21 @@ describe('client API : foyer', () => {
     await expect(api.households.getMine()).resolves.toBeNull();
   });
 
+  it('products.lookupBarcode renvoie null pour un produit inconnu d\'Open Food Facts', async () => {
+    const { api } = setup(() => reply(404, { title: 'Produit inconnu', code: 'product.not_found' }));
+
+    await expect(api.products.lookupBarcode('3000000000017')).resolves.toBeNull();
+  });
+
+  it('products.lookupBarcode signale une recherche indisponible (503)', async () => {
+    const { api } = setup(() => reply(503, { title: 'Indisponible', code: 'product.lookup_unavailable' }));
+
+    await expect(api.products.lookupBarcode('3017620422003')).rejects.toMatchObject({
+      status: 503,
+      code: 'product.lookup_unavailable',
+    });
+  });
+
   it('households.getMine propage les autres erreurs', async () => {
     const { api } = setup(() => reply(500));
 

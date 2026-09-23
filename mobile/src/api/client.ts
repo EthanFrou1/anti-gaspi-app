@@ -10,6 +10,7 @@ import type {
   Invitation,
   LoginRequest,
   ProblemDetails,
+  ProductSuggestion,
   RegisterRequest,
   SaveInventoryItemRequest,
   User,
@@ -291,6 +292,24 @@ export const api = {
     // Réservé à la correction d'une erreur de saisie (sinon : consommé ou jeté).
     delete(householdId: string, itemId: string): Promise<void> {
       return request<void>(`/api/households/${householdId}/items/${itemId}`, { method: 'DELETE' });
+    },
+  },
+
+  products: {
+    /**
+     * Suggestion pour un code-barres, ou null si le produit est inconnu d'Open Food Facts.
+     * Lève une ApiError si la recherche est indisponible (503) : l'app bascule alors
+     * sur la saisie manuelle.
+     */
+    async lookupBarcode(barcode: string): Promise<ProductSuggestion | null> {
+      try {
+        return await request<ProductSuggestion>(`/api/products/barcode/${barcode}`);
+      } catch (error) {
+        if (error instanceof ApiError && error.code === 'product.not_found') {
+          return null;
+        }
+        throw error;
+      }
     },
   },
 };

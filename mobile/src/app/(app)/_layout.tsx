@@ -9,6 +9,8 @@ export default function AppLayout() {
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="item/new" options={{ title: 'Ajouter un produit', presentation: 'modal' }} />
+      <Stack.Screen name="item/scan" options={{ title: 'Scanner un produit' }} />
+      <Stack.Screen name="item/scanned" options={{ title: 'Nouveau produit' }} />
       <Stack.Screen name="item/[id]" options={{ title: 'Produit' }} />
     </Stack>
   );

@@ -119,7 +119,12 @@ export default function FridgeScreen() {
       />
 
       <View style={styles.bottomBar}>
-        <Button title="+ Ajouter un produit" onPress={() => router.push('/item/new')} />
+        <View style={styles.bottomButton}>
+          <Button title="Scanner" onPress={() => router.push('/item/scan')} />
+        </View>
+        <View style={styles.bottomButton}>
+          <Button title="Saisir à la main" variant="secondary" onPress={() => router.push('/item/new')} />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -141,8 +146,11 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center' },
   emptyText: { fontSize: 15, color: colors.mutedText, textAlign: 'center' },
   bottomBar: {
+    flexDirection: 'row',
+    gap: spacing.sm,
     padding: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
+  bottomButton: { flex: 1 },
 });

@@ -111,3 +111,16 @@ export type SaveInventoryItemRequest = {
   barcode: string | null;
   isPersonal: boolean;
 };
+
+// Suggestion de pré-remplissage après un scan (données Open Food Facts, licence ODbL).
+export type ProductSuggestion = {
+  barcode: string;
+  name: string | null;
+  brand: string | null;
+  categoryId: number | null;
+  quantity: number | null;
+  unit: QuantityUnit | null;
+  // Affichée uniquement sur l'écran de confirmation du scan, jamais stockée.
+  imageUrl: string | null;
+  source: string;
+};

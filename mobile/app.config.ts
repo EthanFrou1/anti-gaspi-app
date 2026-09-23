@@ -28,7 +28,23 @@ const config: ExpoConfig = {
   web: {
     favicon: './assets/favicon.png',
   },
-  plugins: ['expo-router', 'expo-status-bar', 'expo-secure-store'],
+  plugins: [
+    'expo-router',
+    'expo-status-bar',
+    'expo-secure-store',
+    [
+      'expo-camera',
+      {
+        // Message affiché par iOS lors de la demande d'accès (build de l'app ; Expo Go
+        // affiche son propre message).
+        cameraPermission: `${APP_NAME} utilise l'appareil photo pour scanner les codes-barres de tes produits.`,
+        // On ne filme pas : ni micro sur iOS, ni permission RECORD_AUDIO sur Android.
+        microphonePermission: false,
+        recordAudioAndroid: false,
+        barcodeScannerEnabled: true,
+      },
+    ],
+  ],
   experiments: {
     // Vérifie à la compilation que les liens de navigation pointent vers des routes existantes.
     typedRoutes: true,
