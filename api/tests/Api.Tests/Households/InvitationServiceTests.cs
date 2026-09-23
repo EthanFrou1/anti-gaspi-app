@@ -20,6 +20,7 @@ public class InvitationServiceTests(DatabaseFixture database) : HouseholdTestBas
         Assert.True(result.IsSuccess);
         Assert.Equal(InvitationCode.Length, result.Value.Code.Length);
         Assert.Equal(Clock.Now.AddDays(7), result.Value.ExpiresAt);
+        Assert.Equal(alice, result.Value.CreatedByUserId);
     }
 
     [Fact]

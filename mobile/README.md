@@ -13,10 +13,11 @@ mobile/
     ├── app/             → écrans (Expo Router : un fichier = une route)
     │   ├── _layout.tsx  → racine : session, écrans de chargement, routes protégées
     │   ├── (auth)/      → connexion, inscription (accessibles déconnecté)
-    │   └── (app)/       → écrans de l'app (accessibles connecté)
+    │   └── (app)/       → écrans de l'app (accessibles connecté) : accueil/foyer, compte
     ├── api/             → client API : SEUL module qui appelle le serveur
     ├── auth/            → contexte de session, stockage sécurisé des jetons
     ├── components/      → composants d'interface réutilisables
+    ├── features/        → logique et vues par fonctionnalité (ex. household/)
     ├── config.ts        → nom de l'app, URL de l'API
     └── theme.ts         → couleurs et espacements provisoires
 ```
@@ -87,9 +88,14 @@ Supprimer la règle quand elle ne sert plus :
 ## Vérifications
 
 ```bash
+npm test               # tests Jest (client API, règles du foyer)
 npm run typecheck      # TypeScript strict
 npx expo-doctor        # compatibilité des dépendances avec le SDK
 ```
+
+Les tests sont dans des dossiers `__tests__/`, **jamais dans `src/app/`** : Expo Router
+considère chaque fichier de ce dossier comme un écran. Chaque fichier de test commence par
+`/// <reference types="jest" />` (TypeScript 6 ne charge plus les `@types` automatiquement).
 
 ## Sessions et sécurité
 

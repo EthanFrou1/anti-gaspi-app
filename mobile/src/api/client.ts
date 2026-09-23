@@ -1,7 +1,15 @@
 import { API_URL } from '@/config';
 import { tokenStorage } from '@/auth/tokenStorage';
 import { ApiError } from './errors';
-import type { AuthResponse, LoginRequest, ProblemDetails, RegisterRequest, User } from './types';
+import type {
+  AuthResponse,
+  Household,
+  Invitation,
+  LoginRequest,
+  ProblemDetails,
+  RegisterRequest,
+  User,
+} from './types';
 
 /**
  * Seul module de l'app qui parle à l'API (règle du projet).
@@ -199,6 +207,49 @@ export const api = {
     async delete(password: string): Promise<void> {
       await request<void>('/api/me', { method: 'DELETE', body: { password } });
       await clearSession();
+    },
+  },
+
+  households: {
+    /**
+     * Foyer de l'utilisateur, ou null s'il n'en a pas encore.
+     */
+    async getMine(): Promise<Household | null> {
+      try {
+        return await request<Household>('/api/households/mine');
+      } catch (error) {
+        if (error instanceof ApiError && error.code === 'household.none') {
+          return null;
+        }
+        throw error;
+      }
+    },
+
+    create(name: string): Promise<Household> {
+      return request<Household>('/api/households', { method: 'POST', body: { name } });
+    },
+
+    join(code: string): Promise<Household> {
+      return request<Household>('/api/households/join', { method: 'POST', body: { code } });
+    },
+
+    // Quitter le foyer (userId = soi-même) ou exclure un membre (propriétaire).
+    removeMember(householdId: string, userId: string): Promise<void> {
+      return request<void>(`/api/households/${householdId}/members/${userId}`, { method: 'DELETE' });
+    },
+  },
+
+  invitations: {
+    list(householdId: string): Promise<Invitation[]> {
+      return request<Invitation[]>(`/api/households/${householdId}/invitations`);
+    },
+
+    create(householdId: string): Promise<Invitation> {
+      return request<Invitation>(`/api/households/${householdId}/invitations`, { method: 'POST' });
+    },
+
+    revoke(householdId: string, invitationId: string): Promise<void> {
+      return request<void>(`/api/households/${householdId}/invitations/${invitationId}`, { method: 'DELETE' });
     },
   },
 };

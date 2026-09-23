@@ -22,6 +22,8 @@ type AuthContextValue = {
   retry: () => Promise<void>;
   // Recharge l'utilisateur (ex. après avoir créé ou rejoint un foyer).
   refreshUser: () => Promise<void>;
+  // Suppression définitive du compte (mot de passe redemandé par l'API).
+  deleteAccount: (password: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -71,10 +73,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: 'signedIn', user });
   }, []);
 
+  const deleteAccount = useCallback(async (password: string) => {
+    await api.me.delete(password);
+    setState({ status: 'signedOut' });
+  }, []);
+
   // useMemo : évite de re-rendre tous les consommateurs du contexte à chaque rendu.
   const value = useMemo(
-    () => ({ state, signIn, signUp, signOut, retry: restore, refreshUser }),
-    [state, signIn, signUp, signOut, restore, refreshUser],
+    () => ({ state, signIn, signUp, signOut, retry: restore, refreshUser, deleteAccount }),
+    [state, signIn, signUp, signOut, restore, refreshUser, deleteAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,36 +1,53 @@
-import { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
+import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
-import { colors } from '@/theme';
+import { HouseholdView } from '@/features/household/HouseholdView';
+import { NoHouseholdView } from '@/features/household/NoHouseholdView';
+import { useHousehold } from '@/features/household/useHousehold';
+import { colors, spacing } from '@/theme';
 
-// Accueil provisoire : l'étape 5 le remplacera par les écrans du foyer.
+/**
+ * Accueil : le foyer de l'utilisateur, ou la création / l'entrée dans un foyer.
+ * (L'inventaire viendra s'ajouter ici à la fonctionnalité 2.)
+ */
 export default function HomeScreen() {
-  const { state, signOut } = useAuth();
-  const [signingOut, setSigningOut] = useState(false);
+  const { state, refreshUser } = useAuth();
+  const { household, loading, error, reload } = useHousehold();
 
   if (state.status !== 'signedIn') {
     return null;
   }
 
-  async function handleSignOut() {
-    setSigningOut(true);
-    await signOut();
+  // Après création, entrée ou départ : on recharge le foyer ET l'utilisateur
+  // (son householdId a changé).
+  async function handleChanged() {
+    await Promise.all([reload(), refreshUser()]);
   }
 
   return (
-    <Screen>
-      <Text style={styles.greeting}>Bonjour {state.user.displayName} !</Text>
-      <Text style={styles.text}>
-        {state.user.householdId ? 'Tu fais partie d\'un foyer.' : 'Tu n\'as pas encore de foyer.'}
-      </Text>
-      <Button title="Se déconnecter" variant="secondary" onPress={() => void handleSignOut()} loading={signingOut} />
+    <Screen hasHeader refreshing={loading && household !== undefined} onRefresh={() => void reload()}>
+      {household === undefined && loading ? (
+        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+      ) : null}
+
+      {error ? (
+        <>
+          <ErrorBanner message={error.message} />
+          <Button title="Réessayer" variant="secondary" onPress={() => void reload()} />
+        </>
+      ) : null}
+
+      {household === null ? <NoHouseholdView onDone={handleChanged} /> : null}
+
+      {household ? (
+        <HouseholdView household={household} myUserId={state.user.id} onChanged={handleChanged} />
+      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  greeting: { fontSize: 24, fontWeight: '700', color: colors.text },
-  text: { fontSize: 16, color: colors.mutedText },
+  loader: { marginTop: spacing.xl },
 });

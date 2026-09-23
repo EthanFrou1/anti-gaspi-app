@@ -33,7 +33,7 @@ export default function RegisterScreen() {
   const hasFieldErrors = error !== null && Object.keys(error.fieldErrors).length > 0;
 
   return (
-    <Screen>
+    <Screen hasHeader>
       <ErrorBanner message={error && !hasFieldErrors ? error.message : undefined} />
 
       <TextField

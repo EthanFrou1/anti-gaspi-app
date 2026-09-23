@@ -37,3 +37,29 @@ export type ProblemDetails = {
   code?: string;
   errors?: Record<string, string[]>;
 };
+
+export type HouseholdRole = 'Member' | 'Owner';
+
+export type HouseholdMember = {
+  userId: string;
+  displayName: string;
+  role: HouseholdRole;
+  joinedAt: string;
+};
+
+export type Household = {
+  id: string;
+  name: string;
+  createdAt: string;
+  myRole: HouseholdRole;
+  // Triés par ancienneté dans le foyer (le premier après le propriétaire hérite de la propriété).
+  members: HouseholdMember[];
+};
+
+export type Invitation = {
+  id: string;
+  code: string;
+  expiresAt: string;
+  // null si l'auteur a supprimé son compte.
+  createdByUserId: string | null;
+};

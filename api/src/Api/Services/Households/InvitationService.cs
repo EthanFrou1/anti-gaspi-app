@@ -62,7 +62,7 @@ public sealed class InvitationService(
             .AsNoTracking()
             .Where(i => i.HouseholdId == householdId && i.RevokedAt == null && i.ExpiresAt > now)
             .OrderByDescending(i => i.CreatedAt)
-            .Select(i => new InvitationDto(i.Id, i.Code, i.ExpiresAt))
+            .Select(i => new InvitationDto(i.Id, i.Code, i.ExpiresAt, i.CreatedByUserId))
             .ToListAsync(ct);
     }
 
@@ -119,5 +119,5 @@ public sealed class InvitationService(
     }
 
     private static InvitationDto ToDto(HouseholdInvitation invitation) =>
-        new(invitation.Id, invitation.Code, invitation.ExpiresAt);
+        new(invitation.Id, invitation.Code, invitation.ExpiresAt, invitation.CreatedByUserId);
 }
