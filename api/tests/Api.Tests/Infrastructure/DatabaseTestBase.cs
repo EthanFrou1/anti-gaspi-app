@@ -1,5 +1,8 @@
+using Api.Common;
 using Api.Data;
+using Api.Dtos.Auth;
 using Api.Extensions;
+using Api.Services.Auth;
 using Api.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,4 +69,19 @@ public abstract class DatabaseTestBase(DatabaseFixture database) : IAsyncLifetim
     }
 
     protected AppDbContext CreateDbContext() => database.CreateDbContext();
+
+    public const string DefaultPassword = "un-mot-de-passe-solide";
+
+    /// <summary>
+    /// Crée un utilisateur via le vrai service d'inscription et renvoie son identifiant.
+    /// </summary>
+    protected async Task<Guid> CreateUserAsync(string displayName)
+    {
+        var email = $"{displayName.ToLowerInvariant()}-{Guid.NewGuid():N}@example.com";
+        var result = await WithServiceAsync<IAuthService, Result<AuthResponse>>(s =>
+            s.RegisterAsync(new RegisterRequest(email, DefaultPassword, displayName), CancellationToken.None));
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        return result.Value.User.Id;
+    }
 }

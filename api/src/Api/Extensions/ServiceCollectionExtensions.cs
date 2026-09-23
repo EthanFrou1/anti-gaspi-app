@@ -1,9 +1,12 @@
+using Api.Authorization;
 using Api.Data;
 using Api.Entities;
 using Api.Options;
 using Api.Services.Auth;
+using Api.Services.Households;
 using Api.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -82,6 +85,33 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddAppAuthorization(this IServiceCollection services)
+    {
+        services.AddAuthorization(options =>
+        {
+            // Sécurisé par défaut : tout endpoint exige un utilisateur connecté,
+            // sauf ceux marqués explicitement [AllowAnonymous]. Un oubli ne peut donc
+            // pas exposer un endpoint par accident.
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+
+            options.AddPolicy(HouseholdPolicies.Member, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new HouseholdAccessRequirement(ownerOnly: false)));
+
+            options.AddPolicy(HouseholdPolicies.Owner, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new HouseholdAccessRequirement(ownerOnly: true)));
+        });
+
+        // Scoped : le handler interroge la base via le DbContext de la requête.
+        services.AddScoped<IAuthorizationHandler, HouseholdAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationMiddlewareResultHandler, HouseholdAuthorizationResultHandler>();
+
+        return services;
+    }
+
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         // TimeProvider injecté plutôt que DateTimeOffset.UtcNow : les tests peuvent
@@ -91,6 +121,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IHouseholdAccessService, HouseholdAccessService>();
+        services.AddScoped<IHouseholdService, HouseholdService>();
+        services.AddScoped<IInvitationService, InvitationService>();
 
         return services;
     }

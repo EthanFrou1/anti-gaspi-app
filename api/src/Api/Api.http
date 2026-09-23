@@ -4,6 +4,9 @@
 # Copier les jetons des réponses dans les variables ci-dessous.
 @accessToken = colle-ici-le-accessToken
 @refreshToken = colle-ici-le-refreshToken
+@householdId = colle-ici-l-id-du-foyer
+@invitationId = colle-ici-l-id-de-l-invitation
+@userId = colle-ici-l-id-d-un-membre
 
 ### Inscription
 POST {{Api_HostAddress}}/api/auth/register
@@ -43,3 +46,54 @@ Content-Type: application/json
 {
   "refreshToken": "{{refreshToken}}"
 }
+
+### Supprimer son compte (mot de passe redemandé)
+DELETE {{Api_HostAddress}}/api/me
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "password": "un-mot-de-passe-solide"
+}
+
+### ---------- Foyers ----------
+
+### Créer un foyer (le créateur en devient propriétaire)
+POST {{Api_HostAddress}}/api/households
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Appart"
+}
+
+### Mon foyer (membres triés par ancienneté)
+GET {{Api_HostAddress}}/api/households/mine
+Authorization: Bearer {{accessToken}}
+
+### Rejoindre un foyer avec un code (casse, espaces et tirets tolérés)
+POST {{Api_HostAddress}}/api/households/join
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "code": "abcd-efgh"
+}
+
+### Quitter le foyer (userId = soi-même) ou retirer un membre (propriétaire)
+DELETE {{Api_HostAddress}}/api/households/{{householdId}}/members/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### ---------- Invitations (tout membre ; 10 actives max par foyer) ----------
+
+### Créer un code d'invitation (valable 7 jours)
+POST {{Api_HostAddress}}/api/households/{{householdId}}/invitations
+Authorization: Bearer {{accessToken}}
+
+### Invitations actives
+GET {{Api_HostAddress}}/api/households/{{householdId}}/invitations
+Authorization: Bearer {{accessToken}}
+
+### Révoquer une invitation (la sienne, ou n'importe laquelle pour le propriétaire)
+DELETE {{Api_HostAddress}}/api/households/{{householdId}}/invitations/{{invitationId}}
+Authorization: Bearer {{accessToken}}

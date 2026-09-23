@@ -1,9 +1,11 @@
+using System.Security.Claims;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Api.Common;
 using Api.Data;
 using Api.Extensions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,17 +20,8 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connect
 builder.Services
     .AddAppIdentity()
     .AddJwtAuthentication(builder.Configuration)
+    .AddAppAuthorization()
     .AddApplicationServices();
-
-builder.Services.AddAuthorization(options =>
-{
-    // Sécurisé par défaut : tout endpoint exige un utilisateur connecté,
-    // sauf ceux marqués explicitement [AllowAnonymous]. Un oubli ne peut donc
-    // pas exposer un endpoint par accident.
-    options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
-});
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -47,9 +40,24 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             }));
+
+    // Entrée dans un foyer : 10 essais de code par minute et par utilisateur.
+    options.AddPolicy(RateLimitPolicies.JoinHousehold, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    // Enums en texte dans le JSON (« Owner » plutôt que 1) : plus lisible et stable côté mobile.
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails(options =>
 {
     // Remplace le titre anglais par défaut des erreurs de validation

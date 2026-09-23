@@ -51,6 +51,7 @@ Recette générée ← produits du foyer + profil(s) des personnes qui mangent
 ```
 
 - **Foyer** : l'inventaire appartient au foyer, pas à l'utilisateur. Un utilisateur peut inviter d'autres membres (code ou lien d'invitation). Au MVP, un utilisateur appartient à un seul foyer à la fois.
+- **Invitations** : tout membre peut créer un code (valable 7 jours, 10 actifs maximum par foyer). Un membre peut révoquer ses propres invitations, le propriétaire peut toutes les révoquer. Seul le propriétaire peut exclure un membre ; une exclusion révoque toutes les invitations actives du foyer (sinon l'exclu pourrait revenir avec un code connu). Quand le propriétaire part, les invitations restent valables.
 - **Propriété du foyer** : si le propriétaire quitte le foyer ou supprime son compte, la propriété passe au membre le plus ancien (date d'arrivée dans le foyer). S'il n'y a plus aucun membre, le foyer et tout son contenu sont supprimés. Ces cas sont couverts par des tests.
 - **Produit** : nom, catégorie, quantité, unité, date d'achat, date de péremption (estimée ou saisie), code-barres optionnel, **propriétaire optionnel**. Propriétaire vide = produit commun au foyer ; renseigné = produit perso (cas des colocs).
 - **Profil** : temps de cuisine souhaité, budget par repas, équipement disponible (plaques, four, air fryer, micro-ondes…), régime et allergies, objectif (équilibré, prise de muscle, anti-gaspi simple…), nombre de portions par défaut.
