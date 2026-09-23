@@ -8,7 +8,8 @@
       2. prépare la configuration locale au premier lancement (.env, user-secrets, .env.local) ;
       3. démarre PostgreSQL et applique les migrations ;
       4. ouvre l'API dans une nouvelle fenêtre et attend qu'elle réponde ;
-      5. lance Expo dans cette fenêtre (QR code à scanner avec Expo Go).
+      5. installe les dépendances mobiles si package-lock.json a changé ;
+      6. lance Expo dans cette fenêtre (QR code à scanner avec Expo Go).
 
     Aucun secret n'est affiché, et le pare-feu Windows n'est jamais modifié.
 
@@ -313,8 +314,11 @@ function Stop-Api {
 }
 
 function Test-ApiReady {
+    # 127.0.0.1 et pas « localhost » : avec --urls http://0.0.0.0, l'API n'écoute qu'en IPv4.
+    # « localhost » essaie d'abord l'IPv6 (::1) ; Windows réessaie une connexion refusée
+    # pendant environ 2 s avant de passer à l'IPv4, et le délai de 2 s expirait à chaque fois.
     try {
-        $response = Invoke-WebRequest "http://localhost:$ApiPort/openapi/v1.json" -UseBasicParsing -TimeoutSec 2
+        $response = Invoke-WebRequest "http://127.0.0.1:$ApiPort/openapi/v1.json" -UseBasicParsing -TimeoutSec 2
         return $response.StatusCode -eq 200
     }
     catch {
@@ -341,11 +345,26 @@ function Start-Api {
     Stop-WithError 'L''API ne répond pas après 2 minutes. Regarde les erreurs dans sa fenêtre.'
 }
 
+function Get-LockHash {
+    return (Get-FileHash (Join-Path $MobileDir 'package-lock.json') -Algorithm SHA256).Hash
+}
+
+# Réinstalle quand package-lock.json a changé depuis la dernière installation (dépendance
+# ajoutée, git pull…). On compare l'empreinte du fichier, enregistrée dans node_modules après
+# chaque installation réussie : plus fiable que les dates, car npm réécrit parfois le fichier
+# sans le changer.
 function Install-MobileDependencies {
     Write-Step 'Dépendances mobiles'
-    if (Test-Path (Join-Path $MobileDir 'node_modules')) {
-        Write-Ok 'node_modules déjà installé'
+    $nodeModules = Join-Path $MobileDir 'node_modules'
+    $stamp = Join-Path $nodeModules '.anti-gaspi-lock-hash'
+
+    if ((Test-Path $stamp) -and ((Get-Content $stamp -Raw).Trim() -eq (Get-LockHash))) {
+        Write-Ok 'Dépendances à jour'
         return
+    }
+
+    if (Test-Path $nodeModules) {
+        Write-Info 'package-lock.json a changé depuis la dernière installation : mise à jour...'
     }
     Push-Location $MobileDir
     try {
@@ -354,6 +373,8 @@ function Install-MobileDependencies {
     finally {
         Pop-Location
     }
+    # Empreinte calculée APRÈS l'installation : npm a pu retoucher package-lock.json.
+    Write-TextFile $stamp @(Get-LockHash)
     Write-Ok 'Dépendances installées'
 }
 

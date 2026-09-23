@@ -29,7 +29,9 @@ Le script ([scripts/dev.ps1](scripts/dev.ps1)) :
 3. met à jour l'URL de l'API dans `mobile/.env.local` avec l'IP actuelle du PC ;
 4. démarre PostgreSQL et applique les migrations ;
 5. ouvre l'API dans une **nouvelle fenêtre** et attend qu'elle réponde ;
-6. lance Expo dans la fenêtre courante : **scanne le QR code** avec l'appareil photo
+6. installe les dépendances mobiles, et les réinstalle quand `mobile/package-lock.json` a changé
+   (dépendance ajoutée, `git pull`…) ;
+7. lance Expo dans la fenêtre courante : **scanne le QR code** avec l'appareil photo
    (iPhone) ou Expo Go (Android).
 
 Rien n'est écrasé : les fichiers et secrets déjà présents sont conservés. Aucun secret
