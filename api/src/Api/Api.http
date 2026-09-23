@@ -152,3 +152,7 @@ Authorization: Bearer {{accessToken}}
 ### Supprimer (erreur de saisie uniquement)
 DELETE {{Api_HostAddress}}/api/households/{{householdId}}/items/{{itemId}}
 Authorization: Bearer {{accessToken}}
+
+### Recherche par code-barres (Open Food Facts, via l'API) — ex. skyr Danone
+GET {{Api_HostAddress}}/api/products/barcode/3033490004743
+Authorization: Bearer {{accessToken}}

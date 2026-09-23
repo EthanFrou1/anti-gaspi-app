@@ -21,7 +21,8 @@ builder.Services
     .AddAppIdentity()
     .AddJwtAuthentication(builder.Configuration)
     .AddAppAuthorization()
-    .AddApplicationServices();
+    .AddApplicationServices()
+    .AddOpenFoodFacts(builder.Configuration);
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -34,6 +35,20 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy(RateLimitPolicies.Auth, context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+
+    // Recherche par code-barres : 30 par minute et par utilisateur. Le cache absorbe les
+    // codes déjà vus ; cette limite protège le quota d'Open Food Facts (100 req/min au total).
+    options.AddPolicy(RateLimitPolicies.ProductLookup, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown",
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 30,

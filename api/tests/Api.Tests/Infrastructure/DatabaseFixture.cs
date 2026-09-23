@@ -26,8 +26,11 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     public string ConnectionString => _container.GetConnectionString();
 
+    // Faux Open Food Facts utilisé par l'API en mémoire.
+    public FakeOpenFoodFactsClient OpenFoodFacts { get; } = new();
+
     // API en mémoire partagée par les tests de bout en bout (démarrée au premier usage).
-    public ApiFactory Api => _api ??= new ApiFactory(ConnectionString);
+    public ApiFactory Api => _api ??= new ApiFactory(ConnectionString, OpenFoodFacts);
 
     public async Task InitializeAsync()
     {

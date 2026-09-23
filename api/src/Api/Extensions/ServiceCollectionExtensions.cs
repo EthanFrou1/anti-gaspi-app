@@ -5,6 +5,7 @@ using Api.Options;
 using Api.Services.Auth;
 using Api.Services.Households;
 using Api.Services.Inventory;
+using Api.Services.Products;
 using Api.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -110,6 +111,36 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthorizationHandler, HouseholdAuthorizationHandler>();
         services.AddSingleton<IAuthorizationMiddlewareResultHandler, HouseholdAuthorizationResultHandler>();
 
+        return services;
+    }
+
+    public static IServiceCollection AddOpenFoodFacts(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<OpenFoodFactsOptions>()
+            .Bind(configuration.GetSection(OpenFoodFactsOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddMemoryCache();
+        services.AddSingleton<OpenFoodFactsRateLimiter>();
+
+        // Client HTTP « typé » : IHttpClientFactory gère la réutilisation des connexions
+        // (créer un HttpClient par requête épuiserait les sockets).
+        services.AddHttpClient<IOpenFoodFactsClient, OpenFoodFactsClient>((provider, http) =>
+        {
+            var options = provider.GetRequiredService<IOptions<OpenFoodFactsOptions>>().Value;
+            var appName = configuration["App:Name"] ?? "App";
+
+            http.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            // Délai court : si OFF est lent, l'utilisateur bascule vite sur la saisie manuelle.
+            http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            // Une fiche produit pèse quelques Ko : on refuse les réponses anormalement grosses.
+            http.MaxResponseContentBufferSize = 1_000_000;
+            http.DefaultRequestHeaders.UserAgent.ParseAdd(
+                OpenFoodFactsUserAgent.Build(appName, options.ContactEmail));
+        });
+
+        services.AddScoped<IProductLookupService, ProductLookupService>();
         return services;
     }
 

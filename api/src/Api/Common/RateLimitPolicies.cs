@@ -7,4 +7,7 @@ public static class RateLimitPolicies
 
     // Saisie d'un code d'invitation : empêche de tester des codes en masse.
     public const string JoinHousehold = "join-household";
+
+    // Recherche par code-barres : protège le quota d'Open Food Facts (100 requêtes/min pour toute l'API).
+    public const string ProductLookup = "product-lookup";
 }

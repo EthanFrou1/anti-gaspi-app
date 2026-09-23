@@ -63,6 +63,8 @@ Recette générée ← produits du foyer + profil(s) des personnes qui mangent
 
 Chaque catégorie de produit a une durée de conservation par défaut (ex. viande fraîche ≈ 3 jours, yaourt ≈ 3 semaines). La date est estimée à l'ajout ; l'utilisateur peut la corriger. Les durées sont stockées en base (table de référence), pas en dur dans le code.
 
+**Open Food Facts** : appelé uniquement par l'API (cache, limite par utilisateur et limite globale de 15 requêtes/min, car tous les appels partent de l'IP du serveur). L'image du produit n'est affichée que sur l'écran de confirmation après un scan : jamais dans la liste du frigo, et son URL n'est pas stockée avec le produit.
+
 Chaque catégorie indique aussi son type de date : **DLC** (« à consommer jusqu'au », à ne pas dépasser) ou **DDM** (« à consommer de préférence avant », encore consommable après). Une DDM dépassée ne doit jamais être présentée comme « périmée » : c'est un levier anti-gaspi. La correspondance entre catégories Open Food Facts et catégories de l'app est elle aussi en base.
 
 ## Périmètre du MVP (ordre de développement)
@@ -93,6 +95,7 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - **Énumération de comptes** : à revoir avec la confirmation d'email. Aujourd'hui, l'inscription renvoie 409 si l'email est pris et le message de verrouillage n'apparaît que pour un compte existant.
 - **ForwardedHeaders** : à activer derrière le reverse proxy, sinon l'API voit l'IP du proxy pour tous les clients (rate limiting par IP faussé, logs inexacts).
 - **Nettoyage des refresh tokens** : tâche périodique qui supprime les jetons expirés ou révoqués.
+- **Politique de confidentialité** : mentionner que les images de produits sont chargées directement depuis les serveurs d'Open Food Facts (qui voient donc l'adresse IP du téléphone), et que les données produit proviennent d'Open Food Facts (licence ODbL).
 
 ## Scan du ticket de caisse (V2)
 
