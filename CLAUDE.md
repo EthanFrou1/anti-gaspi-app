@@ -98,7 +98,16 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - **ForwardedHeaders** : à activer derrière le reverse proxy, sinon l'API voit l'IP du proxy pour tous les clients (rate limiting par IP faussé, logs inexacts).
 - **Nettoyage des refresh tokens** : tâche périodique qui supprime les jetons expirés ou révoqués.
 - **Données de profil et IA** : indiquer dans la politique de confidentialité que les contraintes alimentaires (dont les allergies, avec consentement) sont transmises au fournisseur d'IA pour générer les recettes, sans identité ; prévoir l'export des données personnelles (droit d'accès).
+- **Modèle d'IA** : Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) a une date de retrait « pas avant le 15 octobre 2026 ». Vérifier son statut (page Model deprecations d'Anthropic) et changer `Ai:Model` si besoin avant publication.
 - **Politique de confidentialité** : mentionner que les images de produits sont chargées directement depuis les serveurs d'Open Food Facts (qui voient donc l'adresse IP du téléphone), et que les données produit proviennent d'Open Food Facts (licence ODbL).
+
+## Génération de recettes par IA
+
+- Appel **uniquement depuis l'API**, derrière l'interface `IRecipeGenerator` (changer de fournisseur = une nouvelle implémentation). Deux modes, via `Ai:Provider` : `Fake` (recettes déterministes avec les vrais produits du foyer, par défaut en développement) et `Claude` (SDK officiel Anthropic, modèle dans `Ai:Model`).
+- **Garde-fou** : l'API refuse de démarrer avec `Fake` hors de l'environnement Development, ou avec `Claude` sans clé hors Development.
+- Format de sortie JSON imposé, puis **validation côté API** (bornes, références de produits) ; un refus du modèle, une réponse coupée ou invalide donnent une erreur 503, non décomptée du quota.
+- Quotas : 3 générations par jour et par utilisateur, 50 par jour pour toute l'API (journée en heure de Paris). Historique conservé 30 jours, en ne stockant que la recette.
+- Seuls les contraintes combinées et l'inventaire partent vers l'IA (aucune identité). Les noms de produits sont nettoyés et transmis comme données JSON (injection de prompt).
 
 ## Parcours à tester sur appareil
 

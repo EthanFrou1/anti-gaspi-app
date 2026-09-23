@@ -7,6 +7,8 @@ using Api.Services.Households;
 using Api.Services.Inventory;
 using Api.Services.Products;
 using Api.Services.Profiles;
+using Api.Services.Recipes;
+using Anthropic;
 using Api.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -142,6 +144,50 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddScoped<IProductLookupService, ProductLookupService>();
+        return services;
+    }
+
+    /// <summary>
+    /// Génération de recettes : choisit le générateur selon Ai:Provider, après le garde-fou
+    /// (Fake interdit hors Development, clé obligatoire en production). Une configuration
+    /// invalide lève une exception : l'API ne démarre pas.
+    /// </summary>
+    public static IServiceCollection AddRecipeGeneration(
+        this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
+    {
+        var apiKey = configuration[$"{AnthropicOptions.SectionName}:{nameof(AnthropicOptions.ApiKey)}"];
+        var provider = AiConfigurationGuard.Validate(
+            configuration[$"{AiOptions.SectionName}:{nameof(AiOptions.Provider)}"] ?? nameof(AiProvider.Claude),
+            apiKey,
+            environment.IsDevelopment());
+
+        services.AddOptions<AiOptions>()
+            .Bind(configuration.GetSection(AiOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        if (provider == AiProvider.Fake)
+        {
+            services.AddSingleton<IRecipeGenerator, FakeRecipeGenerator>();
+            return services;
+        }
+
+        // Client Anthropic unique (réutilise ses connexions HTTP). Délai et nouvelles tentatives
+        // bornés pour rester sous le délai de 60 s de l'app mobile.
+        services.AddSingleton(provider2 =>
+        {
+            var ai = provider2.GetRequiredService<IOptions<AiOptions>>().Value;
+            return new AnthropicClient
+            {
+                ApiKey = apiKey ?? string.Empty,
+                Timeout = TimeSpan.FromSeconds(ai.TimeoutSeconds),
+                MaxRetries = ai.MaxRetries,
+            };
+        });
+        services.AddSingleton<IRecipeGenerator>(provider2 => string.IsNullOrWhiteSpace(apiKey)
+            // Développement sans clé : l'API démarre, la génération répond « IA non configurée ».
+            ? new UnconfiguredRecipeGenerator()
+            : ActivatorUtilities.CreateInstance<ClaudeRecipeGenerator>(provider2));
         return services;
     }
 

@@ -41,6 +41,19 @@ dotnet ef database update --project src/Api
 dotnet run --project src/Api
 ```
 
+## Clé de l'API Anthropic (génération de recettes)
+
+Par défaut, le développement utilise le générateur factice (`Ai:Provider = Fake`, aucun appel payant).
+Pour tester avec le vrai modèle, range ta clé dans les user-secrets (saisie masquée, rien dans l'historique) :
+
+```powershell
+$secure = Read-Host "Clé API Anthropic" -AsSecureString
+dotnet user-secrets set "Anthropic:ApiKey" ([System.Net.NetworkCredential]::new('', $secure).Password) --project api/src/Api
+Remove-Variable secure
+```
+
+Puis lance l'API avec `Ai__Provider=Claude` (variable d'environnement) pour cette session.
+
 ## Tests
 
 ```bash
@@ -69,4 +82,7 @@ dotnet ef database update --project src/Api
 | `Jwt:Issuer`, `Jwt:Audience`, durées | `appsettings.json` | Paramètres non secrets des jetons |
 | `OpenFoodFacts:ContactEmail` | user-secrets (dev), variable d'env `OpenFoodFacts__ContactEmail` (prod) | Contact inclus dans le User-Agent, exigé par Open Food Facts (hors repo : le dépôt est public) |
 | `OpenFoodFacts:BaseUrl`, `TimeoutSeconds`, `MaxRequestsPerMinute` | `appsettings.json` | URL de l'API Open Food Facts, délai maximal d'attente (5 s), limite globale des appels sortants (15/min) |
+| `Ai:Provider` | `appsettings.json` (Claude), `appsettings.Development.json` (Fake) | Générateur de recettes. Fake interdit hors Development (l'API refuse de démarrer) |
+| `Ai:Model`, `MaxOutputTokens`, `TimeoutSeconds`, `MaxRetries`, `DailyLimitPerUser`, `GlobalDailyLimit`, `TimeZone` | `appsettings.json` | Modèle Claude, taille maximale des réponses, délais, quotas |
+| `Anthropic:ApiKey` | user-secrets (dev), variable d'env `Anthropic__ApiKey` (prod) | Clé de l'API Anthropic (obligatoire en production avec Ai:Provider = Claude) |
 | `App:Name` | `appsettings.json` | Nom de l'application (provisoire, centralisé ici) |

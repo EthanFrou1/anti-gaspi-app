@@ -22,7 +22,8 @@ builder.Services
     .AddJwtAuthentication(builder.Configuration)
     .AddAppAuthorization()
     .AddApplicationServices()
-    .AddOpenFoodFacts(builder.Configuration);
+    .AddOpenFoodFacts(builder.Configuration)
+    .AddRecipeGeneration(builder.Configuration, builder.Environment);
 
 builder.Services.AddRateLimiter(options =>
 {
