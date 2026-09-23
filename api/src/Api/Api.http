@@ -156,3 +156,33 @@ Authorization: Bearer {{accessToken}}
 ### Recherche par code-barres (Open Food Facts, via l'API) — ex. skyr Danone
 GET {{Api_HostAddress}}/api/products/barcode/3033490004743
 Authorization: Bearer {{accessToken}}
+
+### ---------- Recettes (IA) ----------
+
+### Recettes restantes aujourd'hui
+GET {{Api_HostAddress}}/api/me/recipe-quota
+Authorization: Bearer {{accessToken}}
+
+### Générer une recette (dinerUserIds : membres qui mangent ; par défaut, moi seul)
+POST {{Api_HostAddress}}/api/households/{{householdId}}/recipes
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "dinerUserIds": null,
+  "servings": null
+}
+
+### Aperçu du prompt exact, sans appel à l'IA ni quota (environnement Development uniquement)
+POST {{Api_HostAddress}}/api/households/{{householdId}}/recipes/prompt-preview
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "dinerUserIds": null,
+  "servings": null
+}
+
+### Historique du foyer (30 jours)
+GET {{Api_HostAddress}}/api/households/{{householdId}}/recipes
+Authorization: Bearer {{accessToken}}

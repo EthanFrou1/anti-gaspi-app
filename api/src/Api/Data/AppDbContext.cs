@@ -20,6 +20,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<OffCategoryMapping> OffCategoryMappings => Set<OffCategoryMapping>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+    public DbSet<RecipeGeneration> RecipeGenerations => Set<RecipeGeneration>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

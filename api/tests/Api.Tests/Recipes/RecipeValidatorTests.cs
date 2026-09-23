@@ -69,9 +69,9 @@ public class RecipeValidatorTests
     }
 
     [Fact]
-    public void FakeGenerator_ProducesAValidRecipe_WithTheMostUrgentProducts()
+    public async Task FakeGenerator_ProducesAValidRecipe_WithTheMostUrgentProducts()
     {
-        var draft = new FakeRecipeGenerator().GenerateAsync(Prompt, CancellationToken.None).Result;
+        var draft = await new FakeRecipeGenerator().GenerateAsync(Prompt, CancellationToken.None);
 
         var recipe = RecipeValidator.Validate(draft, Prompt);
 
@@ -80,11 +80,11 @@ public class RecipeValidatorTests
     }
 
     [Fact]
-    public void FakeGenerator_WithAnEmptyFridge_StillProducesAValidRecipe()
+    public async Task FakeGenerator_WithAnEmptyFridge_StillProducesAValidRecipe()
     {
         var emptyPrompt = RecipePromptBuilder.Build(Constraints(), [], Today);
 
-        var draft = new FakeRecipeGenerator().GenerateAsync(emptyPrompt, CancellationToken.None).Result;
+        var draft = await new FakeRecipeGenerator().GenerateAsync(emptyPrompt, CancellationToken.None);
 
         Assert.NotNull(RecipeValidator.Validate(draft, emptyPrompt));
     }

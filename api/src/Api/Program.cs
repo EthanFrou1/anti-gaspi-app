@@ -71,7 +71,14 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        // Outils de mise au point (ex. aperçu du prompt) : absents hors Development.
+        if (!builder.Environment.IsDevelopment())
+        {
+            options.Conventions.Add(new RemoveDevelopmentOnlyActionsConvention());
+        }
+    })
     // Enums en texte dans le JSON (« Owner » plutôt que 1) : plus lisible et stable côté mobile.
     // allowIntegerValues: false : seuls les noms sont acceptés (« Vegan »). Sinon, « 99 »
     // serait converti en une valeur d'énumération inexistante.
@@ -108,6 +115,12 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 app.MapControllers();
+
+if (!app.Environment.IsDevelopment())
+{
+    // Les outils de développement n'existent pas ailleurs : 404 franc, quelle que soit la méthode.
+    DevelopmentOnlyEndpoints.MapNotFoundStubs(app);
+}
 
 app.Run();
 

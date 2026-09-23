@@ -7,6 +7,8 @@ public enum ErrorType
     Forbidden,
     NotFound,
     Conflict,
+    // Quota ou limite atteint (429).
+    TooManyRequests,
     // Service externe indisponible (ex. Open Food Facts en panne) : réessayer plus tard.
     Unavailable,
 }

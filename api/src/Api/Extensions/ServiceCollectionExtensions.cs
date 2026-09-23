@@ -166,6 +166,8 @@ public static class ServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddHostedService<RecipeCleanupService>();
+
         if (provider == AiProvider.Fake)
         {
             services.AddSingleton<IRecipeGenerator, FakeRecipeGenerator>();
@@ -206,6 +208,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<IRecipeService, RecipeService>();
 
         return services;
     }
