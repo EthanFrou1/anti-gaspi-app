@@ -13,11 +13,14 @@ mobile/
     ├── app/             → écrans (Expo Router : un fichier = une route)
     │   ├── _layout.tsx  → racine : session, écrans de chargement, routes protégées
     │   ├── (auth)/      → connexion, inscription (accessibles déconnecté)
-    │   └── (app)/       → écrans de l'app (accessibles connecté) : accueil/foyer, compte
+    │   └── (app)/       → écrans de l'app (accessibles connecté)
+    │       ├── (tabs)/  → onglets Frigo, Foyer, Compte
+    │       └── item/    → ajout et modification d'un produit
     ├── api/             → client API : SEUL module qui appelle le serveur
     ├── auth/            → contexte de session, stockage sécurisé des jetons
     ├── components/      → composants d'interface réutilisables
-    ├── features/        → logique et vues par fonctionnalité (ex. household/)
+    ├── features/        → logique et vues par fonctionnalité (household/, inventory/)
+    ├── utils/           → utilitaires sans interface (dates « jour » en calendrier local)
     ├── config.ts        → nom de l'app, URL de l'API
     └── theme.ts         → couleurs et espacements provisoires
 ```
@@ -88,7 +91,7 @@ Supprimer la règle quand elle ne sert plus :
 ## Vérifications
 
 ```bash
-npm test               # tests Jest (client API, règles du foyer)
+npm test               # tests Jest (client API, dates, règles du foyer et de l'inventaire)
 npm run typecheck      # TypeScript strict
 npx expo-doctor        # compatibilité des dépendances avec le SDK
 ```

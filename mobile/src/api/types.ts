@@ -63,3 +63,51 @@ export type Invitation = {
   // null si l'auteur a supprimé son compte.
   createdByUserId: string | null;
 };
+
+// ---------- Inventaire ----------
+
+// DLC (« à consommer jusqu'au ») ou DDM (« de préférence avant », encore consommable après).
+export type ExpiryKind = 'UseBy' | 'BestBefore';
+
+export type QuantityUnit = 'Piece' | 'Gram' | 'Kilogram' | 'Milliliter' | 'Liter';
+
+export type InventoryItemStatus = 'Active' | 'Consumed' | 'Discarded';
+
+export type Category = {
+  id: number;
+  code: string;
+  name: string;
+  defaultShelfLifeDays: number;
+  expiryKind: ExpiryKind;
+};
+
+// Les dates « jour » (achat, péremption) circulent au format « AAAA-MM-JJ », sans heure.
+export type InventoryItem = {
+  id: string;
+  name: string;
+  categoryId: number;
+  quantity: number;
+  unit: QuantityUnit;
+  purchasedOn: string;
+  expiresOn: string;
+  expiryIsEstimated: boolean;
+  expiryKind: ExpiryKind;
+  barcode: string | null;
+  ownerUserId: string | null;
+  ownerDisplayName: string | null;
+  status: InventoryItemStatus;
+  statusChangedAt: string | null;
+  createdAt: string;
+};
+
+export type SaveInventoryItemRequest = {
+  name: string;
+  categoryId: number;
+  quantity: number;
+  unit: QuantityUnit;
+  purchasedOn: string;
+  // null = date estimée par l'API d'après la catégorie.
+  expiresOn: string | null;
+  barcode: string | null;
+  isPersonal: boolean;
+};

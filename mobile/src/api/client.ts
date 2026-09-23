@@ -3,11 +3,15 @@ import { tokenStorage } from '@/auth/tokenStorage';
 import { ApiError } from './errors';
 import type {
   AuthResponse,
+  Category,
   Household,
+  InventoryItem,
+  InventoryItemStatus,
   Invitation,
   LoginRequest,
   ProblemDetails,
   RegisterRequest,
+  SaveInventoryItemRequest,
   User,
 } from './types';
 
@@ -250,6 +254,43 @@ export const api = {
 
     revoke(householdId: string, invitationId: string): Promise<void> {
       return request<void>(`/api/households/${householdId}/invitations/${invitationId}`, { method: 'DELETE' });
+    },
+  },
+
+  categories: {
+    list(): Promise<Category[]> {
+      return request<Category[]>('/api/categories');
+    },
+  },
+
+  inventory: {
+    list(householdId: string, status: InventoryItemStatus = 'Active'): Promise<InventoryItem[]> {
+      return request<InventoryItem[]>(`/api/households/${householdId}/items?status=${status}`);
+    },
+
+    get(householdId: string, itemId: string): Promise<InventoryItem> {
+      return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}`);
+    },
+
+    create(householdId: string, body: SaveInventoryItemRequest): Promise<InventoryItem> {
+      return request<InventoryItem>(`/api/households/${householdId}/items`, { method: 'POST', body });
+    },
+
+    update(householdId: string, itemId: string, body: SaveInventoryItemRequest): Promise<InventoryItem> {
+      return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}`, { method: 'PUT', body });
+    },
+
+    consume(householdId: string, itemId: string): Promise<InventoryItem> {
+      return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}/consume`, { method: 'POST' });
+    },
+
+    discard(householdId: string, itemId: string): Promise<InventoryItem> {
+      return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}/discard`, { method: 'POST' });
+    },
+
+    // Réservé à la correction d'une erreur de saisie (sinon : consommé ou jeté).
+    delete(householdId: string, itemId: string): Promise<void> {
+      return request<void>(`/api/households/${householdId}/items/${itemId}`, { method: 'DELETE' });
     },
   },
 };

@@ -97,6 +97,20 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - **Nettoyage des refresh tokens** : tâche périodique qui supprime les jetons expirés ou révoqués.
 - **Politique de confidentialité** : mentionner que les images de produits sont chargées directement depuis les serveurs d'Open Food Facts (qui voient donc l'adresse IP du téléphone), et que les données produit proviennent d'Open Food Facts (licence ODbL).
 
+## Parcours à tester sur appareil
+
+Étapes codées et vérifiées automatiquement (tests, typecheck, bundles) mais **pas encore testées sur un vrai téléphone**. Lancer l'environnement avec `.\dev.cmd`, puis cocher chaque parcours validé ; retirer une étape de la liste une fois tous ses parcours validés.
+
+### Inventaire, étape 4 : liste du frigo et saisie manuelle
+
+- [ ] Sans foyer, l'onglet Frigo renvoie vers l'onglet Foyer.
+- [ ] Ajout d'un steak haché : la date proposée est le lendemain (DLC). Ajout de pâtes : DDM dans un an.
+- [ ] Changement de la date avec « +3 j », puis avec le calendrier natif ; « Revenir à l'estimation » fonctionne.
+- [ ] Quantité « 0,5 » en kg acceptée.
+- [ ] Avec un second compte du foyer : un produit perso est visible mais en lecture seule, sans boutons Mangé / Jeté.
+- [ ] « Mangé » et « Jeté » (avec confirmation) retirent le produit de la liste.
+- [ ] Une DDM dépassée s'affiche « à vérifier », jamais « périmé ».
+
 ## Scan du ticket de caisse (V2)
 
 Flux :
