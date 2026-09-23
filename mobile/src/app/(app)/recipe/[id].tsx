@@ -10,6 +10,7 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
 import { APP_NAME } from '@/config';
 import { canModifyItem } from '@/features/inventory/rules';
+import { refreshExpiryReminders } from '@/features/notifications/reminders';
 import { favoriteLabel, formatPrepTime, formatRecipeForSharing, fridgeIngredients } from '@/features/recipes/rules';
 import { colors, spacing } from '@/theme';
 
@@ -84,6 +85,8 @@ export default function RecipeScreen() {
     setError(null);
     try {
       const { consumedCount } = await api.recipes.markCooked(householdId!, recipe!.id, checked);
+      // Les produits retirés ne doivent plus apparaître dans les rappels.
+      if (consumedCount > 0) void refreshExpiryReminders(householdId, user!.id);
       Alert.alert(
         'Bon appétit !',
         consumedCount > 0 ? `${consumedCount} produit(s) retiré(s) du frigo. Autant de gaspillage évité !` : 'Rien n\'a été retiré du frigo.',

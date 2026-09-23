@@ -9,6 +9,7 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
 import { ItemForm, type ItemFormInitial } from '@/features/inventory/ItemForm';
 import { useCategories } from '@/features/inventory/useCategories';
+import { askReminderPermission } from '@/features/notifications/reminders';
 import { colors, spacing } from '@/theme';
 
 type Lookup =
@@ -26,6 +27,7 @@ export default function ScannedItemScreen() {
   const { barcode } = useLocalSearchParams<{ barcode: string }>();
   const { state } = useAuth();
   const householdId = state.status === 'signedIn' ? state.user.householdId : null;
+  const userId = state.status === 'signedIn' ? state.user.id : null;
   const { categories, error: categoriesError } = useCategories();
   const [lookup, setLookup] = useState<Lookup>({ status: 'loading' });
   const [saveError, setSaveError] = useState<ApiError | null>(null);
@@ -52,6 +54,8 @@ export default function ScannedItemScreen() {
     try {
       await api.inventory.create(householdId, request);
       router.back();
+      // Premier produit ajouté : c'est le bon moment pour proposer les rappels.
+      if (userId) void askReminderPermission(householdId, userId);
     } catch (e) {
       setSaveError(asApiError(e));
     }

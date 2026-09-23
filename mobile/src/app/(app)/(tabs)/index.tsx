@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
@@ -13,6 +13,7 @@ import { InventoryRow } from '@/features/inventory/InventoryRow';
 import { canModifyItem, filterItems, type InventoryFilter } from '@/features/inventory/rules';
 import { useCategories } from '@/features/inventory/useCategories';
 import { useInventory } from '@/features/inventory/useInventory';
+import { sendTestReminder, syncExpiryReminders } from '@/features/notifications/reminders';
 import { colors, spacing } from '@/theme';
 import { toLocalDateString } from '@/utils/dates';
 
@@ -34,6 +35,13 @@ export default function FridgeScreen() {
   const { byId: categoriesById } = useCategories();
   const [filter, setFilter] = useState<InventoryFilter>('all');
   const today = toLocalDateString();
+
+  // Chaque chargement du frigo (retour sur l'écran, produit consommé ou jeté…) reprogramme
+  // les rappels de péremption à partir de l'inventaire à jour.
+  const userId = user?.id ?? null;
+  useEffect(() => {
+    if (items && userId) void syncExpiryReminders(items, userId);
+  }, [items, userId]);
 
   const visibleItems = useMemo(
     () => (items && user ? filterItems(items, filter, user.id) : []),
@@ -76,6 +84,22 @@ export default function FridgeScreen() {
       await reload();
     } catch (e) {
       Alert.alert('Impossible de modifier ce produit', asApiError(e).message);
+    }
+  }
+
+  // Outil de mise au point (build de développement uniquement) : le vrai prochain résumé dans 10 s.
+  async function testReminder() {
+    try {
+      const result = await sendTestReminder(items ?? [], user!.id);
+      const messages = {
+        sent: ['Rappel envoyé dans 10 secondes', 'Tu peux verrouiller le téléphone pour le voir arriver.'],
+        'nothing-planned': ['Aucun rappel prévu', 'Ajoute un produit qui périme dans les prochains jours.'],
+        'not-allowed': ['Notifications non autorisées', "La demande apparaît après l'ajout d'un produit, sinon active-les dans les réglages."],
+      } as const;
+      const [title, message] = messages[result];
+      Alert.alert(title, message);
+    } catch (e) {
+      Alert.alert('Envoi impossible', e instanceof Error ? e.message : String(e));
     }
   }
 
@@ -125,6 +149,16 @@ export default function FridgeScreen() {
         <View style={styles.bottomButton}>
           <Button title="Saisir à la main" variant="secondary" onPress={() => router.push('/item/new')} />
         </View>
+        {__DEV__ ? (
+          <Pressable
+            onPress={() => void testReminder()}
+            style={styles.devButton}
+            accessibilityRole="button"
+            accessibilityLabel="Envoyer le prochain rappel dans 10 secondes (outil de développement)"
+          >
+            <Text style={styles.devButtonText}>🔔</Text>
+          </Pressable>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -153,4 +187,14 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
   },
   bottomButton: { flex: 1 },
+  devButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  devButtonText: { fontSize: 22 },
 });

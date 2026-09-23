@@ -22,7 +22,7 @@ mobile/
     ├── api/             → client API : SEUL module qui appelle le serveur
     ├── auth/            → contexte de session, stockage sécurisé des jetons
     ├── components/      → composants d'interface réutilisables
-    ├── features/        → logique et vues par fonctionnalité (household/, inventory/, profile/, recipes/, scan/)
+    ├── features/        → logique et vues par fonctionnalité (household/, inventory/, notifications/, profile/, recipes/, scan/)
     ├── utils/           → utilitaires sans interface (dates « jour » en calendrier local)
     ├── config.ts        → nom de l'app, URL de l'API
     └── theme.ts         → couleurs et espacements provisoires
@@ -119,6 +119,20 @@ considère chaque fichier de ce dossier comme un écran. Chaque fichier de test 
   ranger la clé (voir `api/README.md`), puis lancer avec `$env:Ai__Provider = "Claude"; .dev.cmd`.
 - Le bouton 🤖 (visible seulement en build de développement, `__DEV__`) copie le prompt exact
   dans le presse-papiers, pour le mettre au point dans une console d'IA sans consommer de quota.
+
+## Rappels de péremption
+
+- Notifications **locales** (`expo-notifications`) : le téléphone programme un résumé à 18 h
+  pour les jours où des produits arrivent à leur date. Rien ne passe par le serveur.
+- Elles marchent dans Expo Go (seul le push en a été retiré depuis le SDK 53). L'avertissement
+  « expo-notifications functionality is not fully supported in Expo Go » au démarrage concerne
+  le push : on peut l'ignorer.
+- La planification est une fonction pure (`features/notifications/planner.ts`), testée avec Jest ;
+  la synchronisation (`reminders.ts`) annule puis reprogramme, dans une file d'attente.
+- Le bouton 🔔 du Frigo (visible seulement en build de développement, `__DEV__`) envoie le vrai
+  prochain résumé 10 secondes plus tard, pour tester sans attendre 18 h.
+- Le plugin `expo-notifications` n'est pas déclaré dans `app.config.ts` : il ajouterait
+  l'autorisation push iOS, inutile avant la V2.
 
 ## Sessions et sécurité
 

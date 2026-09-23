@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
+import { useExpiryReminderSync } from '@/features/notifications/hooks';
 import { colors, spacing } from '@/theme';
 
 export default function RootLayout() {
@@ -21,6 +22,8 @@ export default function RootLayout() {
  */
 function RootNavigator() {
   const { state, retry } = useAuth();
+  // Rappels de péremption : reprogrammés si connecté, effacés à la déconnexion.
+  useExpiryReminderSync(state);
 
   if (state.status === 'loading') {
     return (

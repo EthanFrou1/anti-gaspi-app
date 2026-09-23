@@ -31,7 +31,7 @@ Cible de lancement : étudiants et alternants (petit budget, peu de temps, peu d
 - **Mobile** : React Native avec Expo, en TypeScript.
 - **Codes-barres** : API Open Food Facts (nom, catégorie, infos produit).
 - **IA** : un modèle de langage avec vision, appelé **uniquement depuis le backend**, pour lire les tickets de caisse et générer les recettes.
-- **Notifications** : push via Expo Notifications.
+- **Notifications** : Expo Notifications. Notifications **locales** au MVP (programmées par le téléphone), push en V2.
 
 ## Structure du repo
 
@@ -79,6 +79,7 @@ Chaque catégorie indique aussi son type de date : **DLC** (« à consommer jusq
 
 ### V2 (après le MVP)
 
+- **Première priorité : notifications push, avec le passage à EAS Build et la distribution sur TestFlight.** Le compte Apple Developer (payant) existe déjà. Le push lèvera la limite des notifications locales (un produit ajouté par un colocataire n'est pris en compte qu'à la prochaine ouverture de l'app). À prévoir : development build (le push ne marche plus dans Expo Go depuis le SDK 53), identifiants APNs (iOS) et FCM (Android, projet Firebase), projectId EAS, table des jetons d'appareils côté API (supprimés à la déconnexion et à la suppression du compte), tâche quotidienne d'envoi, reçus de livraison. Déclarer alors le plugin `expo-notifications` dans `app.config.ts` (il ajoute l'autorisation push iOS `aps-environment`, volontairement absente au MVP) avec une icône de notification monochrome pour Android.
 - **Scan du ticket de caisse par IA** (voir la section dédiée).
 - Compteur de gaspillage évité et d'argent économisé.
 - Import des commandes drive.
@@ -88,6 +89,7 @@ Chaque catégorie indique aussi son type de date : **DLC** (« à consommer jusq
 - Bouton rapide « −1 » sur les produits à la pièce (consommation partielle sans passer par l'édition).
 - Prix d'achat des produits (nécessaire au compteur « argent économisé » de la V2, non stocké au MVP).
 - Système d'amis hors foyer, pour voir et partager les recettes favorites de ses proches.
+- Réglages des rappels de péremption dans l'app : interrupteur pour les activer ou désactiver, et choix de l'heure du résumé quotidien (aujourd'hui fixée à 18 h ; on les coupe dans les réglages du téléphone).
 
 ## À faire avant publication
 
@@ -101,6 +103,7 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - **Données de profil et IA** : indiquer dans la politique de confidentialité que les contraintes alimentaires (dont les allergies, avec consentement) sont transmises au fournisseur d'IA pour générer les recettes, sans identité ; prévoir l'export des données personnelles (droit d'accès).
 - **Modèle d'IA** : Claude Haiku 4.5 (`claude-haiku-4-5-20251001`), retrait « pas avant le 15 octobre 2026 » (date minimale, pas un retrait programmé ; Anthropic prévient à l'avance). Avant publication, vérifier son statut sur la page Model deprecations d'Anthropic ; en cas d'annonce de retrait, changer `Ai:Model`.
 - **Politique de confidentialité** : mentionner que les images de produits sont chargées directement depuis les serveurs d'Open Food Facts (qui voient donc l'adresse IP du téléphone), et que les données produit proviennent d'Open Food Facts (licence ODbL).
+- **Politique de confidentialité, rappels de péremption** : indiquer que les notifications affichent des noms de produits, visibles sur l'écran verrouillé selon les réglages d'aperçu du téléphone (masquables dans les réglages de notification).
 
 ## Génération de recettes par IA
 
@@ -111,6 +114,16 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - **Partage** : une recette se partage en texte via la feuille de partage native.
 - Quotas : 3 générations par jour et par utilisateur, 50 par jour pour toute l'API (journée en heure de Paris). Historique conservé 30 jours, en ne stockant que la recette.
 - Seuls les contraintes combinées et l'inventaire partent vers l'IA (aucune identité). Les noms de produits sont nettoyés et transmis comme données JSON (injection de prompt).
+
+## Rappels de péremption (notifications)
+
+- **Notifications locales** au MVP : le téléphone programme les rappels à partir de l'inventaire. Aucun changement côté API, aucune donnée personnelle en plus, et ça marche dans Expo Go.
+- **Un résumé par jour à 18 h** (le moment où l'on se demande quoi cuisiner), qui suggère de demander une recette ; l'appui ouvre l'onglet Frigo.
+- **DLC** : rappel la veille et le jour même. **DDM** : un seul rappel le jour même, au ton « à vérifier » (jamais « périmé »).
+- Produits communs et produits perso de l'utilisateur ; jamais ceux des autres membres.
+- **Horizon de 14 jours** : au plus 14 notifications programmées (iOS n'en garde que 64 par app).
+- **Synchronisation idempotente** : à chaque chargement du Frigo, retour de l'app au premier plan, changement de foyer ou « J'ai cuisiné », l'app annule ses rappels puis les reprogramme (dans une file d'attente, pour éviter les doublons). Déconnexion, suppression du compte ou session expirée : rappels annulés, et ceux déjà affichés sont retirés (ils contiennent des noms de produits).
+- **Autorisation** demandée une seule fois, après l'ajout d'un produit (pas au démarrage, où elle est souvent refusée par réflexe).
 
 ## Parcours à tester sur appareil
 
@@ -157,6 +170,20 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] API arrêtée pendant la génération : message d'erreur, le quota n'est pas décompté.
 - [ ] Étoile sur une recette : elle apparaît dans « Favoris » pour tous les membres du foyer, avec le bon libellé (« Dans tes favoris », « Favori de 1 membre »).
 - [ ] « Partager » ouvre la feuille de partage native avec la recette en texte lisible.
+
+### Rappels de péremption (notifications locales)
+
+- [ ] Aucune demande d'autorisation au démarrage ; elle apparaît après l'ajout d'un produit (manuel ou scanné), une seule fois, même après un refus. Dans Expo Go, l'autorisation est celle d'Expo Go : si elle a déjà été accordée ou refusée pour un autre projet, aucune demande n'apparaît (la réinitialiser en supprimant puis réinstallant Expo Go).
+- [ ] Android 13+ : la demande s'affiche bien (canal « Produits à consommer » visible dans les réglages de notification de l'app).
+- [ ] Bouton 🔔 du Frigo (build de développement uniquement) : le prochain résumé arrive 10 secondes plus tard, avec le même texte que celui de 18 h ; message « Aucun rappel prévu » si rien ne périme bientôt.
+- [ ] Un produit en DLC qui périme demain, ajouté avant 18 h : notification à 18 h, « Ce soir : 1 produit à utiliser », avec « (demain) ».
+- [ ] Une DDM du jour : « à vérifier », jamais « périmé ».
+- [ ] Appui sur la notification, app fermée puis app en arrière-plan : l'onglet Frigo s'ouvre.
+- [ ] Notification reçue app ouverte : le bandeau s'affiche quand même.
+- [ ] Produit marqué « Consommé » avant 18 h : plus de notification pour lui.
+- [ ] Produit perso d'un colocataire : n'apparaît pas dans mes rappels.
+- [ ] Déconnexion : plus aucune notification ; les notifications déjà affichées de l'app disparaissent.
+- [ ] Autorisation refusée : l'app fonctionne normalement, sans message d'erreur.
 
 ## Scan du ticket de caisse (V2)
 

@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 import { useAuth } from '@/auth/AuthContext';
+import { useReminderTaps } from '@/features/notifications/hooks';
 
 /**
  * Espace connecté. Tant que le profil n'existe pas (hasProfile false), seul
@@ -8,6 +9,8 @@ import { useAuth } from '@/auth/AuthContext';
 export default function AppLayout() {
   const { state } = useAuth();
   const hasProfile = state.status === 'signedIn' && state.user.hasProfile;
+  // Appui sur un rappel de péremption : ouvre le Frigo (une fois l'onboarding terminé).
+  useReminderTaps(hasProfile);
 
   return (
     <Stack>
