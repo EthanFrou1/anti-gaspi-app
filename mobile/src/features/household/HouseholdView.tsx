@@ -6,6 +6,7 @@ import type { Household, HouseholdMember } from '@/api/types';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { colors, spacing } from '@/theme';
+import { EquipmentSection } from './EquipmentSection';
 import { InvitationsSection } from './InvitationsSection';
 import { canRemoveMember, describeLeaveConsequence } from './rules';
 
@@ -77,6 +78,8 @@ export function HouseholdView({ household, myUserId, onChanged }: Props) {
           </View>
         ))}
       </View>
+
+      <EquipmentSection household={household} />
 
       <InvitationsSection household={household} myUserId={myUserId} />
 

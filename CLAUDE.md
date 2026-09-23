@@ -125,6 +125,15 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Un QR code est ignoré (« Code non reconnu »), un code-barres alimentaire est lu du premier coup.
 - [ ] Après « Ajouter au frigo », retour au frigo avec le produit dans la liste.
 
+### Profil : onboarding et préférences
+
+- [ ] Juste après l'inscription, l'onboarding s'affiche (5 questions, barre de progression) ; l'app n'est pas accessible avant la fin.
+- [ ] Un compte existant sans profil passe aussi par l'onboarding à la connexion suivante.
+- [ ] « Passer cette question » à chaque étape : l'onboarding se termine avec les valeurs par défaut.
+- [ ] Allergies cochées sans consentement : message bloquant ; décocher le consentement efface les allergies cochées.
+- [ ] Compte → « Mes préférences » : les réponses de l'onboarding sont reprises, modifiables et enregistrées.
+- [ ] Foyer → « Équipement de la cuisine » : un changement fait par un membre est visible par un autre après rafraîchissement.
+
 ## Scan du ticket de caisse (V2)
 
 Flux :

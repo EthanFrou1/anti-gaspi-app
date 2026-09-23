@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { asApiError, type ApiError } from '@/api/errors';
@@ -54,6 +55,8 @@ export default function AccountScreen() {
         <Text style={styles.name}>{state.user.displayName}</Text>
         <Text style={styles.email}>{state.user.email}</Text>
       </View>
+
+      <Button title="Mes préférences alimentaires" onPress={() => router.push('/preferences')} />
 
       <Button title="Se déconnecter" variant="secondary" onPress={() => void handleSignOut()} loading={signingOut} />
 
