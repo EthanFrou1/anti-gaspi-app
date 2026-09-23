@@ -16,4 +16,7 @@ public class User : IdentityUser<Guid>
     public HouseholdMember? Membership { get; set; }
 
     public List<RefreshToken> RefreshTokens { get; set; } = [];
+
+    // Préférences alimentaires ; null tant que l'onboarding n'est pas terminé.
+    public UserProfile? Profile { get; set; }
 }

@@ -7,6 +7,7 @@ public sealed record HouseholdDto(
     string Name,
     DateTimeOffset CreatedAt,
     HouseholdRole MyRole,
+    IReadOnlyList<KitchenEquipment> Equipment,
     IReadOnlyList<HouseholdMemberDto> Members);
 
 // Pas d'email : les autres membres n'en ont pas besoin (minimisation des données).

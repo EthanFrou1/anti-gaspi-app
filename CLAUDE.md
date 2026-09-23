@@ -56,7 +56,9 @@ Recette générée ← produits du foyer + profil(s) des personnes qui mangent
 - **Produit** : nom, catégorie, quantité, unité, date d'achat, date de péremption (estimée ou saisie), code-barres optionnel, **propriétaire optionnel**. Propriétaire vide = produit commun au foyer ; renseigné = produit perso (cas des colocs).
 - **Produits perso** : visibles par tout le foyer, mais seul leur propriétaire peut les modifier, les marquer consommés/jetés ou les supprimer. Quand il quitte le foyer ou supprime son compte, ses produits deviennent communs (la nourriture reste dans le frigo).
 - **Statut d'un produit** : actif, consommé ou jeté. « Consommé » et « jeté » concernent le produit entier (la quantité se modifie par l'édition) et sont conservés en base pour le futur compteur de gaspillage ; la suppression sert seulement à corriger une erreur de saisie.
-- **Profil** : temps de cuisine souhaité, budget par repas, équipement disponible (plaques, four, air fryer, micro-ondes…), régime et allergies, objectif (équilibré, prise de muscle, anti-gaspi simple…), nombre de portions par défaut.
+- **Profil** (privé, jamais montré aux autres membres) : temps de cuisine souhaité, budget par repas (tranches), régime, exclusions d'ingrédients, allergies, objectif (équilibré, prise de muscle, repas légers, anti-gaspi simple), nombre de portions par défaut. Uniquement des listes fermées, **aucun texte libre** (il finirait dans le prompt de l'IA : risque d'injection de prompt).
+- **Équipement de cuisine** : porté par le **foyer** (plaques, four, micro-ondes, air fryer, blender), car les membres partagent la même cuisine ; modifiable par tout membre.
+- **Données sensibles (RGPD, article 9)** : les allergies sont des données de santé, enregistrées seulement avec un consentement explicite (date conservée ; retirer le consentement efface les allergies). Pas de régime « religieux » (halal, casher) : des exclusions d'ingrédients neutres (porc, alcool…) couvrent le besoin sans étiqueter la personne.
 - **Repas partagé** : quand plusieurs membres mangent ensemble, les contraintes de leurs profils se combinent (si l'un est végétarien, la recette l'est ; les allergies de tous sont exclues).
 
 ### Estimation des dates de péremption
@@ -95,6 +97,7 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - **Énumération de comptes** : à revoir avec la confirmation d'email. Aujourd'hui, l'inscription renvoie 409 si l'email est pris et le message de verrouillage n'apparaît que pour un compte existant.
 - **ForwardedHeaders** : à activer derrière le reverse proxy, sinon l'API voit l'IP du proxy pour tous les clients (rate limiting par IP faussé, logs inexacts).
 - **Nettoyage des refresh tokens** : tâche périodique qui supprime les jetons expirés ou révoqués.
+- **Données de profil et IA** : indiquer dans la politique de confidentialité que les contraintes alimentaires (dont les allergies, avec consentement) sont transmises au fournisseur d'IA pour générer les recettes, sans identité ; prévoir l'export des données personnelles (droit d'accès).
 - **Politique de confidentialité** : mentionner que les images de produits sont chargées directement depuis les serveurs d'Open Food Facts (qui voient donc l'adresse IP du téléphone), et que les données produit proviennent d'Open Food Facts (licence ODbL).
 
 ## Parcours à tester sur appareil

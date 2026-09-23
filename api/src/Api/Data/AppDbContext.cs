@@ -19,6 +19,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<OffCategoryMapping> OffCategoryMappings => Set<OffCategoryMapping>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

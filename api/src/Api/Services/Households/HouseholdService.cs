@@ -24,6 +24,12 @@ public interface IHouseholdService
     /// Fait quitter à l'utilisateur son foyer actuel, s'il en a un (utilisé à la suppression du compte).
     /// </summary>
     Task<Result> LeaveCurrentAsync(Guid userId, CancellationToken ct);
+
+    /// <summary>
+    /// Remplace l'équipement de la cuisine du foyer (tout membre peut le modifier).
+    /// </summary>
+    Task<Result<HouseholdDto>> UpdateEquipmentAsync(
+        Guid actorId, Guid householdId, IReadOnlyList<KitchenEquipment> equipment, CancellationToken ct);
 }
 
 public sealed class HouseholdService(AppDbContext db, TimeProvider time) : IHouseholdService
@@ -58,7 +64,7 @@ public sealed class HouseholdService(AppDbContext db, TimeProvider time) : IHous
         var membership = await db.HouseholdMembers
             .AsNoTracking()
             .Where(m => m.UserId == userId)
-            .Select(m => new { m.HouseholdId, m.Role, m.Household.Name, m.Household.CreatedAt })
+            .Select(m => new { m.HouseholdId, m.Role, m.Household.Name, m.Household.CreatedAt, m.Household.Equipment })
             .SingleOrDefaultAsync(ct);
 
         if (membership is null)
@@ -73,7 +79,8 @@ public sealed class HouseholdService(AppDbContext db, TimeProvider time) : IHous
             .Select(m => new HouseholdMemberDto(m.UserId, m.User.DisplayName, m.Role, m.JoinedAt))
             .ToListAsync(ct);
 
-        return new HouseholdDto(membership.HouseholdId, membership.Name, membership.CreatedAt, membership.Role, members);
+        return new HouseholdDto(
+            membership.HouseholdId, membership.Name, membership.CreatedAt, membership.Role, membership.Equipment, members);
     }
 
     public Task<Result<HouseholdDto>> JoinAsync(Guid userId, string code, CancellationToken ct) =>
@@ -158,6 +165,26 @@ public sealed class HouseholdService(AppDbContext db, TimeProvider time) : IHous
             await RemoveMembershipAsync(target, members, ct);
             return Result.Success();
         }, ct);
+
+    public async Task<Result<HouseholdDto>> UpdateEquipmentAsync(
+        Guid actorId, Guid householdId, IReadOnlyList<KitchenEquipment> equipment, CancellationToken ct)
+    {
+        if (!equipment.All(Enum.IsDefined))
+        {
+            return new Error(ErrorType.Validation, "household.validation", "Équipement inconnu.",
+                new Dictionary<string, string[]> { ["Equipment"] = ["Équipement inconnu."] });
+        }
+
+        var household = await db.Households.SingleOrDefaultAsync(h => h.Id == householdId, ct);
+        if (household is null)
+        {
+            return HouseholdErrors.NotFound;
+        }
+
+        household.Equipment = equipment.Distinct().Order().ToList();
+        await db.SaveChangesAsync(ct);
+        return await GetMineAsync(actorId, ct);
+    }
 
     public Task<Result> LeaveCurrentAsync(Guid userId, CancellationToken ct) =>
         db.InTransactionAsync(async () =>

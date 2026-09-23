@@ -95,6 +95,23 @@ public class InventoryEndpointsTests(DatabaseFixture database) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task NumericEnumValue_Returns400()
+    {
+        // Sans « allowIntegerValues: false », 99 deviendrait une unité inexistante, enregistrée telle quelle.
+        var alice = await CreateUserAsync("Alice");
+        var householdId = await CreateHouseholdAsync(alice.Id);
+        var body = $$"""
+            {"name":"Lait","categoryId":7,"quantity":1,"unit":99,"purchasedOn":"{{Today:yyyy-MM-dd}}",
+             "expiresOn":null,"barcode":null,"isPersonal":false}
+            """;
+
+        var response = await alice.Client.PostAsync(
+            ItemsUrl(householdId), new StringContent(body, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task WithoutToken_Returns401()
     {
         var alice = await CreateUserAsync("Alice");

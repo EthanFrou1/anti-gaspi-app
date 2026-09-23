@@ -23,7 +23,8 @@ public sealed class UserService(
                 u.Id,
                 u.Email!,
                 u.DisplayName,
-                u.Membership == null ? null : u.Membership.HouseholdId))
+                u.Membership == null ? null : u.Membership.HouseholdId,
+                u.Profile != null))
             .SingleOrDefaultAsync(ct);
 
         // Cas possible : compte supprimé alors que son access token est encore valide.

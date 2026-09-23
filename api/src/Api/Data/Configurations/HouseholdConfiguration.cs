@@ -10,6 +10,12 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
     {
         builder.Property(h => h.Name).HasMaxLength(50);
 
+        // Tableau PostgreSQL (text[]). Valeur par défaut SQL pour les foyers déjà existants
+        // au moment de la migration.
+        builder.PrimitiveCollection(h => h.Equipment)
+            .HasDefaultValueSql("ARRAY['Hob','Microwave']::text[]")
+            .ElementType().HasConversion<string>();
+
         // Supprimer un foyer supprime tout son contenu (membres, invitations,
         // et plus tard l'inventaire).
         builder.HasMany(h => h.Members)

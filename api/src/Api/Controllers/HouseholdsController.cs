@@ -40,6 +40,18 @@ public sealed class HouseholdsController(IHouseholdService householdService) : A
         return result.IsSuccess ? Ok(result.Value) : ToProblem(result.Error);
     }
 
+    // Équipement de la cuisine commune : modifiable par tout membre du foyer.
+    [HttpPut("{householdId:guid}/equipment")]
+    [Authorize(Policy = HouseholdPolicies.Member)]
+    [ProducesResponseType<HouseholdDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<HouseholdDto>> UpdateEquipment(
+        Guid householdId, UpdateEquipmentRequest request, CancellationToken ct)
+    {
+        var result = await householdService.UpdateEquipmentAsync(User.GetUserId(), householdId, request.Equipment, ct);
+        return result.IsSuccess ? Ok(result.Value) : ToProblem(result.Error);
+    }
+
     // Quitter le foyer (userId = soi-même) ou retirer un membre (propriétaire uniquement,
     // vérifié par le service car la règle dépend de la personne ciblée).
     [HttpDelete("{householdId:guid}/members/{userId:guid}")]

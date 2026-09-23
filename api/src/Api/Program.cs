@@ -72,7 +72,9 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddControllers()
     // Enums en texte dans le JSON (« Owner » plutôt que 1) : plus lisible et stable côté mobile.
-    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    // allowIntegerValues: false : seuls les noms sont acceptés (« Vegan »). Sinon, « 99 »
+    // serait converti en une valeur d'énumération inexistante.
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false)));
 builder.Services.AddProblemDetails(options =>
 {
     // Remplace le titre anglais par défaut des erreurs de validation

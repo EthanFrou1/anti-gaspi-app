@@ -11,6 +11,10 @@ public class Household
 
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    // Équipement de la cuisine, partagée par les membres (plaques et micro-ondes par défaut :
+    // le minimum le plus courant, notamment chez les étudiants).
+    public List<KitchenEquipment> Equipment { get; set; } = [KitchenEquipment.Hob, KitchenEquipment.Microwave];
+
     public List<HouseholdMember> Members { get; set; } = [];
 
     public List<HouseholdInvitation> Invitations { get; set; } = [];
