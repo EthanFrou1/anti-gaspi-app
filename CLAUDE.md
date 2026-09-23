@@ -99,7 +99,7 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - **ForwardedHeaders** : à activer derrière le reverse proxy, sinon l'API voit l'IP du proxy pour tous les clients (rate limiting par IP faussé, logs inexacts).
 - **Nettoyage des refresh tokens** : tâche périodique qui supprime les jetons expirés ou révoqués.
 - **Données de profil et IA** : indiquer dans la politique de confidentialité que les contraintes alimentaires (dont les allergies, avec consentement) sont transmises au fournisseur d'IA pour générer les recettes, sans identité ; prévoir l'export des données personnelles (droit d'accès).
-- **Modèle d'IA** : Claude Haiku 4.5 (`claude-haiku-4-5-20251001`) a une date de retrait « pas avant le 15 octobre 2026 ». Vérifier son statut (page Model deprecations d'Anthropic) et changer `Ai:Model` si besoin avant publication.
+- **Modèle d'IA** : Claude Haiku 4.5 (`claude-haiku-4-5-20251001`), retrait « pas avant le 15 octobre 2026 » (date minimale, pas un retrait programmé ; Anthropic prévient à l'avance). Avant publication, vérifier son statut sur la page Model deprecations d'Anthropic ; en cas d'annonce de retrait, changer `Ai:Model`.
 - **Politique de confidentialité** : mentionner que les images de produits sont chargées directement depuis les serveurs d'Open Food Facts (qui voient donc l'adresse IP du téléphone), et que les données produit proviennent d'Open Food Facts (licence ODbL).
 
 ## Génération de recettes par IA
