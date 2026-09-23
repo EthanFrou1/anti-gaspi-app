@@ -1,0 +1,91 @@
+# =====================================================================
+# Secrets et variables d'environnement (règle de sécurité du projet)
+# =====================================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.p8
+*.jks
+*.mobileprovision
+# Surcharges locales de config .NET (les secrets vont dans les user-secrets)
+appsettings.*.local.json
+appsettings.Local.json
+
+# =====================================================================
+# Système / éditeurs
+# =====================================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Réglages Claude Code propres à chaque poste
+.claude/settings.local.json
+
+# =====================================================================
+# Backend .NET (/api)
+# =====================================================================
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Ll]og/
+[Ll]ogs/
+*.log
+TestResults/
+[Tt]est[Rr]esult*/
+coverage/
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+*.trx
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.rsuser
+*.DotSettings.user
+_ReSharper*/
+# Publication
+publish/
+*.[Pp]ublish.xml
+*.pubxml.user
+PublishProfiles/*.pubxml
+
+# =====================================================================
+# Mobile Expo / React Native (/mobile)
+# =====================================================================
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+*.tsbuildinfo
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.kotlin/
+*.orig.*
+# Dossiers natifs générés par Expo (Continuous Native Generation)
+/mobile/ios
+/mobile/android
