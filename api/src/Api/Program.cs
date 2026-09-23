@@ -92,3 +92,7 @@ app.UseRateLimiter();
 app.MapControllers();
 
 app.Run();
+
+// Rend la classe Program (générée par les instructions de haut niveau) visible
+// des tests de bout en bout, qui démarrent l'API en mémoire avec WebApplicationFactory<Program>.
+public partial class Program;

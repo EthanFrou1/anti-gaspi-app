@@ -126,6 +126,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IHouseholdService, HouseholdService>();
         services.AddScoped<IInvitationService, InvitationService>();
         services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IInventoryService, InventoryService>();
 
         return services;
     }

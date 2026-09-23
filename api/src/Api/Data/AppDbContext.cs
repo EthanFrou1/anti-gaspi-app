@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<OffCategoryMapping> OffCategoryMappings => Set<OffCategoryMapping>();
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

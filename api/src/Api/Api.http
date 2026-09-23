@@ -7,6 +7,7 @@
 @householdId = colle-ici-l-id-du-foyer
 @invitationId = colle-ici-l-id-de-l-invitation
 @userId = colle-ici-l-id-d-un-membre
+@itemId = colle-ici-l-id-d-un-produit
 
 ### Inscription
 POST {{Api_HostAddress}}/api/auth/register
@@ -102,4 +103,52 @@ Authorization: Bearer {{accessToken}}
 
 ### Catégories de produits (durée de conservation par défaut, DLC ou DDM)
 GET {{Api_HostAddress}}/api/categories
+Authorization: Bearer {{accessToken}}
+
+### Produits du foyer (actifs, triés par péremption) — ?status=Consumed ou Discarded pour l'historique
+GET {{Api_HostAddress}}/api/households/{{householdId}}/items
+Authorization: Bearer {{accessToken}}
+
+### Ajouter un produit (expiresOn: null = date estimée d'après la catégorie)
+POST {{Api_HostAddress}}/api/households/{{householdId}}/items
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Yaourts nature",
+  "categoryId": 9,
+  "quantity": 4,
+  "unit": "Piece",
+  "purchasedOn": "2026-09-23",
+  "expiresOn": null,
+  "barcode": null,
+  "isPersonal": false
+}
+
+### Modifier un produit (remplacement complet ; seul le propriétaire d'un produit perso)
+PUT {{Api_HostAddress}}/api/households/{{householdId}}/items/{{itemId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Yaourts nature",
+  "categoryId": 9,
+  "quantity": 2,
+  "unit": "Piece",
+  "purchasedOn": "2026-09-23",
+  "expiresOn": "2026-10-10",
+  "barcode": null,
+  "isPersonal": true
+}
+
+### Marquer comme consommé
+POST {{Api_HostAddress}}/api/households/{{householdId}}/items/{{itemId}}/consume
+Authorization: Bearer {{accessToken}}
+
+### Marquer comme jeté
+POST {{Api_HostAddress}}/api/households/{{householdId}}/items/{{itemId}}/discard
+Authorization: Bearer {{accessToken}}
+
+### Supprimer (erreur de saisie uniquement)
+DELETE {{Api_HostAddress}}/api/households/{{householdId}}/items/{{itemId}}
 Authorization: Bearer {{accessToken}}

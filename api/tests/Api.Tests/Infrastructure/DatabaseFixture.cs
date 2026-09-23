@@ -22,7 +22,12 @@ public sealed class DatabaseFixture : IAsyncLifetime
 
     private string _resetSql = string.Empty;
 
+    private ApiFactory? _api;
+
     public string ConnectionString => _container.GetConnectionString();
+
+    // API en mémoire partagée par les tests de bout en bout (démarrée au premier usage).
+    public ApiFactory Api => _api ??= new ApiFactory(ConnectionString);
 
     public async Task InitializeAsync()
     {
@@ -66,7 +71,14 @@ public sealed class DatabaseFixture : IAsyncLifetime
     public AppDbContext CreateDbContext() =>
         new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(ConnectionString).Options);
 
-    public Task DisposeAsync() => _container.DisposeAsync().AsTask();
+    public async Task DisposeAsync()
+    {
+        if (_api is not null)
+        {
+            await _api.DisposeAsync();
+        }
+        await _container.DisposeAsync();
+    }
 }
 
 [CollectionDefinition(Name)]
