@@ -1,8 +1,10 @@
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { formatShortDate, fromDateString, toLocalDateString } from '@/utils/dates';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
+import { Chip } from './Chip';
+import { useFieldStyles } from './TextField';
 
 export type DateShortcut = { label: string; value: string };
 
@@ -26,6 +28,9 @@ type Props = {
  * - iOS : calendrier affiché sous le champ.
  */
 export function DateField({ label, value, onChange, shortcuts = [], minimumDate, maximumDate, hint, error, disabled }: Props) {
+  const theme = useTheme();
+  const field = useFieldStyles();
+  const styles = useStyles();
   const [iosPickerOpen, setIosPickerOpen] = useState(false);
 
   const min = minimumDate ? fromDateString(minimumDate) : undefined;
@@ -46,15 +51,15 @@ export function DateField({ label, value, onChange, shortcuts = [], minimumDate,
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={field.container}>
+      <Text style={field.label}>{label}</Text>
 
       <Pressable
         onPress={openPicker}
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={`${label} : ${formatShortDate(value)}. Modifier`}
-        style={[styles.value, error ? styles.valueError : null, disabled && styles.disabled]}
+        style={[field.input, styles.value, error ? field.inputError : null, disabled && styles.disabled]}
       >
         <Text style={styles.valueText}>{formatShortDate(value)}</Text>
         <Text style={styles.change}>Choisir…</Text>
@@ -63,19 +68,16 @@ export function DateField({ label, value, onChange, shortcuts = [], minimumDate,
       {shortcuts.length > 0 && !disabled ? (
         <View style={styles.shortcuts}>
           {shortcuts.map((shortcut) => (
-            <Pressable
+            <Chip
               key={shortcut.label}
+              label={shortcut.label}
+              selected={shortcut.value === value}
               onPress={() => {
                 onChange(shortcut.value);
                 setIosPickerOpen(false);
               }}
               accessibilityRole="button"
-              style={[styles.shortcut, shortcut.value === value && styles.shortcutSelected]}
-            >
-              <Text style={[styles.shortcutText, shortcut.value === value && styles.shortcutTextSelected]}>
-                {shortcut.label}
-              </Text>
-            </Pressable>
+            />
           ))}
         </View>
       ) : null}
@@ -85,46 +87,24 @@ export function DateField({ label, value, onChange, shortcuts = [], minimumDate,
           value={fromDateString(value)}
           mode="date"
           display="inline"
+          accentColor={theme.colors.primary}
+          themeVariant={theme.scheme}
           minimumDate={min}
           maximumDate={max}
           onValueChange={(_event, date) => onChange(toLocalDateString(date))}
         />
       ) : null}
 
-      {hint && !error ? <Text style={styles.hint}>{hint}</Text> : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {hint && !error ? <Text style={field.hint}>{hint}</Text> : null}
+      {error ? <Text style={field.error}>{error}</Text> : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { gap: spacing.xs },
-  label: { fontSize: 14, fontWeight: '600', color: colors.text },
-  value: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 4,
-  },
-  valueError: { borderColor: colors.error },
+const useStyles = makeStyles((t) => ({
+  value: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   disabled: { opacity: 0.6 },
-  valueText: { fontSize: 16, color: colors.text },
-  change: { fontSize: 14, color: colors.primary, fontWeight: '600' },
-  shortcuts: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  shortcut: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-  },
-  shortcutSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  shortcutText: { fontSize: 14, color: colors.text },
-  shortcutTextSelected: { color: colors.primaryText, fontWeight: '600' },
-  hint: { fontSize: 13, color: colors.mutedText },
-  error: { fontSize: 13, color: colors.error },
-});
+  valueText: { ...t.type.body, color: t.colors.ink },
+  change: { ...t.type.callout, color: t.colors.primaryText },
+  shortcuts: { flexDirection: 'row', gap: t.space.xs, flexWrap: 'wrap' },
+}));

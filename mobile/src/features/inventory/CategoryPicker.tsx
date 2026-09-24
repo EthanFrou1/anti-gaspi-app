@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Category } from '@/api/types';
-import { colors, spacing } from '@/theme';
+import { CategoryIcon } from '@/components/CategoryIcon';
+import { useFieldStyles } from '@/components/TextField';
+import { makeStyles } from '@/theme';
 
 type Props = {
   categories: Category[];
@@ -17,23 +19,26 @@ type Props = {
  * Une liste plein écran affiche aussi la durée par défaut et le type de date.
  */
 export function CategoryPicker({ categories, value, onChange, error, disabled }: Props) {
+  const field = useFieldStyles();
+  const styles = useStyles();
   const [open, setOpen] = useState(false);
   const selected = categories.find((c) => c.id === value);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Catégorie</Text>
+    <View style={field.container}>
+      <Text style={field.label}>Catégorie</Text>
       <Pressable
         onPress={() => setOpen(true)}
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={`Catégorie : ${selected?.name ?? 'à choisir'}`}
-        style={[styles.field, error ? styles.fieldError : null, disabled && styles.disabled]}
+        style={[field.input, styles.field, error ? field.inputError : null, disabled && styles.disabled]}
       >
-        <Text style={selected ? styles.value : styles.placeholder}>{selected?.name ?? 'Choisir une catégorie'}</Text>
+        {selected ? <CategoryIcon code={selected.code} size={22} /> : null}
+        <Text style={[selected ? styles.value : styles.placeholder, styles.fieldText]}>{selected?.name ?? 'Choisir une catégorie'}</Text>
         <Text style={styles.chevron}>›</Text>
       </Pressable>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={field.error}>{error}</Text> : null}
 
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
         <SafeAreaView style={styles.modal}>
@@ -53,12 +58,17 @@ export function CategoryPicker({ categories, value, onChange, error, disabled }:
                   setOpen(false);
                 }}
                 accessibilityRole="button"
-                style={[styles.option, item.id === value && styles.optionSelected]}
+                accessibilityState={{ selected: item.id === value }}
+                style={({ pressed }) => [styles.option, item.id === value && styles.optionSelected, pressed && styles.optionPressed]}
               >
-                <Text style={styles.optionName}>{item.name}</Text>
-                <Text style={styles.optionMeta}>
-                  ≈ {formatDuration(item.defaultShelfLifeDays)} · {item.expiryKind === 'UseBy' ? 'DLC' : 'DDM'}
-                </Text>
+                <CategoryIcon code={item.code} />
+                <View style={styles.optionText}>
+                  <Text style={styles.optionName}>{item.name}</Text>
+                  <Text style={styles.optionMeta}>
+                    ≈ {formatDuration(item.defaultShelfLifeDays)} · {item.expiryKind === 'UseBy' ? 'DLC' : 'DDM'}
+                  </Text>
+                </View>
+                {item.id === value ? <Text style={styles.check}>✓</Text> : null}
               </Pressable>
             )}
           />
@@ -75,45 +85,40 @@ function formatDuration(days: number): string {
   return `${days} j`;
 }
 
-const styles = StyleSheet.create({
-  container: { gap: spacing.xs },
-  label: { fontSize: 14, fontWeight: '600', color: colors.text },
-  field: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 4,
-  },
-  fieldError: { borderColor: colors.error },
+const useStyles = makeStyles((t) => ({
+  field: { flexDirection: 'row', alignItems: 'center', gap: t.space.xs },
+  fieldText: { flex: 1 },
   disabled: { opacity: 0.6 },
-  value: { fontSize: 16, color: colors.text },
-  placeholder: { fontSize: 16, color: colors.mutedText },
-  chevron: { fontSize: 20, color: colors.mutedText },
-  error: { fontSize: 13, color: colors.error },
-  modal: { flex: 1, backgroundColor: colors.background },
+  value: { ...t.type.body, color: t.colors.ink },
+  placeholder: { ...t.type.body, color: t.colors.ink3 },
+  chevron: { ...t.type.title3, color: t.colors.ink3 },
+  modal: { flex: 1, backgroundColor: t.colors.bg },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    paddingHorizontal: t.layout.screenPadding,
+    paddingVertical: t.space.md,
+    borderBottomWidth: t.borderWidth.hairline,
+    borderBottomColor: t.colors.line,
   },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
-  close: { fontSize: 16, color: colors.primary, fontWeight: '600' },
+  modalTitle: { ...t.type.title3, color: t.colors.ink },
+  close: { ...t.type.bodyBold, color: t.colors.primaryText },
   option: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    alignItems: 'center',
+    gap: t.space.sm,
+    minHeight: t.layout.minTouch + t.space.md,
+    paddingHorizontal: t.layout.screenPadding,
+    paddingVertical: t.space.sm,
+    borderBottomWidth: t.borderWidth.hairline,
+    borderBottomColor: t.colors.line,
   },
-  optionSelected: { backgroundColor: '#E8F5E9' },
-  optionName: { fontSize: 16, color: colors.text },
-  optionMeta: { fontSize: 13, color: colors.mutedText },
-});
+  // Sélection : coche + fond doux (jamais la couleur seule).
+  optionSelected: { backgroundColor: t.colors.primarySoft },
+  optionPressed: { backgroundColor: t.colors.surface2 },
+  optionText: { flex: 1, gap: 2 },
+  optionName: { ...t.type.body, color: t.colors.ink },
+  optionMeta: { ...t.type.caption, color: t.colors.ink3 },
+  check: { ...t.type.bodyBold, color: t.colors.ink },
+}));

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 
 type ScreenProps = {
   children: ReactNode;
@@ -18,6 +18,8 @@ type ScreenProps = {
  * remonte le contenu quand le clavier s'ouvre et permet de défiler.
  */
 export function Screen({ children, refreshing = false, onRefresh, hasHeader = false }: ScreenProps) {
+  const theme = useTheme();
+  const styles = useStyles();
   return (
     <SafeAreaView
       style={styles.safeArea}
@@ -32,7 +34,7 @@ export function Screen({ children, refreshing = false, onRefresh, hasHeader = fa
           keyboardShouldPersistTaps="handled"
           refreshControl={
             onRefresh ? (
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
             ) : undefined
           }
         >
@@ -43,8 +45,8 @@ export function Screen({ children, refreshing = false, onRefresh, hasHeader = fa
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
+const useStyles = makeStyles((t) => ({
+  safeArea: { flex: 1, backgroundColor: t.colors.bg },
   flex: { flex: 1 },
-  content: { flexGrow: 1, padding: spacing.lg, gap: spacing.md },
-});
+  content: { flexGrow: 1, padding: t.layout.screenPadding, gap: t.space.md },
+}));

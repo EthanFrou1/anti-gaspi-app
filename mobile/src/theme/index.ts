@@ -9,5 +9,6 @@ export { ThemeProvider, useTheme, makeStyles, FOLLOW_SYSTEM_SCHEME } from './The
 export { lightTheme, darkTheme, type Theme, type ThemeColors, type ColorScheme } from './theme';
 export { categoryGroup, categoryGroupByCode } from './categories';
 export { avatarColor, avatarInitial, AVATAR_TEXT_COLOR } from './avatar';
+export { brandUrgency } from './urgency';
 export type { Urgency as BrandUrgency, CategoryGroup } from './tokens';
 export { colors, spacing } from './legacy';

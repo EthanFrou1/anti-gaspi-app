@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing } from '@/theme';
+import { View } from 'react-native';
+import { makeStyles } from '@/theme';
+import { Chip } from './Chip';
 
 type Option<T extends string> = { value: T; label: string };
 
@@ -15,38 +16,23 @@ type Props<T extends string> = {
  * Générique : T est le type des valeurs possibles (ex. QuantityUnit).
  */
 export function ChoiceChips<T extends string>({ options, value, onChange, disabled = false }: Props<T>) {
+  const styles = useStyles();
   return (
     <View style={styles.row} accessibilityRole="radiogroup">
-      {options.map((option) => {
-        const selected = option.value === value;
-        return (
-          <Pressable
-            key={option.value}
-            onPress={() => onChange(option.value)}
-            disabled={disabled}
-            accessibilityRole="radio"
-            accessibilityState={{ selected, disabled }}
-            style={[styles.chip, selected && styles.selected, disabled && styles.disabled]}
-          >
-            <Text style={[styles.label, selected && styles.selectedLabel]}>{option.label}</Text>
-          </Pressable>
-        );
-      })}
+      {options.map((option) => (
+        <Chip
+          key={option.value}
+          label={option.label}
+          selected={option.value === value}
+          onPress={() => onChange(option.value)}
+          disabled={disabled}
+          accessibilityRole="radio"
+        />
+      ))}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-  },
-  selected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  disabled: { opacity: 0.5 },
-  label: { fontSize: 14, color: colors.text },
-  selectedLabel: { color: colors.primaryText, fontWeight: '600' },
-});
+const useStyles = makeStyles((t) => ({
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space.xs },
+}));

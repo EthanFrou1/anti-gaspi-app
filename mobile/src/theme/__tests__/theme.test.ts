@@ -9,7 +9,8 @@ import config, { BRAND_BACKGROUND } from '../../../app.config';
 import { avatarColor, avatarInitial } from '../avatar';
 import { categoryGroup, categoryGroupByCode } from '../categories';
 import { darkTheme, lightTheme } from '../theme';
-import { brand, categoryGroups, colors, palette, urgency } from '../tokens';
+import { brandUrgency } from '../urgency';
+import { brand, categoryGroups, colors, palette, stateIcons, urgency } from '../tokens';
 
 const MOBILE_ROOT = join(__dirname, '..', '..', '..');
 
@@ -37,6 +38,33 @@ describe('catégories', () => {
   it('chaque groupe de la charte a son fichier SVG dans l\'app', () => {
     for (const group of Object.keys(categoryGroups)) {
       expect(existsSync(join(MOBILE_ROOT, 'assets', 'brand', 'icons', 'categorie', `${group}.svg`))).toBe(true);
+    }
+  });
+});
+
+describe('urgences', () => {
+  it('chaque urgence de l\'inventaire a son badge dans la charte (« critical » s\'y appelle « urgent »)', () => {
+    expect(brandUrgency('expired')).toBe('expired');
+    expect(brandUrgency('critical')).toBe('urgent');
+    expect(brandUrgency('soon')).toBe('soon');
+    expect(brandUrgency('ok')).toBe('ok');
+    // DDM dépassée : « À vérifier », jamais « Périmé » (règle anti-gaspi).
+    expect(brandUrgency('check')).toBe('check');
+    expect(lightTheme.urgency[brandUrgency('check')].label).toBe('À vérifier');
+  });
+
+  it('chaque icône d\'état de la charte a son fichier SVG dans l\'app', () => {
+    // Nom de fichier = libellé + nom de l'icône dans les tokens (stateIcons).
+    const files = {
+      expired: 'perime-x-octagon',
+      urgent: 'urgent-flame',
+      soon: 'bientot-hourglass',
+      ok: 'ok-check-circle',
+      check: 'a-verifier-eye',
+    } as const;
+    for (const [key, file] of Object.entries(files)) {
+      expect(file.endsWith(stateIcons[key as keyof typeof stateIcons])).toBe(true);
+      expect(existsSync(join(MOBILE_ROOT, 'assets', 'brand', 'icons', 'etat', `${file}.svg`))).toBe(true);
     }
   });
 });
