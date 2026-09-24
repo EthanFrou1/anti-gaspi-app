@@ -19,8 +19,8 @@ public class ReceiptServiceTests(DatabaseFixture database) : HouseholdTestBase(d
 {
     private static readonly TimeZoneInfo Paris = TimeZoneInfo.FindSystemTimeZoneById("Europe/Paris");
 
-    // Début d'un fichier JPEG : suffisant pour passer la vérification du format.
-    internal static readonly byte[] Jpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46];
+    // Vraie photo JPEG, avec métadonnées (EXIF, GPS…).
+    internal static readonly byte[] Jpeg = TestJpeg.PhotoWithMetadata;
 
     private DateOnly Today => QuotaDay.Window(Clock.Now, Paris).LocalDate;
 
@@ -47,14 +47,16 @@ public class ReceiptServiceTests(DatabaseFixture database) : HouseholdTestBase(d
     }
 
     [Fact]
-    public async Task Scan_SendsTheImageWithItsDetectedType_AndStoresNoContent()
+    public async Task Scan_SendsTheImageWithoutItsMetadata_AndStoresNoContent()
     {
         var alice = await CreateUserAsync("Alice");
 
         await ScanAsync(alice);
 
+        // Ce qui partirait vers l'IA : la photo, sans EXIF ni position GPS.
         Assert.Equal("image/jpeg", ReceiptReader.LastImage!.MediaType);
-        Assert.Equal(Jpeg, ReceiptReader.LastImage.Data);
+        Assert.Equal(JpegMetadataStripper.Strip(Jpeg), ReceiptReader.LastImage.Data);
+        Assert.False(TestJpeg.Contains(ReceiptReader.LastImage.Data, "Exif"));
         // Seule trace en base : l'utilisateur et l'heure, pour les quotas.
         await using var db = CreateDbContext();
         var scan = await db.ReceiptScans.SingleAsync();
@@ -66,6 +68,8 @@ public class ReceiptServiceTests(DatabaseFixture database) : HouseholdTestBase(d
     [Theory]
     [InlineData(new byte[] { 0x47, 0x49, 0x46, 0x38, 0x39, 0x61 })]   // GIF
     [InlineData(new byte[] { 0x25, 0x50, 0x44, 0x46 })]               // PDF
+    [InlineData(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A })]   // PNG
+    [InlineData(new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10 })]   // début de JPEG, sans image derrière
     [InlineData(new byte[0])]
     public async Task UnsupportedImage_IsRejected_WithoutCallingTheAi_NorUsingTheQuota(byte[] image)
     {

@@ -26,8 +26,11 @@ export function resizeTarget(
 }
 
 /**
- * Prépare la photo d'un ticket avant l'envoi : redimensionnée si besoin, puis
- * réenregistrée en JPEG compressé. Renvoie l'URI du nouveau fichier (local, temporaire).
+ * Prépare la photo d'un ticket avant l'envoi : redimensionnée si besoin, puis TOUJOURS
+ * réenregistrée en JPEG compressé. Ce réencodage part des seuls pixels (jpegData sur iOS,
+ * Bitmap.compress sur Android) : les métadonnées de la photo d'origine (EXIF, position GPS,
+ * modèle du téléphone) ne sont pas recopiées. L'API les retire aussi de son côté.
+ * Renvoie l'URI du nouveau fichier (local, temporaire).
  */
 export async function prepareReceiptImage(uri: string): Promise<string> {
   const context = ImageManipulator.manipulate(uri);

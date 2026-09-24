@@ -16,15 +16,18 @@ public sealed class ReceiptsController(IReceiptService receiptService) : ApiCont
     private const int MaxRequestBytes = ReceiptImageFormat.MaxBytes + 64 * 1024;
 
     /// <summary>
-    /// Lit la photo d'un ticket de caisse (champ « image », JPEG ou PNG, 2 Mo au plus) et
+    /// Lit la photo d'un ticket de caisse (champ « image », JPEG, 2 Mo au plus) et
     /// renvoie les produits reconnus, à valider par l'utilisateur. Rien n'est ajouté au frigo,
     /// et l'image n'est jamais enregistrée. Quota : 3 par jour et par utilisateur.
     /// </summary>
     [HttpPost("scan")]
     [Consumes("multipart/form-data")]
     // Limites appliquées pendant la réception : un envoi trop gros est coupé avant d'être lu en entier.
+    // MemoryBufferThreshold : par défaut, ASP.NET Core écrit tout fichier de plus de 64 Ko dans un
+    // fichier temporaire sur disque. Ici, la photo reste en mémoire jusqu'à la taille maximale
+    // (au-delà, l'envoi est refusé avant d'avoir pu déborder sur le disque).
     [RequestSizeLimit(MaxRequestBytes)]
-    [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestBytes, MemoryBufferThreshold = MaxRequestBytes)]
     [ProducesResponseType<ReceiptScanDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests)]

@@ -4,6 +4,7 @@ using Api.Options;
 using Api.Services.Ai;
 using Api.Services.Receipts;
 using Api.Tests.Infrastructure;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using static Api.Tests.Infrastructure.FakeAnthropicServer;
 using static Api.Tests.Receipts.ReceiptValidatorTests;
@@ -80,6 +81,30 @@ public class ClaudeReceiptReaderTests
 
         await Assert.ThrowsAsync<AiUnavailableException>(() => refused.ReadAsync(Image, Prompt, CancellationToken.None));
         await Assert.ThrowsAsync<AiUnavailableException>(() => overloaded.ReadAsync(Image, Prompt, CancellationToken.None));
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.BadRequest, "invalid_request_error")]
+    [InlineData((HttpStatusCode)529, "overloaded_error")]
+    public async Task ApiErrors_AreLogged_WithoutTheImage(HttpStatusCode status, string errorType)
+    {
+        var logs = new CapturingLoggerProvider();
+        using var factory = new LoggerFactory([logs]);
+        var server = new FakeAnthropicServer(_ => Error(status, errorType));
+        var reader = new ClaudeReceiptReader(
+            server.CreateClient(), Microsoft.Extensions.Options.Options.Create(new AiOptions()), new Logger<ClaudeReceiptReader>(factory));
+        var photo = TestJpeg.PhotoWithMetadata;
+
+        await Assert.ThrowsAsync<AiUnavailableException>(() =>
+            reader.ReadAsync(new ReceiptImage(photo, "image/jpeg"), Prompt, CancellationToken.None));
+
+        // L'image est bien partie dans la requête… mais n'apparaît pas dans les journaux.
+        using var body = JsonDocument.Parse(server.LastBody!);
+        var sent = body.RootElement.GetProperty("messages")[0].GetProperty("content")[0].GetProperty("source").GetProperty("data");
+        Assert.Equal(Convert.ToBase64String(photo), sent.GetString());
+        Assert.NotEmpty(logs.Entries);
+        Assert.DoesNotContain(Convert.ToBase64String(photo), logs.AllText);
+        Assert.DoesNotContain(Convert.ToBase64String(photo[100..160]), logs.AllText);
     }
 
     private static (ClaudeReceiptReader Reader, FakeAnthropicServer Server) Create(

@@ -13,8 +13,8 @@ namespace Api.Services.Receipts;
 public static class ReceiptErrors
 {
     public static readonly Error InvalidImage = new(
-        ErrorType.Validation, "receipt.invalid_image", "La photo doit être une image JPEG ou PNG de moins de 2 Mo.",
-        new Dictionary<string, string[]> { ["image"] = ["La photo doit être une image JPEG ou PNG de moins de 2 Mo."] });
+        ErrorType.Validation, "receipt.invalid_image", "La photo doit être une image JPEG de moins de 2 Mo.",
+        new Dictionary<string, string[]> { ["image"] = ["La photo doit être une image JPEG de moins de 2 Mo."] });
 
     public static readonly Error DailyQuotaReached = new(
         ErrorType.TooManyRequests, "receipt.daily_quota",
@@ -66,8 +66,11 @@ public sealed class ReceiptService(
     public async Task<Result<ReceiptScanDto>> ScanAsync(Guid actorId, byte[] image, CancellationToken ct)
     {
         // Vérifié avant de réserver : une image refusée ne coûte rien et n'est pas décomptée.
-        var mediaType = image.Length <= ReceiptImageFormat.MaxBytes ? ReceiptImageFormat.Detect(image) : null;
-        if (mediaType is null)
+        // Les métadonnées (EXIF, position GPS…) sont retirées avant tout envoi à l'IA.
+        var cleaned = image.Length <= ReceiptImageFormat.MaxBytes && ReceiptImageFormat.IsJpeg(image)
+            ? JpegMetadataStripper.Strip(image)
+            : null;
+        if (cleaned is null)
         {
             return ReceiptErrors.InvalidImage;
         }
@@ -87,7 +90,7 @@ public sealed class ReceiptService(
         ValidatedReceipt receipt;
         try
         {
-            var draft = await reader.ReadAsync(new ReceiptImage(image, mediaType), prompt, ct);
+            var draft = await reader.ReadAsync(new ReceiptImage(cleaned, ReceiptImageFormat.JpegMediaType), prompt, ct);
             receipt = ReceiptValidator.Validate(draft, categoryList, today);
         }
         catch (AiUnavailableException ex)

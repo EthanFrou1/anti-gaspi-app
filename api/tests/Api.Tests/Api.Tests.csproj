@@ -24,4 +24,9 @@
     <ProjectReference Include="..\..\src\Api\Api.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Vraie photo JPEG avec EXIF, GPS, commentaire et données après la fin de l'image. -->
+    <None Update="Receipts\Fixtures\*.jpg" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
