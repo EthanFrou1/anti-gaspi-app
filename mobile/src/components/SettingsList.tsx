@@ -50,7 +50,11 @@ export function SettingsRow({ icon: Icon, label, value, onPress, accessibilityHi
         <Icon size={20} strokeWidth={2} color={destructive ? theme.colors.danger : theme.colors.primaryText} />
       </View>
       <Text style={[styles.label, { color }]}>{label}</Text>
-      {value ? <Text style={styles.value}>{value}</Text> : null}
+      {value ? (
+        <Text style={styles.value} numberOfLines={1}>
+          {value}
+        </Text>
+      ) : null}
       {loading ? <ActivityIndicator color={theme.colors.primary} /> : null}
       {/* Choix actuel : une coche (jamais la couleur seule). */}
       {selected ? <Check size={22} strokeWidth={2.5} color={theme.colors.ink} /> : null}
@@ -111,5 +115,6 @@ const useStyles = makeStyles((t) => ({
   },
   iconTileDanger: { backgroundColor: t.scheme === 'dark' ? t.palette.framboise.darkSoft : t.palette.framboise.soft },
   label: { ...t.type.body, flex: 1 },
-  value: { ...t.type.callout, color: t.colors.ink3 },
+  // La valeur ne prend jamais la place du libellé : une ligne, 40 % de la largeur au plus.
+  value: { ...t.type.callout, color: t.colors.ink3, flexShrink: 1, maxWidth: '40%', textAlign: 'right' },
 }));

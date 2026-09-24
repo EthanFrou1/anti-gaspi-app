@@ -67,8 +67,8 @@ export default function ProfileScreen() {
         <SettingsRow
           icon={Bell}
           label="Rappels de péremption"
-          value="Réglages du téléphone"
           onPress={() => void Linking.openSettings()}
+          accessibilityHint="Ouvre les réglages du téléphone"
           last
         />
       </SettingsSection>
