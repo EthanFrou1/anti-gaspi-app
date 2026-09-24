@@ -82,13 +82,36 @@ export function parseQuantity(input: string): number | null {
   return value >= 0.001 && value <= 100000 ? value : null;
 }
 
-/** Quantités proposées en boutons (« 3 pains », « 5 carottes ») ; « Autre » pour le reste. */
-export const QUANTITY_PRESETS = [1, 2, 3, 4, 5] as const;
+/**
+ * Quantités proposées en boutons selon l'unité (« 3 pains », « 250 g de crème », « 1 l de lait »),
+ * calées sur les formats courants des emballages ; « Autre » pour le reste.
+ */
+export const QUANTITY_PRESETS: Record<QuantityUnit, readonly number[]> = {
+  Piece: [1, 2, 3, 4, 5],
+  Gram: [100, 200, 250, 500, 1000],
+  Kilogram: [0.5, 1, 1.5, 2],
+  Milliliter: [100, 200, 250, 500, 750],
+  Liter: [0.5, 1, 1.5, 2],
+};
 
-/** Bouton de quantité correspondant au texte saisi, ou null (autre valeur, ou saisie invalide). */
-export function presetQuantity(input: string): number | null {
+/** Quantité au format du champ texte : 0.5 → « 0,5 ». */
+export function toQuantityText(quantity: number): string {
+  return String(quantity).replace('.', ',');
+}
+
+/** Bouton de quantité (pour cette unité) correspondant au texte saisi, ou null (autre valeur, ou saisie invalide). */
+export function presetQuantity(input: string, unit: QuantityUnit): number | null {
   const value = parseQuantity(input);
-  return value !== null && (QUANTITY_PRESETS as readonly number[]).includes(value) ? value : null;
+  return value !== null && QUANTITY_PRESETS[unit].includes(value) ? value : null;
+}
+
+/**
+ * Quantité à garder quand l'unité change alors qu'un bouton est sélectionné. Si ce bouton
+ * n'existe pas dans la nouvelle unité, la sélection est effacée : « 3 pièces » ne doit pas
+ * devenir « 3 g » sans que l'utilisateur le voie. Sinon (ex. 1 pièce → 1 kg), elle est gardée.
+ */
+export function quantityAfterUnitChange(input: string, from: QuantityUnit, to: QuantityUnit): string {
+  return presetQuantity(input, from) !== null && presetQuantity(input, to) === null ? '' : input;
 }
 
 /** Un produit commun est modifiable par tout membre ; un produit perso, par son seul propriétaire. */
@@ -107,4 +130,21 @@ export function filterItems(items: InventoryItem[], filter: InventoryFilter, myU
     default:
       return items;
   }
+}
+
+/** Ordre des filtres par état : du plus pressant au plus tranquille. */
+export const URGENCY_FILTERS: readonly Urgency[] = ['expired', 'critical', 'check', 'soon', 'ok'];
+
+/** Nombre de produits par état (pour les compteurs des filtres). */
+export function countByUrgency(items: InventoryItem[], today: string): Record<Urgency, number> {
+  const counts: Record<Urgency, number> = { expired: 0, critical: 0, check: 0, soon: 0, ok: 0 };
+  for (const item of items) {
+    counts[expiryStatus(item.expiresOn, item.expiryKind, today).urgency] += 1;
+  }
+  return counts;
+}
+
+/** Produits d'un état donné ; null = tous les états. */
+export function filterByUrgency(items: InventoryItem[], urgency: Urgency | null, today: string): InventoryItem[] {
+  return urgency === null ? items : items.filter((i) => expiryStatus(i.expiresOn, i.expiryKind, today).urgency === urgency);
 }

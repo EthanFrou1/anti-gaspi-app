@@ -6,7 +6,6 @@ import { asApiError } from '@/api/errors';
 import type { Category } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
-import { ChoiceChips } from '@/components/ChoiceChips';
 import { DateField } from '@/components/DateField';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
@@ -14,7 +13,7 @@ import { TextField } from '@/components/TextField';
 import { CheckBox } from '@/components/CheckBox';
 import { CategoryPicker } from '@/features/inventory/CategoryPicker';
 import { QuantityPicker } from '@/features/inventory/QuantityPicker';
-import { estimateExpiry, formatQuantity, parseQuantity, UNITS, unitLabel } from '@/features/inventory/rules';
+import { estimateExpiry, formatQuantity, parseQuantity } from '@/features/inventory/rules';
 import { useCategories } from '@/features/inventory/useCategories';
 import { askReminderPermission } from '@/features/notifications/reminders';
 import { clearPendingScan, getPendingScan } from '@/features/receipts/pendingScan';
@@ -263,11 +262,11 @@ function LineCard({ line, category, categories, purchasedOn, today, expanded, er
         <View style={styles.editor}>
           <TextField label="Nom du produit" value={line.name} onChangeText={(name) => onChange({ name })} maxLength={100} />
           <CategoryPicker categories={categories} value={line.categoryId} onChange={(categoryId) => onChange({ categoryId })} />
-          <QuantityPicker value={line.quantityText} onChange={(quantityText) => onChange({ quantityText })} />
-          <ChoiceChips
-            options={UNITS.map((u) => ({ value: u, label: unitLabel(u) }))}
-            value={line.unit}
-            onChange={(unit) => onChange({ unit })}
+          <QuantityPicker
+            value={line.quantityText}
+            onChange={(quantityText) => onChange({ quantityText })}
+            unit={line.unit}
+            onUnitChange={(unit) => onChange({ unit })}
           />
           {expiresOn ? (
             <DateField

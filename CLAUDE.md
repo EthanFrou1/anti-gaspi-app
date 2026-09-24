@@ -202,9 +202,20 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Bouton 🔔 de test des rappels : maintenant dans l'en-tête du Frigo (build de développement uniquement).
 - [ ] Pastilles (filtres du Frigo, unités, raccourcis de date) : la sélection a une coche et un bord plus épais. Champs : bord plus épais pendant la saisie. Sélecteur de catégorie : icône devant chaque catégorie, coche sur la catégorie choisie.
 - [ ] Sélecteur de catégorie : l'en-tête (« Catégorie », « Fermer ») ne passe plus sous la barre d'état. iOS : la liste s'ouvre en feuille et se ferme aussi en la glissant vers le bas ; Android : bouton retour. Après fermeture par glissement, elle se rouvre normalement.
-- [ ] Quantité (ajout, fiche produit, ligne de ticket) : boutons 1 à 5 en un appui ; « Autre… » affiche un champ et ouvre le clavier ; une fiche à 0,5 kg ou une ligne de ticket à 0,612 kg s'ouvre avec « Autre… » déjà sélectionné. « Autre… » laissé vide : message « Quantité invalide ».
+- [ ] Quantité (ajout, fiche produit, ligne de ticket) : l'unité se choisit d'abord, puis des boutons adaptés (pièces 1 à 5 ; g 100 à 1 000 ; kg et l 0,5 à 2 ; ml 100 à 750) ; « Autre… » affiche un champ et ouvre le clavier ; une fiche à 0,5 kg s'ouvre avec le bouton « 0,5 kg » sélectionné, une ligne de ticket à 0,612 kg avec « Autre… ». « 3 » pièces puis passage en g : plus aucun bouton sélectionné (pas de « 3 g » silencieux) ; « 1 » pièce puis kg : « 1 kg » reste sélectionné. « Autre… » laissé vide : message « Quantité invalide ».
+- [ ] Barre d'onglets : le « + » dépasse moins de la barre (16 px au lieu de 30).
+
+### Frigo : filtres par état, actions en icônes, liseré de couleur
+
+- [ ] Sous Tout / Commun / À moi, une rangée qui défile : seuls les états présents, avec icône et nombre (« Urgent 5 »). Un appui filtre, un second appui retire le filtre.
+- [ ] Les deux filtres se combinent : « À moi » puis « Urgent » ne montre que mes produits urgents, et les nombres suivent le premier filtre.
+- [ ] Filtre sélectionné dont le dernier produit est mangé : la pastille reste (« Urgent 0 ») avec « Rien dans cette sélection », et se retire d'un appui.
+- [ ] Chaque carte a un liseré à gauche de la couleur de son état (rose Périmé, mandarine Urgent, citron Bientôt, bleu OK, violet À vérifier), aussi en mode sombre.
+- [ ] « Mangé » (couverts, mandarine) et « Jeté » (poubelle, blanc) : boutons carrés à côté du nom, qui s'enfoncent à l'appui ; confirmation et célébration inchangées. Le détail (« DDM dépassée : encore bon ? ») tient sur une ligne.
+- [ ] VoiceOver : « Nom du produit : consommé » / « : jeté » sur les icônes, « Urgent, 5 produits » sur les filtres.
+- [ ] Produit perso d'un autre membre : pas de boutons, le nom prend toute la largeur.
 - [ ] Champs de date (iOS) : choisir un jour dans le calendrier le referme aussitôt ; changer de mois ne le ferme pas.
-- [ ] Frigo : « Mangé » (mandarine) et « Jeté » (blanc) sont de vrais boutons, de même taille, avec l'ombre sticker ; ils s'enfoncent à l'appui. Toucher le reste de la ligne ouvre toujours la fiche du produit. VoiceOver annonce « Nom du produit : consommé » / « : jeté ».
+- [ ] Frigo : toucher la carte en dehors des boutons « Mangé » / « Jeté » ouvre toujours la fiche du produit (boutons : voir « Frigo : filtres par état, actions en icônes »).
 - [ ] Réglages → Accessibilité → Réduire les animations : le panneau apparaît sans glisser.
 - [ ] Texte agrandi (réglages d'accessibilité) : la barre d'onglets reste lisible.
 - [ ] Android : le « + » dépasse bien de la barre sans être coupé.

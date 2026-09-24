@@ -3,7 +3,6 @@ import { Switch, Text, View } from 'react-native';
 import type { ApiError } from '@/api/errors';
 import type { Category, InventoryItem, QuantityUnit, SaveInventoryItemRequest } from '@/api/types';
 import { Button } from '@/components/Button';
-import { ChoiceChips } from '@/components/ChoiceChips';
 import { DateField } from '@/components/DateField';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { TextField } from '@/components/TextField';
@@ -11,7 +10,7 @@ import { makeStyles, useTheme } from '@/theme';
 import { addDays, formatShortDate, toLocalDateString } from '@/utils/dates';
 import { CategoryPicker } from './CategoryPicker';
 import { QuantityPicker } from './QuantityPicker';
-import { estimateExpiry, parseQuantity, UNITS, unitLabel } from './rules';
+import { estimateExpiry, parseQuantity, toQuantityText } from './rules';
 
 // Valeurs de départ du formulaire (produit existant, ou suggestion après un scan).
 export type ItemFormInitial = Partial<
@@ -45,7 +44,7 @@ export function ItemForm({ categories, initial, submitLabel, onSubmit, error, re
   const [name, setName] = useState(initial?.name ?? '');
   const [categoryId, setCategoryId] = useState<number | null>(initial?.categoryId ?? null);
   const [quantityText, setQuantityText] = useState(
-    initial?.quantity !== undefined ? String(initial.quantity).replace('.', ',') : '1',
+    initial?.quantity !== undefined ? toQuantityText(initial.quantity) : '1',
   );
   const [unit, setUnit] = useState<QuantityUnit>(initial?.unit ?? 'Piece');
   const [purchasedOn, setPurchasedOn] = useState(initial?.purchasedOn ?? today);
@@ -122,11 +121,12 @@ export function ItemForm({ categories, initial, submitLabel, onSubmit, error, re
         disabled={readOnly}
       />
 
-      <QuantityPicker value={quantityText} onChange={setQuantityText} error={fieldError('Quantity')} disabled={readOnly} />
-      <ChoiceChips
-        options={UNITS.map((u) => ({ value: u, label: unitLabel(u) }))}
-        value={unit}
-        onChange={setUnit}
+      <QuantityPicker
+        value={quantityText}
+        onChange={setQuantityText}
+        unit={unit}
+        onUnitChange={setUnit}
+        error={fieldError('Quantity')}
         disabled={readOnly}
       />
 

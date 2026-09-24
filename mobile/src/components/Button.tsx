@@ -10,7 +10,7 @@ type ButtonProps = {
   loading?: boolean;
   disabled?: boolean;
   variant?: ButtonVariant;
-  // « small » : bouton compact dans une liste (ex. « Mangé » / « Jeté » d'une ligne du frigo).
+  // « small » : bouton compact dans une liste (ex. « Exclure » d'un membre du foyer).
   size?: 'regular' | 'small';
   // Libellé lu par VoiceOver / TalkBack, si le texte seul ne suffit pas (« Yaourt : consommé »).
   accessibilityLabel?: string;

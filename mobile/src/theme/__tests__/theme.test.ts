@@ -95,8 +95,8 @@ describe('thèmes', () => {
   it('reprennent les couleurs de la charte pour chaque mode', () => {
     expect(lightTheme.colors).toEqual(colors.light);
     expect(darkTheme.colors).toEqual(colors.dark);
-    expect(lightTheme.urgency.urgent).toEqual({ ...urgency.urgent.light, label: 'Urgent' });
-    expect(darkTheme.urgency.check).toEqual({ ...urgency.check.dark, label: 'À vérifier' });
+    expect(lightTheme.urgency.urgent).toEqual({ ...urgency.urgent.light, accent: palette.tangerine.base, label: 'Urgent' });
+    expect(darkTheme.urgency.check).toEqual({ ...urgency.check.dark, accent: palette.raisin.dark, label: 'À vérifier' });
     expect(darkTheme.persoBadge.bg).toBe('#2C2340');
   });
 });

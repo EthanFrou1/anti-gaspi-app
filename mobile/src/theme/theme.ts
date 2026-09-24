@@ -26,8 +26,9 @@ export type Theme = {
   scheme: ColorScheme;
   colors: ThemeColors;
   palette: typeof palette;
-  // Badges d'urgence : fond + couleur de l'icône et du texte, et libellé court.
-  urgency: Record<Urgency, { bg: string; fg: string; label: string }>;
+  // Badges d'urgence : fond + couleur de l'icône et du texte, libellé court, et couleur vive
+  // (accent) pour le liseré des cartes du frigo.
+  urgency: Record<Urgency, { bg: string; fg: string; accent: string; label: string }>;
   persoBadge: { bg: string; fg: string; avatarSize: number };
   type: typeof type;
   fonts: typeof fonts;
@@ -39,9 +40,25 @@ export type Theme = {
   motion: typeof motion;
 };
 
+/**
+ * Couleur de la palette associée à chaque urgence (adaptation propre à l'app). Les couleurs
+ * du badge sont trop pâles (fond) ou trop sombres (texte) pour une bande fine : le liseré
+ * prend la couleur vive correspondante.
+ */
+const URGENCY_ACCENT: Record<Urgency, 'framboise' | 'tangerine' | 'citron' | 'myrtille' | 'raisin'> = {
+  expired: 'framboise',
+  urgent: 'tangerine',
+  soon: 'citron',
+  ok: 'myrtille',
+  check: 'raisin',
+};
+
 function buildTheme(scheme: ColorScheme): Theme {
   const urgencyColors = Object.fromEntries(
-    Object.entries(urgency).map(([key, value]) => [key, { ...value[scheme], label: value.label }]),
+    Object.entries(urgency).map(([key, value]) => {
+      const accent = palette[URGENCY_ACCENT[key as Urgency]];
+      return [key, { ...value[scheme], accent: scheme === 'light' ? accent.base : accent.dark, label: value.label }];
+    }),
   ) as Theme['urgency'];
 
   return {

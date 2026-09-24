@@ -1,24 +1,34 @@
 import { router, Tabs } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
 import type { InventoryItem } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
+import { Chip } from '@/components/Chip';
 import { ChoiceChips } from '@/components/ChoiceChips';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Bell } from '@/components/icons/lucide';
+import { stateIcons } from '@/components/icons/stateIcons';
 import { SavedCelebration } from '@/features/celebration/SavedCelebration';
 import { useHousehold } from '@/features/household/useHousehold';
 import { InventoryRow } from '@/features/inventory/InventoryRow';
-import { canModifyItem, filterItems, type InventoryFilter } from '@/features/inventory/rules';
+import {
+  canModifyItem,
+  countByUrgency,
+  filterByUrgency,
+  filterItems,
+  URGENCY_FILTERS,
+  type InventoryFilter,
+  type Urgency,
+} from '@/features/inventory/rules';
 import { useCategories } from '@/features/inventory/useCategories';
 import { useInventory } from '@/features/inventory/useInventory';
 import { sendTestReminder, syncExpiryReminders } from '@/features/notifications/reminders';
-import { makeStyles, useTheme } from '@/theme';
+import { brandUrgency, makeStyles, useTheme } from '@/theme';
 import { toLocalDateString } from '@/utils/dates';
 
 const FILTERS: { value: InventoryFilter; label: string }[] = [
@@ -43,6 +53,7 @@ export default function FridgeScreen() {
   const { household } = useHousehold();
   const memberIds = useMemo(() => household?.members.map((m) => m.userId), [household]);
   const [filter, setFilter] = useState<InventoryFilter>('all');
+  const [urgencyFilter, setUrgencyFilter] = useState<Urgency | null>(null);
   // Produit qui vient d'être mangé : célébration « Produit sauvé » (visuelle seulement).
   const [savedProduct, setSavedProduct] = useState<string | null>(null);
   const today = toLocalDateString();
@@ -54,10 +65,16 @@ export default function FridgeScreen() {
     if (items && userId) void syncExpiryReminders(items, userId);
   }, [items, userId]);
 
+  // Deux filtres qui se combinent : propriétaire (Tout / Commun / À moi), puis état.
+  // Les compteurs d'état portent sur la sélection du premier filtre.
+  const ownerItems = useMemo(() => (items && user ? filterItems(items, filter, user.id) : []), [items, filter, user]);
+  const urgencyCounts = useMemo(() => countByUrgency(ownerItems, today), [ownerItems, today]);
   const visibleItems = useMemo(
-    () => (items && user ? filterItems(items, filter, user.id) : []),
-    [items, filter, user],
+    () => filterByUrgency(ownerItems, urgencyFilter, today),
+    [ownerItems, urgencyFilter, today],
   );
+  // États présents, plus celui qui est sélectionné même s'il est vide (pour pouvoir le désélectionner).
+  const urgencyChips = URGENCY_FILTERS.filter((u) => urgencyCounts[u] > 0 || u === urgencyFilter);
 
   if (!user) {
     return null;
@@ -142,6 +159,35 @@ export default function FridgeScreen() {
       <View style={styles.toolbar}>
         <ChoiceChips options={FILTERS} value={filter} onChange={setFilter} />
       </View>
+      {urgencyChips.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.urgencyScroll}
+          contentContainerStyle={styles.urgencyRow}
+          accessibilityRole="radiogroup"
+          accessibilityLabel="Filtrer par état"
+        >
+          {urgencyChips.map((urgency) => {
+            const key = brandUrgency(urgency);
+            const { fg, label } = theme.urgency[key];
+            const StateIcon = stateIcons[key];
+            const count = urgencyCounts[urgency];
+            return (
+              <Chip
+                key={urgency}
+                label={`${label} ${count}`}
+                icon={<StateIcon width={16} height={16} color={fg} />}
+                selected={urgency === urgencyFilter}
+                // Un second appui retire le filtre.
+                onPress={() => setUrgencyFilter(urgency === urgencyFilter ? null : urgency)}
+                accessibilityRole="radio"
+                accessibilityLabel={`${label}, ${count} produit${count > 1 ? 's' : ''}`}
+              />
+            );
+          })}
+        </ScrollView>
+      ) : null}
 
       {error ? (
         <View style={styles.padded}>
@@ -174,7 +220,7 @@ export default function FridgeScreen() {
           items !== null ? (
             <EmptyState
               illustration="emptyFridge"
-              title={filter === 'all' ? 'Le frigo est vide' : 'Rien dans cette sélection'}
+              title={filter === 'all' && urgencyFilter === null ? 'Le frigo est vide' : 'Rien dans cette sélection'}
               text="Ajoute tes courses avec le bouton « + » pour être prévenu avant qu'elles ne périment."
             />
           ) : null
@@ -189,6 +235,9 @@ export default function FridgeScreen() {
 const useStyles = makeStyles((t) => ({
   container: { flex: 1, backgroundColor: t.colors.bg },
   toolbar: { paddingHorizontal: t.layout.screenPadding, paddingTop: t.space.xs, paddingBottom: t.space.sm },
+  // Sans flexGrow : un ScrollView horizontal prendrait sinon toute la hauteur libre.
+  urgencyScroll: { flexGrow: 0 },
+  urgencyRow: { paddingHorizontal: t.layout.screenPadding, paddingBottom: t.space.sm, gap: t.space.xs },
   padded: { paddingHorizontal: t.layout.screenPadding, paddingBottom: t.space.sm },
   loader: { marginTop: t.space['2xl'] },
   list: { paddingHorizontal: t.layout.screenPadding, paddingBottom: t.space['2xl'], gap: t.space.sm },

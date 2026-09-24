@@ -79,7 +79,7 @@ export const type = {
 
 /** Grille de 8 */
 export const space = { xxs: 4, xs: 8, sm: 12, md: 16, lg: 20, xl: 24, '2xl': 32, '3xl': 40, '4xl': 48 } as const;
-export const layout = { screenPadding: 20, cardGap: 16, sectionGap: 24, minTouch: 44, tabBarHeight: 68, tabBarInset: 12, fabSize: 64, fabLift: 30 } as const;
+export const layout = { screenPadding: 20, cardGap: 16, sectionGap: 24, minTouch: 44, tabBarHeight: 68, tabBarInset: 12, fabSize: 64, fabLift: 16 } as const;
 
 export const radius = { sm: 12, md: 16, lg: 20, xl: 24, sheet: 28, pill: 999 } as const;
 
