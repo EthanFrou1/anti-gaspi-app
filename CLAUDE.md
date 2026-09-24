@@ -57,7 +57,7 @@ Recette générée ← produits du foyer + profil(s) des personnes qui mangent
 - **Propriété du foyer** : si le propriétaire quitte le foyer ou supprime son compte, la propriété passe au membre le plus ancien (date d'arrivée dans le foyer). S'il n'y a plus aucun membre, le foyer et tout son contenu sont supprimés. Ces cas sont couverts par des tests.
 - **Produit** : nom, catégorie, quantité, unité, date d'achat, date de péremption (estimée ou saisie), code-barres optionnel, **propriétaire optionnel**. Propriétaire vide = produit commun au foyer ; renseigné = produit perso (cas des colocs).
 - **Produits perso** : visibles par tout le foyer, mais seul leur propriétaire peut les modifier, les marquer consommés/jetés ou les supprimer. Quand il quitte le foyer ou supprime son compte, ses produits deviennent communs (la nourriture reste dans le frigo).
-- **Statut d'un produit** : actif, consommé ou jeté. « Consommé » et « jeté » concernent le produit entier (la quantité se modifie par l'édition) et sont conservés en base pour le futur compteur de gaspillage ; la suppression sert seulement à corriger une erreur de saisie.
+- **Statut d'un produit** : actif, consommé ou jeté, conservé en base pour le futur compteur de gaspillage ; la suppression sert seulement à corriger une erreur de saisie. « Consommé » et « jeté » portent sur le produit entier ou sur une partie (« 200 g sur 600 g », dans l'unité du produit) : la part retirée devient une ligne d'historique à part (copie du produit avec cette quantité et le nouveau statut), et le produit reste actif avec le reste, sous le même Id (rappels et recettes toujours valables). Le compteur n'aura qu'à additionner les lignes consommées et jetées.
 - **Profil** (privé, jamais montré aux autres membres) : temps de cuisine souhaité, budget par repas (tranches), régime, exclusions d'ingrédients, allergies, objectif (équilibré, prise de muscle, repas légers, anti-gaspi simple), nombre de portions par défaut. Uniquement des listes fermées, **aucun texte libre** (il finirait dans le prompt de l'IA : risque d'injection de prompt).
 - **Équipement de cuisine** : porté par le **foyer** (plaques, four, micro-ondes, air fryer, blender), car les membres partagent la même cuisine ; modifiable par tout membre.
 - **Données sensibles (RGPD, article 9)** : les allergies sont des données de santé, enregistrées seulement avec un consentement explicite (date conservée ; retirer le consentement efface les allergies). Pas de régime « religieux » (halal, casher) : des exclusions d'ingrédients neutres (porc, alcool…) couvrent le besoin sans étiqueter la personne.
@@ -88,7 +88,6 @@ Chaque catégorie indique aussi son type de date : **DLC** (« à consommer jusq
 
 ### Idées notées pour plus tard
 
-- Bouton rapide « −1 » sur les produits à la pièce (consommation partielle sans passer par l'édition).
 - Prix d'achat des produits (nécessaire au compteur « argent économisé » de la V2, non stocké au MVP).
 - Système d'amis hors foyer, pour voir et partager les recettes favorites de ses proches.
 - Réglages des rappels de péremption dans l'app : interrupteur pour les activer ou désactiver, et choix de l'heure du résumé quotidien (aujourd'hui fixée à 18 h ; on les coupe dans les réglages du téléphone).
@@ -214,6 +213,16 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] « Mangé » (couverts, mandarine) et « Jeté » (poubelle, blanc) : boutons carrés à côté du nom, qui s'enfoncent à l'appui ; confirmation et célébration inchangées. Le détail (« DDM dépassée : encore bon ? ») tient sur une ligne.
 - [ ] VoiceOver : « Nom du produit : consommé » / « : jeté » sur les icônes, « Urgent, 5 produits » sur les filtres.
 - [ ] Produit perso d'un autre membre : pas de boutons, le nom prend toute la largeur.
+
+### Frigo : consommation partielle
+
+- [ ] Produit à 1 pièce (baguette) : « Mangé » et « Jeté » gardent la simple confirmation.
+- [ ] Steak haché (2 pièces) → couverts : panneau « Combien en as-tu mangé ? », choix « 1 » et « Tout · 2 pièces » (sélectionné d'office), « Il en restera 1 pièce. » ; après « Valider », la carte affiche 1 pièce et la célébration apparaît.
+- [ ] Emmental (200 g) → poubelle : ¼ · 50 g, ½ · 100 g, ¾ · 150 g, Tout ; bouton rouge « Jeter » ; pas de célébration.
+- [ ] « Autre… » : le champ s'ouvre avec le clavier, et le panneau reste visible au-dessus (iOS et Android) ; « 0,5 » en kg accepté ; plus que le reste : « Il n'en reste que … » ; vide : « Quantité invalide ».
+- [ ] Toucher le fond ou le bouton retour d'Android ferme le panneau sans rien changer.
+- [ ] Fiche produit : « Consommé » et « Jeté » passent par la même confirmation ou le même panneau, puis reviennent au frigo.
+- [ ] Rappels : après avoir mangé une partie, le produit reste dans les rappels ; après « Tout », il en sort.
 - [ ] Champs de date (iOS) : choisir un jour dans le calendrier le referme aussitôt ; changer de mois ne le ferme pas.
 - [ ] Frigo : toucher la carte en dehors des boutons « Mangé » / « Jeté » ouvre toujours la fiche du produit (boutons : voir « Frigo : filtres par état, actions en icônes »).
 - [ ] Réglages → Accessibilité → Réduire les animations : le panneau apparaît sans glisser.

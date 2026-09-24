@@ -30,8 +30,14 @@ public interface IInventoryService
     Task<Result<InventoryItemDto>> UpdateAsync(
         Guid actorId, Guid householdId, Guid itemId, SaveInventoryItemRequest request, CancellationToken ct);
 
+    /// <summary>
+    /// Marque le produit « consommé » ou « jeté ». quantity = null (ou toute la quantité) :
+    /// le produit entier. Sinon, seule cette part change de statut : elle devient une ligne
+    /// d'historique à part, et le produit reste au frigo avec ce qu'il en reste.
+    /// Renvoie le produit après le changement (la part restante, s'il en reste).
+    /// </summary>
     Task<Result<InventoryItemDto>> ChangeStatusAsync(
-        Guid actorId, Guid householdId, Guid itemId, InventoryItemStatus newStatus, CancellationToken ct);
+        Guid actorId, Guid householdId, Guid itemId, InventoryItemStatus newStatus, decimal? quantity, CancellationToken ct);
 
     Task<Result> DeleteAsync(Guid actorId, Guid householdId, Guid itemId, CancellationToken ct);
 }
@@ -111,30 +117,76 @@ public sealed class InventoryService(AppDbContext db, TimeProvider time) : IInve
     }
 
     public async Task<Result<InventoryItemDto>> ChangeStatusAsync(
-        Guid actorId, Guid householdId, Guid itemId, InventoryItemStatus newStatus, CancellationToken ct)
+        Guid actorId, Guid householdId, Guid itemId, InventoryItemStatus newStatus, decimal? quantity, CancellationToken ct)
     {
         if (newStatus == InventoryItemStatus.Active)
         {
             throw new ArgumentException("Seuls « consommé » et « jeté » sont des changements de statut.", nameof(newStatus));
         }
 
-        var (item, error) = await FindModifiableAsync(actorId, householdId, itemId, ct);
-        if (item is null)
+        var changed = await db.InTransactionAsync(async () =>
         {
-            return error!;
-        }
+            // Verrou : deux membres qui mangent « les mêmes 200 g » en même temps sont traités
+            // l'un après l'autre (sinon, les deux liraient 600 g et en laisseraient 400).
+            if (!await db.LockHouseholdAsync(householdId, ct))
+            {
+                return (Result<Guid>)InventoryErrors.ItemNotFound;
+            }
 
-        if (item.Status != InventoryItemStatus.Active)
-        {
-            return InventoryErrors.NotActive;
-        }
+            var (item, error) = await FindModifiableAsync(actorId, householdId, itemId, ct);
+            if (item is null)
+            {
+                return error!;
+            }
 
-        var now = time.GetUtcNow();
-        item.Status = newStatus;
-        item.StatusChangedAt = now;
-        item.UpdatedAt = now;
-        await db.SaveChangesAsync(ct);
-        return await GetAsync(householdId, item.Id, ct);
+            if (item.Status != InventoryItemStatus.Active)
+            {
+                return InventoryErrors.NotActive;
+            }
+
+            if (quantity > item.Quantity)
+            {
+                return InventoryErrors.QuantityExceedsStock;
+            }
+
+            var now = time.GetUtcNow();
+            if (quantity is { } part && part < item.Quantity)
+            {
+                // Consommation partielle : la part mangée ou jetée devient une ligne d'historique
+                // (base du futur compteur de gaspillage) ; le produit garde son Id, ses rappels et
+                // ses références dans les recettes, avec la quantité restante.
+                db.InventoryItems.Add(new InventoryItem
+                {
+                    HouseholdId = item.HouseholdId,
+                    Name = item.Name,
+                    CategoryId = item.CategoryId,
+                    Quantity = part,
+                    Unit = item.Unit,
+                    PurchasedOn = item.PurchasedOn,
+                    ExpiresOn = item.ExpiresOn,
+                    ExpiryIsEstimated = item.ExpiryIsEstimated,
+                    Barcode = item.Barcode,
+                    OwnerUserId = item.OwnerUserId,
+                    Status = newStatus,
+                    StatusChangedAt = now,
+                    CreatedByUserId = item.CreatedByUserId,
+                    CreatedAt = item.CreatedAt,
+                    UpdatedAt = now,
+                });
+                item.Quantity -= part;
+            }
+            else
+            {
+                item.Status = newStatus;
+                item.StatusChangedAt = now;
+            }
+
+            item.UpdatedAt = now;
+            await db.SaveChangesAsync(ct);
+            return item.Id;
+        }, ct);
+
+        return changed.IsSuccess ? await GetAsync(householdId, changed.Value, ct) : changed.Error;
     }
 
     public async Task<Result> DeleteAsync(Guid actorId, Guid householdId, Guid itemId, CancellationToken ct)

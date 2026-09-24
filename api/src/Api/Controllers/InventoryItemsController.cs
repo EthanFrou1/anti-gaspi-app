@@ -5,6 +5,7 @@ using Api.Entities;
 using Api.Services.Inventory;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Api.Controllers;
 
@@ -72,21 +73,33 @@ public sealed class InventoryItemsController(IInventoryService inventoryService)
         return result.IsSuccess ? Ok(result.Value) : ToProblem(result.Error);
     }
 
+    /// <summary>
+    /// Produit consommé, en entier (sans corps) ou en partie (<c>{ "quantity": 200 }</c>).
+    /// </summary>
     [HttpPost("{itemId:guid}/consume")]
     [ProducesResponseType<InventoryItemDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    public Task<ActionResult<InventoryItemDto>> Consume(Guid householdId, Guid itemId, CancellationToken ct) =>
-        ChangeStatus(householdId, itemId, InventoryItemStatus.Consumed, ct);
+    public Task<ActionResult<InventoryItemDto>> Consume(
+        Guid householdId, Guid itemId,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ChangeStatusRequest? request, CancellationToken ct) =>
+        ChangeStatus(householdId, itemId, InventoryItemStatus.Consumed, request?.Quantity, ct);
 
+    /// <summary>
+    /// Produit jeté, en entier (sans corps) ou en partie (<c>{ "quantity": 200 }</c>).
+    /// </summary>
     [HttpPost("{itemId:guid}/discard")]
     [ProducesResponseType<InventoryItemDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    public Task<ActionResult<InventoryItemDto>> Discard(Guid householdId, Guid itemId, CancellationToken ct) =>
-        ChangeStatus(householdId, itemId, InventoryItemStatus.Discarded, ct);
+    public Task<ActionResult<InventoryItemDto>> Discard(
+        Guid householdId, Guid itemId,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ChangeStatusRequest? request, CancellationToken ct) =>
+        ChangeStatus(householdId, itemId, InventoryItemStatus.Discarded, request?.Quantity, ct);
 
     // Réservé à la correction d'une erreur de saisie (sinon : consommé ou jeté).
     [HttpDelete("{itemId:guid}")]
@@ -100,9 +113,9 @@ public sealed class InventoryItemsController(IInventoryService inventoryService)
     }
 
     private async Task<ActionResult<InventoryItemDto>> ChangeStatus(
-        Guid householdId, Guid itemId, InventoryItemStatus status, CancellationToken ct)
+        Guid householdId, Guid itemId, InventoryItemStatus status, decimal? quantity, CancellationToken ct)
     {
-        var result = await inventoryService.ChangeStatusAsync(User.GetUserId(), householdId, itemId, status, ct);
+        var result = await inventoryService.ChangeStatusAsync(User.GetUserId(), householdId, itemId, status, quantity, ct);
         return result.IsSuccess ? Ok(result.Value) : ToProblem(result.Error);
     }
 }

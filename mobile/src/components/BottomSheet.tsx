@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { AccessibilityInfo, Animated, Modal, Pressable, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { makeStyles, useTheme } from '@/theme';
 
@@ -59,20 +59,28 @@ export function BottomSheet({ visible, title, onClose, onHidden, children }: Pro
       <Animated.View style={[styles.scrim, { opacity: progress }]}>
         <Pressable style={styles.fill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Fermer" />
       </Animated.View>
-      <Animated.View
-        accessibilityViewIsModal
-        style={[
-          styles.sheet,
-          { paddingBottom: insets.bottom + theme.space.md },
-          { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [400, 0] }) }] },
-        ]}
+      {/* Le panneau remonte au-dessus du clavier (iOS ; Android redimensionne la fenêtre de la Modal).
+          box-none : un appui à côté du panneau atteint toujours le fond assombri. */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.keyboard}
+        pointerEvents="box-none"
       >
-        <View style={styles.handle} />
-        <Text style={styles.title} accessibilityRole="header">
-          {title}
-        </Text>
-        {children}
-      </Animated.View>
+        <Animated.View
+          accessibilityViewIsModal
+          style={[
+            styles.sheet,
+            { paddingBottom: insets.bottom + theme.space.md },
+            { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [400, 0] }) }] },
+          ]}
+        >
+          <View style={styles.handle} />
+          <Text style={styles.title} accessibilityRole="header">
+            {title}
+          </Text>
+          {children}
+        </Animated.View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -80,11 +88,8 @@ export function BottomSheet({ visible, title, onClose, onHidden, children }: Pro
 const useStyles = makeStyles((t) => ({
   scrim: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: t.colors.scrim },
   fill: { flex: 1 },
+  keyboard: { flex: 1, justifyContent: 'flex-end' },
   sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     backgroundColor: t.colors.surface,
     borderTopLeftRadius: t.radius.sheet,
     borderTopRightRadius: t.radius.sheet,

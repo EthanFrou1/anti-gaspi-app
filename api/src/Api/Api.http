@@ -145,7 +145,14 @@ Content-Type: application/json
 POST {{Api_HostAddress}}/api/households/{{householdId}}/items/{{itemId}}/consume
 Authorization: Bearer {{accessToken}}
 
-### Marquer comme jeté
+### Marquer une partie comme consommée (ex. 200 g sur 600 g ; même unité que le produit)
+POST {{Api_HostAddress}}/api/households/{{householdId}}/items/{{itemId}}/consume
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{ "quantity": 200 }
+
+### Marquer comme jeté (même corps facultatif pour une partie)
 POST {{Api_HostAddress}}/api/households/{{householdId}}/items/{{itemId}}/discard
 Authorization: Bearer {{accessToken}}
 

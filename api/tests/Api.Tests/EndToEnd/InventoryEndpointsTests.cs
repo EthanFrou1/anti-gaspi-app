@@ -153,6 +153,49 @@ public class InventoryEndpointsTests(DatabaseFixture database) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Consume_WithoutBody_ConsumesTheWholeItem()
+    {
+        // Compatibilité : l'app (et « J'ai cuisiné ») appellent sans corps.
+        var alice = await CreateUserAsync("Alice");
+        var householdId = await CreateHouseholdAsync(alice.Id);
+        var item = await CreateItemAsync(alice, householdId, NewItem("Yaourts", 9, quantity: 4));
+
+        var response = await alice.Client.PostAsync($"{ItemsUrl(householdId)}/{item.Id}/consume", null);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(InventoryItemStatus.Consumed, (await response.Content.ReadFromJsonAsync<InventoryItemDto>(Json))!.Status);
+    }
+
+    [Fact]
+    public async Task Consume_WithAQuantity_ReturnsWhatIsLeft()
+    {
+        var alice = await CreateUserAsync("Alice");
+        var householdId = await CreateHouseholdAsync(alice.Id);
+        var item = await CreateItemAsync(alice, householdId, NewItem("Farine", 23, quantity: 1, unit: QuantityUnit.Kilogram));
+
+        var response = await alice.Client.PostAsJsonAsync($"{ItemsUrl(householdId)}/{item.Id}/consume", new { quantity = 0.25m }, Json);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var left = await response.Content.ReadFromJsonAsync<InventoryItemDto>(Json);
+        Assert.Equal((InventoryItemStatus.Active, 0.75m), (left!.Status, left.Quantity));
+    }
+
+    [Theory]
+    [InlineData(0)]    // quantité nulle : refusée par la validation du DTO
+    [InlineData(5)]    // plus qu'il n'en reste : refusée par le service
+    public async Task Discard_WithAnInvalidQuantity_Returns400_OnQuantity(int quantity)
+    {
+        var alice = await CreateUserAsync("Alice");
+        var householdId = await CreateHouseholdAsync(alice.Id);
+        var item = await CreateItemAsync(alice, householdId, NewItem("Yaourts", 9, quantity: 4));
+
+        var response = await alice.Client.PostAsJsonAsync($"{ItemsUrl(householdId)}/{item.Id}/discard", new { quantity }, Json);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.True((await ReadProblemAsync(response)).GetProperty("errors").TryGetProperty("Quantity", out _));
+    }
+
+    [Fact]
     public async Task HouseholdOfSomeoneElse_Returns404_WithoutRevealingThatItExists()
     {
         var alice = await CreateUserAsync("Alice");
@@ -186,6 +229,13 @@ public class InventoryEndpointsTests(DatabaseFixture database) : IAsyncLifetime
     private static SaveInventoryItemRequest NewItem(
         string name, int categoryId, decimal quantity = 1, QuantityUnit unit = QuantityUnit.Piece) =>
         new(name, categoryId, quantity, unit, Today, ExpiresOn: null, Barcode: null, IsPersonal: false);
+
+    private static async Task<InventoryItemDto> CreateItemAsync(TestUser user, Guid householdId, SaveInventoryItemRequest request)
+    {
+        var response = await user.Client.PostAsJsonAsync(ItemsUrl(householdId), request, Json);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<InventoryItemDto>(Json))!;
+    }
 
     private static async Task<JsonElement> ReadProblemAsync(HttpResponseMessage response) =>
         (await response.Content.ReadFromJsonAsync<JsonElement>(Json));

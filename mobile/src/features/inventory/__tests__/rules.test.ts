@@ -11,9 +11,12 @@ import {
   filterByUrgency,
   filterItems,
   formatQuantity,
+  hasSeveralPortions,
   parseQuantity,
+  portionOptions,
   presetQuantity,
   quantityAfterUnitChange,
+  remainingQuantity,
 } from '../rules';
 
 const TODAY = '2026-09-23';
@@ -136,6 +139,40 @@ describe('droits et filtres', () => {
     expect(filterItems(items, 'all', 'me')).toHaveLength(3);
     expect(filterItems(items, 'common', 'me')).toEqual([common]);
     expect(filterItems(items, 'mine', 'me')).toEqual([mine]);
+  });
+});
+
+describe('consommation partielle', () => {
+  const labels = (options: { label: string }[]) => options.map((o) => o.label.replace(/ | /g, ' '));
+
+  it.each([
+    [1, 'Piece', false],
+    [2, 'Piece', true],
+    [1, 'Kilogram', true],
+    [600, 'Gram', true],
+  ] as const)('%s %s : panneau « Combien ? » = %s', (quantity, unit, expected) => {
+    expect(hasSeveralPortions({ quantity, unit })).toBe(expected);
+  });
+
+  it('pièces : 1, 2… sans atteindre le total, puis « Tout »', () => {
+    expect(labels(portionOptions(2, 'Piece'))).toEqual(['1', 'Tout · 2 pièces']);
+    expect(labels(portionOptions(12, 'Piece'))).toEqual(['1', '2', '3', '4', 'Tout · 12 pièces']);
+  });
+
+  it('poids et volume : ¼, ½, ¾ avec la valeur calculée', () => {
+    expect(labels(portionOptions(600, 'Gram'))).toEqual(['¼ · 150 g', '½ · 300 g', '¾ · 450 g', 'Tout · 600 g']);
+    expect(portionOptions(1.5, 'Liter').map((o) => o.quantity)).toEqual([0.375, 0.75, 1.125, 1.5]);
+    // g et ml arrondis à l'unité : 125 g → 31 g, 63 g, 94 g.
+    expect(portionOptions(125, 'Gram').map((o) => o.quantity)).toEqual([31, 63, 94, 125]);
+  });
+
+  it('une quantité trop petite pour être découpée ne propose que « Tout »', () => {
+    expect(portionOptions(1, 'Gram').map((o) => o.quantity)).toEqual([1]);
+  });
+
+  it('calcule le reste sans erreur d\'arrondi', () => {
+    expect(remainingQuantity(0.3, 0.1)).toBe(0.2);
+    expect(remainingQuantity(600, 200)).toBe(400);
   });
 });
 

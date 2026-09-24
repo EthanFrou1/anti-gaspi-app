@@ -114,6 +114,48 @@ export function quantityAfterUnitChange(input: string, from: QuantityUnit, to: Q
   return presetQuantity(input, from) !== null && presetQuantity(input, to) === null ? '' : input;
 }
 
+/**
+ * Consommation partielle : le panneau « Combien ? » n'a de sens que s'il y a plusieurs portions
+ * (plus d'une pièce, ou un poids / un volume). À 1 pièce, une simple confirmation suffit.
+ */
+export function hasSeveralPortions(item: Pick<InventoryItem, 'quantity' | 'unit'>): boolean {
+  return item.unit !== 'Piece' || item.quantity > 1;
+}
+
+export type PortionOption = { label: string; quantity: number };
+
+// Arrondi au millième (précision de l'API), pour éviter les 0,30000000000000004.
+const roundQuantity = (value: number) => Math.round(value * 1000) / 1000;
+
+/**
+ * Raccourcis du panneau « Combien ? », dans l'unité du produit, toujours terminés par « Tout » :
+ * - pièces : 1, 2… jusqu'à 4 (sans atteindre le total) ;
+ * - poids / volume : ¼, ½, ¾ avec la valeur calculée (g et ml arrondis à l'unité).
+ */
+export function portionOptions(quantity: number, unit: QuantityUnit): PortionOption[] {
+  const all = { label: `Tout · ${formatQuantity(quantity, unit)}`, quantity };
+  if (unit === 'Piece') {
+    const counts = [1, 2, 3, 4].filter((n) => n < quantity);
+    return [...counts.map((n) => ({ label: String(n), quantity: n })), all];
+  }
+
+  const round = unit === 'Gram' || unit === 'Milliliter' ? Math.round : roundQuantity;
+  const fractions = [
+    { symbol: '¼', ratio: 0.25 },
+    { symbol: '½', ratio: 0.5 },
+    { symbol: '¾', ratio: 0.75 },
+  ]
+    .map(({ symbol, ratio }) => ({ symbol, value: round(quantity * ratio) }))
+    // Trop petit pour être découpé (ex. ¼ de 1 g) : le raccourci disparaît.
+    .filter(({ value }, index, list) => value > 0 && value < quantity && list.findIndex((f) => f.value === value) === index);
+  return [...fractions.map(({ symbol, value }) => ({ label: `${symbol} · ${formatQuantity(value, unit)}`, quantity: value })), all];
+}
+
+/** Ce qu'il restera après avoir retiré `taken` (arrondi au millième). */
+export function remainingQuantity(quantity: number, taken: number): number {
+  return roundQuantity(quantity - taken);
+}
+
 /** Un produit commun est modifiable par tout membre ; un produit perso, par son seul propriétaire. */
 export function canModifyItem(item: Pick<InventoryItem, 'ownerUserId'>, myUserId: string): boolean {
   return item.ownerUserId === null || item.ownerUserId === myUserId;

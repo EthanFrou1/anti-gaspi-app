@@ -355,6 +355,87 @@ public class InventoryServiceTests(DatabaseFixture database) : HouseholdTestBase
         Assert.Equal(InventoryErrors.NotActive, result.Error);
     }
 
+    // ---------- Consommation partielle ----------
+
+    [Theory]
+    [InlineData(InventoryItemStatus.Consumed)]
+    [InlineData(InventoryItemStatus.Discarded)]
+    public async Task ChangeStatus_OfAPart_KeepsTheRestInTheFridge_AndRecordsThePart(InventoryItemStatus status)
+    {
+        var (alice, householdId) = await CreateHouseholdAsync();
+        var cheese = (await CreateAsync(alice, householdId,
+            Request("Emmental râpé", "hard-cheese", quantity: 600, unit: QuantityUnit.Gram, isPersonal: true))).Value!;
+        Clock.Advance(TimeSpan.FromHours(3));
+
+        var result = await ChangeStatusAsync(alice, householdId, cheese.Id, status, quantity: 200);
+
+        // Le produit reste au frigo (même Id : rappels et recettes toujours valables), avec le reste.
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(cheese.Id, result.Value.Id);
+        Assert.Equal(InventoryItemStatus.Active, result.Value.Status);
+        Assert.Equal(400, result.Value.Quantity);
+
+        // La part mangée ou jetée devient une ligne d'historique, copie du produit (compteur de gaspillage).
+        var part = Assert.Single(await ListAsync(householdId, status));
+        Assert.NotEqual(cheese.Id, part.Id);
+        Assert.Equal(200, part.Quantity);
+        Assert.Equal(QuantityUnit.Gram, part.Unit);
+        Assert.Equal((cheese.Name, cheese.CategoryId, cheese.ExpiresOn, cheese.OwnerUserId), (part.Name, part.CategoryId, part.ExpiresOn, part.OwnerUserId));
+        Assert.Equal(Clock.Now, part.StatusChangedAt!.Value, TimeSpan.FromMilliseconds(1));
+    }
+
+    [Fact]
+    public async Task ChangeStatus_OfTheWholeQuantity_ChangesTheItemItself()
+    {
+        var (alice, householdId) = await CreateHouseholdAsync();
+        var item = (await CreateAsync(alice, householdId, Request(quantity: 2))).Value!;
+
+        var result = await ChangeStatusAsync(alice, householdId, item.Id, InventoryItemStatus.Consumed, quantity: 2);
+
+        // Pas de ligne en plus : c'est le produit entier.
+        Assert.Equal(InventoryItemStatus.Consumed, result.Value!.Status);
+        Assert.Empty(await ListAsync(householdId));
+        Assert.Equal(item.Id, Assert.Single(await ListAsync(householdId, InventoryItemStatus.Consumed)).Id);
+    }
+
+    [Fact]
+    public async Task ChangeStatus_OfMoreThanWhatIsLeft_IsRejected()
+    {
+        var (alice, householdId) = await CreateHouseholdAsync();
+        var item = (await CreateAsync(alice, householdId, Request(quantity: 2))).Value!;
+
+        var result = await ChangeStatusAsync(alice, householdId, item.Id, InventoryItemStatus.Consumed, quantity: 3);
+
+        Assert.Equal(InventoryErrors.QuantityExceedsStock, result.Error);
+        Assert.Equal(2, (await GetAsync(householdId, item.Id)).Value!.Quantity);
+    }
+
+    [Fact]
+    public async Task ChangeStatus_OfAPart_Twice_LeavesTheRightQuantity()
+    {
+        var (alice, householdId) = await CreateHouseholdAsync();
+        var item = (await CreateAsync(alice, householdId, Request(quantity: 4))).Value!;
+
+        await ChangeStatusAsync(alice, householdId, item.Id, InventoryItemStatus.Consumed, quantity: 1);
+        await ChangeStatusAsync(alice, householdId, item.Id, InventoryItemStatus.Discarded, quantity: 1);
+
+        Assert.Equal(2, (await GetAsync(householdId, item.Id)).Value!.Quantity);
+        Assert.Single(await ListAsync(householdId, InventoryItemStatus.Consumed));
+        Assert.Single(await ListAsync(householdId, InventoryItemStatus.Discarded));
+    }
+
+    [Fact]
+    public async Task ChangeStatus_OfAPart_OfAPersonalItemOfAnotherMember_IsRejected()
+    {
+        var (alice, bob, householdId) = await CreateHouseholdWithMemberAsync();
+        var item = (await CreateAsync(alice, householdId, Request(quantity: 4, isPersonal: true))).Value!;
+
+        var result = await ChangeStatusAsync(bob, householdId, item.Id, InventoryItemStatus.Consumed, quantity: 1);
+
+        Assert.Equal(InventoryErrors.NotOwner, result.Error);
+        Assert.Equal(4, (await GetAsync(householdId, item.Id)).Value!.Quantity);
+    }
+
     [Fact]
     public async Task Delete_RemovesTheItem()
     {
@@ -398,9 +479,9 @@ public class InventoryServiceTests(DatabaseFixture database) : HouseholdTestBase
             s.UpdateAsync(actorId, householdId, itemId, request, CancellationToken.None));
 
     private Task<Result<InventoryItemDto>> ChangeStatusAsync(
-        Guid actorId, Guid householdId, Guid itemId, InventoryItemStatus status) =>
+        Guid actorId, Guid householdId, Guid itemId, InventoryItemStatus status, decimal? quantity = null) =>
         WithServiceAsync<IInventoryService, Result<InventoryItemDto>>(s =>
-            s.ChangeStatusAsync(actorId, householdId, itemId, status, CancellationToken.None));
+            s.ChangeStatusAsync(actorId, householdId, itemId, status, quantity, CancellationToken.None));
 
     private Task<Result> DeleteAsync(Guid actorId, Guid householdId, Guid itemId) =>
         WithServiceAsync<IInventoryService, Result>(s =>

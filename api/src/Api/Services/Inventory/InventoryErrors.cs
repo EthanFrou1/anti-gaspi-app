@@ -28,6 +28,9 @@ public static class InventoryErrors
     public static readonly Error ExpiryDateOutOfRange = Validation(
         nameof(SaveInventoryItemRequest.ExpiresOn), "La date de péremption doit être comprise entre un an avant l'achat et 10 ans après.");
 
+    public static readonly Error QuantityExceedsStock = Validation(
+        nameof(ChangeStatusRequest.Quantity), "Il n'en reste pas autant : indique au plus la quantité restante.");
+
     private static Error Validation(string field, string message) =>
         new(ErrorType.Validation, "inventory.validation", message, new Dictionary<string, string[]> { [field] = [message] });
 }

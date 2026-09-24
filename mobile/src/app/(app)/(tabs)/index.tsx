@@ -2,9 +2,6 @@ import { router, Tabs } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { api } from '@/api/client';
-import { asApiError } from '@/api/errors';
-import type { InventoryItem } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { Chip } from '@/components/Chip';
@@ -27,6 +24,7 @@ import {
 } from '@/features/inventory/rules';
 import { useCategories } from '@/features/inventory/useCategories';
 import { useInventory } from '@/features/inventory/useInventory';
+import { useStatusChange } from '@/features/inventory/useStatusChange';
 import { sendTestReminder, syncExpiryReminders } from '@/features/notifications/reminders';
 import { brandUrgency, makeStyles, useTheme } from '@/theme';
 import { toLocalDateString } from '@/utils/dates';
@@ -76,6 +74,13 @@ export default function FridgeScreen() {
   // États présents, plus celui qui est sélectionné même s'il est vide (pour pouvoir le désélectionner).
   const urgencyChips = URGENCY_FILTERS.filter((u) => urgencyCounts[u] > 0 || u === urgencyFilter);
 
+  // « Mangé » / « Jeté » : confirmation, ou panneau « Combien ? » s'il y a plusieurs portions.
+  const statusChange = useStatusChange(householdId, (item, action) => {
+    // Même une partie mangée est un produit sauvé.
+    if (action === 'consume') setSavedProduct(item.name);
+    void reload();
+  });
+
   if (!user) {
     return null;
   }
@@ -92,32 +97,6 @@ export default function FridgeScreen() {
         </EmptyState>
       </SafeAreaView>
     );
-  }
-
-  function confirmStatus(item: InventoryItem, action: 'consume' | 'discard') {
-    const consumed = action === 'consume';
-    Alert.alert(
-      consumed ? `${item.name} : consommé ?` : `${item.name} : jeté ?`,
-      'Il sera retiré du frigo.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: consumed ? 'Consommé' : 'Jeté',
-          style: consumed ? 'default' : 'destructive',
-          onPress: () => void changeStatus(item, action),
-        },
-      ],
-    );
-  }
-
-  async function changeStatus(item: InventoryItem, action: 'consume' | 'discard') {
-    try {
-      await api.inventory[action](householdId!, item.id);
-      if (action === 'consume') setSavedProduct(item.name);
-      await reload();
-    } catch (e) {
-      Alert.alert('Impossible de modifier ce produit', asApiError(e).message);
-    }
   }
 
   // Outil de mise au point (build de développement uniquement) : le vrai prochain résumé dans 10 s.
@@ -208,8 +187,8 @@ export default function FridgeScreen() {
             canModify={canModifyItem(item, user.id)}
             memberIds={memberIds}
             onPress={() => router.push({ pathname: '/item/[id]', params: { id: item.id } })}
-            onConsume={() => confirmStatus(item, 'consume')}
-            onDiscard={() => confirmStatus(item, 'discard')}
+            onConsume={() => statusChange.ask(item, 'consume')}
+            onDiscard={() => statusChange.ask(item, 'discard')}
           />
         )}
         contentContainerStyle={styles.list}
@@ -227,6 +206,7 @@ export default function FridgeScreen() {
         }
       />
 
+      {statusChange.sheet}
       <SavedCelebration productName={savedProduct} onDone={() => setSavedProduct(null)} />
     </SafeAreaView>
   );

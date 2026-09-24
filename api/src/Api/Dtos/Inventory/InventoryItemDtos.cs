@@ -57,6 +57,18 @@ public sealed record SaveInventoryItemRequest(
     bool IsPersonal);
 
 /// <summary>
+/// « Consommé » ou « jeté », en entier ou en partie (« 200 g sur 600 g »). Corps facultatif :
+/// sans quantité, c'est le produit entier.
+/// </summary>
+public sealed record ChangeStatusRequest(
+    // Même unité que le produit. Culture invariante : voir SaveInventoryItemRequest.Quantity.
+    [Range(typeof(decimal), "0.001", "100000",
+        ParseLimitsInInvariantCulture = true,
+        ConvertValueInInvariantCulture = true,
+        ErrorMessage = "La quantité doit être comprise entre 0,001 et 100 000.")]
+    decimal? Quantity);
+
+/// <summary>
 /// Ajout groupé : lignes validées par l'utilisateur après la lecture d'un ticket de caisse.
 /// </summary>
 public sealed record CreateInventoryItemsRequest(

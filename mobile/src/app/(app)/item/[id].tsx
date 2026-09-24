@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { ItemForm } from '@/features/inventory/ItemForm';
 import { canModifyItem } from '@/features/inventory/rules';
 import { useCategories } from '@/features/inventory/useCategories';
+import { useStatusChange } from '@/features/inventory/useStatusChange';
 import { makeStyles, useTheme } from '@/theme';
 
 export default function EditItemScreen() {
@@ -25,6 +26,8 @@ export default function EditItemScreen() {
   const [item, setItem] = useState<InventoryItem | null>(null);
   const [loadError, setLoadError] = useState<ApiError | null>(null);
   const [saveError, setSaveError] = useState<ApiError | null>(null);
+  // Comme dans le frigo : confirmation, ou panneau « Combien ? » s'il y a plusieurs portions.
+  const statusChange = useStatusChange(householdId, () => router.back());
 
   useEffect(() => {
     if (!householdId || !id) return;
@@ -118,13 +121,14 @@ export default function EditItemScreen() {
 
       {editable ? (
         <View style={styles.actions}>
-          <Button title="Consommé" variant="secondary" onPress={() => void runAction(() => api.inventory.consume(householdId, item.id))} />
-          <Button title="Jeté" variant="secondary" onPress={() => void runAction(() => api.inventory.discard(householdId, item.id))} />
+          <Button title="Consommé" variant="secondary" onPress={() => statusChange.ask(item, 'consume')} />
+          <Button title="Jeté" variant="secondary" onPress={() => statusChange.ask(item, 'discard')} />
           <Pressable onPress={confirmDelete} accessibilityRole="button" style={styles.deleteButton} hitSlop={6}>
             <Text style={styles.deleteText}>Supprimer (erreur de saisie)</Text>
           </Pressable>
         </View>
       ) : null}
+      {statusChange.sheet}
     </Screen>
   );
 }

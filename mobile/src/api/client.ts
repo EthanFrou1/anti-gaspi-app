@@ -310,12 +310,23 @@ export const api = {
       return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}`, { method: 'PUT', body });
     },
 
-    consume(householdId: string, itemId: string): Promise<InventoryItem> {
-      return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}/consume`, { method: 'POST' });
+    /**
+     * Consommé : le produit entier (quantity null), ou seulement cette quantité (dans son unité).
+     * Renvoie le produit après le changement (ce qu'il en reste, s'il en reste).
+     */
+    consume(householdId: string, itemId: string, quantity: number | null = null): Promise<InventoryItem> {
+      return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}/consume`, {
+        method: 'POST',
+        body: quantity === null ? undefined : { quantity },
+      });
     },
 
-    discard(householdId: string, itemId: string): Promise<InventoryItem> {
-      return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}/discard`, { method: 'POST' });
+    /** Jeté : même principe que consume. */
+    discard(householdId: string, itemId: string, quantity: number | null = null): Promise<InventoryItem> {
+      return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}/discard`, {
+        method: 'POST',
+        body: quantity === null ? undefined : { quantity },
+      });
     },
 
     // Réservé à la correction d'une erreur de saisie (sinon : consommé ou jeté).
