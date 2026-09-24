@@ -132,36 +132,6 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 
 Étapes codées et vérifiées automatiquement (tests, typecheck, bundles) mais **pas encore testées sur un vrai téléphone**. Lancer l'environnement avec `.\dev.cmd`, puis cocher chaque parcours validé ; retirer une étape de la liste une fois tous ses parcours validés.
 
-### Inventaire, étape 4 : liste du frigo et saisie manuelle
-
-- [ ] Sans foyer, l'onglet Frigo renvoie vers l'onglet Foyer.
-- [ ] Ajout d'un steak haché : la date proposée est le lendemain (DLC). Ajout de pâtes : DDM dans un an.
-- [ ] Changement de la date avec « +3 j », puis avec le calendrier natif ; « Revenir à l'estimation » fonctionne.
-- [ ] Quantité « 0,5 » en kg acceptée (bouton « Autre… »).
-- [ ] Avec un second compte du foyer : un produit perso est visible mais en lecture seule, sans boutons Mangé / Jeté.
-- [ ] « Mangé » et « Jeté » (avec confirmation) retirent le produit de la liste.
-- [ ] Une DDM dépassée s'affiche « à vérifier », jamais « périmé ».
-
-### Inventaire, étape 5 : scan du code-barres
-
-- [ ] Premier scan : la demande d'accès à l'appareil photo s'affiche ; après un refus, l'écran propose « Autoriser » ou la saisie manuelle.
-- [ ] Refus définitif : le bouton « Ouvrir les réglages » ouvre les réglages de l'app.
-- [ ] Scan d'un produit connu (ex. Nutella 3017620422003) : écran de confirmation avec image, nom, marque, mention « Données Open Food Facts », formulaire pré-rempli.
-- [ ] L'image n'apparaît nulle part ailleurs (liste du frigo, fiche du produit).
-- [ ] Scan d'un produit inconnu d'OFF : message, formulaire vide avec code-barres conservé.
-- [ ] API arrêtée pendant la recherche (ou OFF indisponible) : message « momentanément indisponible », saisie manuelle possible.
-- [ ] Un QR code est ignoré (« Code non reconnu »), un code-barres alimentaire est lu du premier coup.
-- [ ] Après « Ajouter au frigo », retour au frigo avec le produit dans la liste.
-
-### Profil : onboarding et préférences
-
-- [ ] Juste après l'inscription, l'onboarding s'affiche (5 questions, barre de progression) ; l'app n'est pas accessible avant la fin.
-- [ ] Un compte existant sans profil passe aussi par l'onboarding à la connexion suivante.
-- [ ] « Passer cette question » à chaque étape : l'onboarding se termine avec les valeurs par défaut.
-- [ ] Allergies cochées sans consentement : message bloquant ; décocher le consentement efface les allergies cochées.
-- [ ] Compte → « Mes préférences » : les réponses de l'onboarding sont reprises, modifiables et enregistrées.
-- [ ] Foyer → « Équipement de la cuisine » : un changement fait par un membre est visible par un autre après rafraîchissement.
-
 ### Recettes par IA
 
 - [ ] En développement (générateur Fake) : « Proposer une recette » affiche l'écran d'attente puis une recette qui utilise les produits qui périment en premier.
@@ -173,93 +143,10 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] API arrêtée pendant la génération : message d'erreur, le quota n'est pas décompté.
 - [ ] Étoile sur une recette : elle apparaît dans « Favoris » pour tous les membres du foyer, avec le bon libellé (« Dans tes favoris », « Favori de 1 membre »).
 - [ ] « Partager » ouvre la feuille de partage native avec la recette en texte lisible.
-
-### Rappels de péremption (notifications locales)
-
-- [ ] Aucune demande d'autorisation au démarrage ; elle apparaît après l'ajout d'un produit (manuel ou scanné), une seule fois, même après un refus. Dans Expo Go, l'autorisation est celle d'Expo Go : si elle a déjà été accordée ou refusée pour un autre projet, aucune demande n'apparaît (la réinitialiser en supprimant puis réinstallant Expo Go).
-- [ ] Android 13+ : la demande s'affiche bien (canal « Produits à consommer » visible dans les réglages de notification de l'app).
-- [ ] Bouton 🔔 du Frigo (build de développement uniquement) : le prochain résumé arrive 10 secondes plus tard, avec le même texte que celui de 18 h ; message « Aucun rappel prévu » si rien ne périme bientôt.
-- [ ] Un produit en DLC qui périme demain, ajouté avant 18 h : notification à 18 h, « Ce soir : 1 produit à utiliser », avec « (demain) ».
-- [ ] Une DDM du jour : « à vérifier », jamais « périmé ».
-- [ ] Appui sur la notification, app fermée puis app en arrière-plan : l'onglet Frigo s'ouvre.
-- [ ] Notification reçue app ouverte : le bandeau s'affiche quand même.
-- [ ] Produit marqué « Consommé » avant 18 h : plus de notification pour lui.
-- [ ] Produit perso d'un colocataire : n'apparaît pas dans mes rappels.
-- [ ] Déconnexion : plus aucune notification ; les notifications déjà affichées de l'app disparaissent.
-- [ ] Autorisation refusée : l'app fonctionne normalement, sans message d'erreur.
-
-### Charte Leftly, étapes 1 à 3 : fondations, composants, navigation
-
-- [ ] Au lancement, le splash reste affiché le temps de charger les polices, sans « saut » de police ensuite.
-- [ ] Titres d'en-tête et boutons en Fredoka (police arrondie) ; fond crème ; boutons mandarine à bord encre avec une ombre nette décalée vers le bas.
-- [ ] Appui sur un bouton : il s'enfonce dans son ombre, puis remonte.
-- [ ] Barre d'onglets flottante : Frigo, Recettes, « + », Foyer, Profil. L'onglet actif a une pastille derrière l'icône et un libellé en gras.
-- [ ] « + » : le panneau monte du bas sur un fond assombri, avec 4 actions ; chacune ouvre le bon écran une fois le panneau refermé. Toucher le fond le ferme (et le bouton retour sur Android).
-- [ ] « Proposer une recette » ouvre l'onglet Recettes sans lancer de génération (le compteur ne bouge pas).
-- [ ] Sans foyer : le « + » propose d'aller à l'onglet Foyer.
-- [ ] L'ancien onglet Compte s'appelle Profil (déconnexion, préférences, suppression du compte inchangées).
-- [ ] Bouton 🔔 de test des rappels : maintenant dans l'en-tête du Frigo (build de développement uniquement).
-- [ ] Pastilles (filtres du Frigo, unités, raccourcis de date) : la sélection a une coche et un bord plus épais. Champs : bord plus épais pendant la saisie. Sélecteur de catégorie : icône devant chaque catégorie, coche sur la catégorie choisie.
-- [ ] Sélecteur de catégorie : l'en-tête (« Catégorie », « Fermer ») ne passe plus sous la barre d'état. iOS : la liste s'ouvre en feuille et se ferme aussi en la glissant vers le bas ; Android : bouton retour. Après fermeture par glissement, elle se rouvre normalement.
-- [ ] Quantité (ajout, fiche produit, ligne de ticket) : l'unité se choisit d'abord, puis des boutons adaptés (pièces 1 à 5 ; g 100 à 1 000 ; kg et l 0,5 à 2 ; ml 100 à 750) ; « Autre… » affiche un champ et ouvre le clavier ; une fiche à 0,5 kg s'ouvre avec le bouton « 0,5 kg » sélectionné, une ligne de ticket à 0,612 kg avec « Autre… ». « 3 » pièces puis passage en g : plus aucun bouton sélectionné (pas de « 3 g » silencieux) ; « 1 » pièce puis kg : « 1 kg » reste sélectionné. « Autre… » laissé vide : message « Quantité invalide ».
-- [ ] Barre d'onglets : le « + » dépasse moins de la barre (16 px au lieu de 30).
-
-### Frigo : filtres par état, actions en icônes, liseré de couleur
-
-- [ ] Sous Tout / Commun / À moi, une rangée qui défile : seuls les états présents, avec icône et nombre (« Urgent 5 »). Un appui filtre, un second appui retire le filtre.
-- [ ] Les deux filtres se combinent : « À moi » puis « Urgent » ne montre que mes produits urgents, et les nombres suivent le premier filtre.
-- [ ] Filtre sélectionné dont le dernier produit est mangé : la pastille reste (« Urgent 0 ») avec « Rien dans cette sélection », et se retire d'un appui.
-- [ ] Chaque carte a un liseré à gauche de la couleur de son état (rose Périmé, mandarine Urgent, citron Bientôt, bleu OK, violet À vérifier), aussi en mode sombre.
-- [ ] « Mangé » (couverts, mandarine) et « Jeté » (poubelle, blanc) : boutons carrés à côté du nom, qui s'enfoncent à l'appui ; confirmation et célébration inchangées. Le détail (« DDM dépassée : encore bon ? ») tient sur une ligne.
-- [ ] VoiceOver : « Nom du produit : consommé » / « : jeté » sur les icônes, « Urgent, 5 produits » sur les filtres.
-- [ ] Produit perso d'un autre membre : pas de boutons, le nom prend toute la largeur.
-
-### Frigo : consommation partielle
-
-- [ ] Produit à 1 pièce (baguette) : « Mangé » et « Jeté » gardent la simple confirmation.
-- [ ] Steak haché (2 pièces) → couverts : panneau « Combien en as-tu mangé ? », choix « 1 » et « Tout · 2 pièces » (sélectionné d'office), « Il en restera 1 pièce. » ; après « Valider », la carte affiche 1 pièce et la célébration apparaît.
-- [ ] Emmental (200 g) → poubelle : ¼ · 50 g, ½ · 100 g, ¾ · 150 g, Tout ; bouton rouge « Jeter » ; pas de célébration.
-- [ ] « Autre… » : le champ s'ouvre avec le clavier, et le panneau reste visible au-dessus (iOS et Android) ; « 0,5 » en kg accepté ; plus que le reste : « Il n'en reste que … » ; vide : « Quantité invalide ».
-- [ ] Toucher le fond ou le bouton retour d'Android ferme le panneau sans rien changer.
-- [ ] Fiche produit : « Consommé » et « Jeté » passent par la même confirmation ou le même panneau, puis reviennent au frigo.
-- [ ] Rappels : après avoir mangé une partie, le produit reste dans les rappels ; après « Tout », il en sort.
-- [ ] Champs de date (iOS) : choisir un jour dans le calendrier le referme aussitôt ; changer de mois ne le ferme pas.
-- [ ] Frigo : toucher la carte en dehors des boutons « Mangé » / « Jeté » ouvre toujours la fiche du produit (boutons : voir « Frigo : filtres par état, actions en icônes »).
-- [ ] Réglages → Accessibilité → Réduire les animations : le panneau apparaît sans glisser.
-- [ ] Texte agrandi (réglages d'accessibilité) : la barre d'onglets reste lisible.
-- [ ] Android : le « + » dépasse bien de la barre sans être coupé.
-- [ ] Development build seulement (Expo Go affiche les siens) : icône d'app claire et sombre (iOS 18), icône adaptative et monochrome (Android 13+), splash clair et sombre.
-
-### Charte Leftly, étape 4 : écrans migrés
-
-- [ ] Frigo : chaque produit est une carte (icône de catégorie, nom, quantité et catégorie, badge d'urgence avec fond, icône et libellé court : Périmé, Urgent, Bientôt, OK, À vérifier, puis le détail « À consommer demain », « Dans 5 j »…).
-- [ ] Frigo : une DDM dépassée affiche le badge violet « À vérifier » (œil) et « DDM dépassée : encore bon ? », jamais « Périmé ».
-- [ ] Frigo : un produit perso affiche le badge neutre « Perso · Prénom » avec l'avatar ; deux colocataires ont deux couleurs différentes.
-- [ ] Frigo : filtres Tout / Commun / À moi, tirer pour rafraîchir, état vide et état « sans foyer » aux couleurs de la charte.
-- [ ] Ajout et fiche produit : titres en Fredoka, interrupteur « Produit perso » mandarine, bandeau « lecture seule » neutre sur le produit perso d'un autre membre, lien « Supprimer (erreur de saisie) » en rouge souligné.
-- [ ] Scan du code-barres : cadre de visée mandarine, consigne sur fond sombre arrondi ; confirmation avec aperçu du produit en carte (image sur fond blanc).
-- [ ] Ticket : écran d'attente en carte sur fond assombri ; validation avec cartes, cases à cocher encre (cochée : fond mandarine et coche), ligne décochée atténuée, ligne en erreur bordée de rouge.
-- [ ] Recettes : historique et favoris en cartes (étoile citron pour une recette en favori) ; écran d'attente « Le chef réfléchit… » en carte ; bouton de développement du prompt avec une icône de robot.
-- [ ] Détail d'une recette : durée avec une icône d'horloge ; « Favori » en pastille (étoile pleine citron et bord épais quand la recette est en favori) ; « Partager » avec son icône ; avertissement IA sur fond citron ; ingrédients du frigo marqués d'une icône de frigo et en gras ; étapes numérotées dans des pastilles ; « J'ai cuisiné » avec les cases à cocher de la charte (grisées pour le produit perso d'un autre membre).
-- [ ] Foyer : nom en grand titre ; membres en cartes avec avatar (même couleur que sur leurs produits perso), badge « Propriétaire » avec couronne, « Exclure » en petit bouton rouge (propriétaire seulement) ; codes d'invitation en cartes (icône de partage, « Révoquer » en petit bouton rouge) ; « Quitter le foyer » inchangé.
-- [ ] Sans foyer : « Créer un foyer » et « Rejoindre un foyer » séparés par « ou » entre deux traits.
-- [ ] Profil → Supprimer mon compte : « Supprimer définitivement » en bouton rouge (désactivé tant que le mot de passe est vide).
-- [ ] Préférences : titres de section en Fredoka, interrupteur de consentement aux allergies mandarine, boutons − / + des portions en cercles à bord encre.
-- [ ] Onboarding : « QUESTION 2 SUR 5 » en petites capitales, barre de progression mandarine arrondie, question en grand titre ; « Question précédente » et « Se déconnecter » faciles à toucher.
-- [ ] Connexion : logo vertical de la charte (version sombre en mode sombre), sous-titre centré ; inscription et écran « serveur injoignable » (API arrêtée au lancement) aux couleurs de la charte.
-- [x] Mode sombre (Réglages → Luminosité → Sombre) : tous les écrans passent en sombre (fond violet très foncé, textes clairs), y compris la barre d'onglets, le panneau « + », le sélecteur de catégorie, le calendrier iOS, les écrans d'attente et les badges d'urgence (toujours lisibles). Le clavier iOS est sombre lui aussi.
-- [ ] Changer le mode du téléphone app ouverte : l'app suit immédiatement, sans redémarrer.
-
-### Charte Leftly, étape 5 : moments forts
-
-- [ ] Frigo vide : illustration du frigo vide (sur un disque pêche, crème en mode sombre), titre et texte ; sans foyer : illustration du frigo et bouton vers l'onglet Foyer.
-- [ ] Recettes : « Aucune recette ces 30 derniers jours » et « Pas encore de favori » avec l'illustration des pâtes.
-- [ ] Génération d'une recette : la marmite se balance doucement au-dessus de « Le chef réfléchit… ».
-- [ ] Onboarding : la mascotte accueille en haut de chaque question.
-- [ ] « Mangé » puis confirmation : la mascotte ravie apparaît avec un rebond et une gerbe de confettis, « Produit sauvé ! » et le nom du produit ; tout disparaît seul au bout de 2 secondes environ, ou d'un appui. VoiceOver annonce « Produit sauvé ».
-- [ ] « Jeté » : pas de célébration.
-- [ ] Réduire les animations activé : pas de confettis, pas de rebond ni de balancement ; le message s'affiche quand même.
-- [ ] Mode sombre : les illustrations restent lisibles (disque crème).
+- [ ] « + » → « Proposer une recette » ouvre l'onglet Recettes sans lancer de génération (le compteur ne bouge pas).
+- [ ] Charte : historique et favoris en cartes (étoile citron pour une recette en favori) ; écran d'attente « Le chef réfléchit… » en carte, avec la marmite qui se balance doucement ; bouton de développement du prompt avec une icône de robot.
+- [ ] Charte : « Aucune recette ces 30 derniers jours » et « Pas encore de favori » avec l'illustration des pâtes.
+- [ ] Charte, détail d'une recette : durée avec une icône d'horloge ; « Favori » en pastille (étoile pleine citron et bord épais quand la recette est en favori) ; « Partager » avec son icône ; avertissement IA sur fond citron ; ingrédients du frigo marqués d'une icône de frigo et en gras ; étapes numérotées dans des pastilles ; « J'ai cuisiné » avec les cases à cocher de la charte (grisées pour le produit perso d'un autre membre).
 
 ### Scan du ticket de caisse (V2)
 
@@ -275,6 +162,25 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] 4e scan du jour : boutons désactivés, « reviens demain », lien vers la saisie manuelle.
 - [ ] API arrêtée pendant la lecture : message d'erreur, quota non décompté.
 - [ ] Avec la vraie clé (`Ai__Provider=Claude`) sur un vrai ticket : lecture en moins d'une minute, noms lisibles, lessive et sacs écartés, date d'achat lue.
+- [ ] Charte : écran d'attente en carte sur fond assombri ; validation avec cartes, cases à cocher encre (cochée : fond mandarine et coche), ligne décochée atténuée, ligne en erreur bordée de rouge.
+
+### Android
+
+Le reste de l'app est validé sur iPhone ; ces points sont propres à Android.
+
+- [ ] Rappels, Android 13+ : la demande d'autorisation s'affiche bien (canal « Produits à consommer » visible dans les réglages de notification de l'app).
+- [ ] Le bouton retour ferme le panneau « + », le sélecteur de catégorie et le panneau « Combien ? » (sans rien changer).
+- [ ] Le « + » dépasse bien de la barre d'onglets sans être coupé.
+- [ ] Panneau « Combien ? » → « Autre… » : le panneau reste visible au-dessus du clavier.
+
+### Accessibilité et development build
+
+Réglages du téléphone ou build particulier, non couverts par le test dans Expo Go.
+
+- [ ] Réglages → Accessibilité → Réduire les animations : le panneau « + » apparaît sans glisser ; « Produit sauvé » sans confettis, rebond ni balancement, mais le message s'affiche.
+- [ ] Texte agrandi (réglages d'accessibilité) : la barre d'onglets reste lisible.
+- [ ] VoiceOver : « Nom du produit : consommé » / « : jeté » sur les icônes du Frigo, « Urgent, 5 produits » sur les filtres, « Produit sauvé » à la célébration.
+- [ ] Development build seulement (Expo Go affiche les siens) : icône d'app claire et sombre (iOS 18), icône adaptative et monochrome (Android 13+), splash clair et sombre.
 
 ## Scan du ticket de caisse (V2)
 
