@@ -98,7 +98,8 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - **Confirmation de l'adresse email** à l'inscription (nécessite un service d'envoi d'emails).
 - **Mot de passe oublié** : réinitialisation par lien envoyé par email (même dépendance).
 - **Énumération de comptes** : à revoir avec la confirmation d'email. Aujourd'hui, l'inscription renvoie 409 si l'email est pris et le message de verrouillage n'apparaît que pour un compte existant.
-- **ForwardedHeaders** : à activer derrière le reverse proxy, sinon l'API voit l'IP du proxy pour tous les clients (rate limiting par IP faussé, logs inexacts).
+- **ForwardedHeaders** : codé, mais à configurer au déploiement : renseigner `ReverseProxy:KnownNetworks` (réseau du proxy, notation CIDR), sinon l'API voit l'IP du proxy pour tous les clients (rate limiting par IP faussé, logs inexacts).
+- **Déploiement** (préparé, reporté à la fin du développement) : image Docker (`api/Dockerfile`), endpoint `/health` (API + base), migrations au démarrage (`Database:MigrateOnStartup`), redirection HTTPS laissée au proxy. Reste à faire : hébergement (Coolify envisagé), workflow GitHub Actions de construction de l'image, documentation du déploiement.
 - **Nettoyage des refresh tokens** : tâche périodique qui supprime les jetons expirés ou révoqués.
 - **Données de profil et IA** : indiquer dans la politique de confidentialité que les contraintes alimentaires (dont les allergies, avec consentement) sont transmises au fournisseur d'IA pour générer les recettes, sans identité ; prévoir l'export des données personnelles (droit d'accès).
 - **Modèle d'IA** : Claude Haiku 4.5 (`claude-haiku-4-5-20251001`), retrait « pas avant le 15 octobre 2026 » (date minimale, pas un retrait programmé ; Anthropic prévient à l'avance). Avant publication, vérifier son statut sur la page Model deprecations d'Anthropic ; en cas d'annonce de retrait, changer `Ai:Model`.

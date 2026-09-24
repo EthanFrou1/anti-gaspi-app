@@ -23,7 +23,9 @@ builder.Services
     .AddAppAuthorization()
     .AddApplicationServices()
     .AddOpenFoodFacts(builder.Configuration)
-    .AddRecipeGeneration(builder.Configuration, builder.Environment);
+    .AddRecipeGeneration(builder.Configuration, builder.Environment)
+    .AddReverseProxySupport(builder.Configuration)
+    .AddAppHealthChecks();
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -99,6 +101,10 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+// EN PREMIER : tout ce qui suit (limite de débit par IP, journaux) doit voir la vraie IP
+// du client et le vrai protocole, pas ceux du proxy de Coolify.
+app.UseForwardedHeaders();
+
 // Les erreurs non gérées (500) sont renvoyées au format ProblemDetails, sans détail interne.
 app.UseExceptionHandler();
 app.UseStatusCodePages();
@@ -108,7 +114,13 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi().AllowAnonymous();
 }
 
-app.UseHttpsRedirection();
+// Hors développement, le HTTPS est géré par le proxy (Traefik redirige HTTP vers HTTPS).
+// On ne redirige pas dans l'API : une requête POST redirigée perdrait son corps, et la
+// vérification de santé de Coolify, en HTTP dans le conteneur, serait redirigée elle aussi.
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -116,11 +128,17 @@ app.UseRateLimiter();
 
 app.MapControllers();
 
+// Vérification de santé pour Coolify : anonyme (fallback « connecté » sinon), sans détail.
+app.MapHealthChecks("/health").AllowAnonymous();
+
 if (!app.Environment.IsDevelopment())
 {
     // Les outils de développement n'existent pas ailleurs : 404 franc, quelle que soit la méthode.
     DevelopmentOnlyEndpoints.MapNotFoundStubs(app);
 }
+
+// Production : migrations appliquées avant d'ouvrir le port (Database:MigrateOnStartup).
+await app.MigrateDatabaseIfEnabledAsync();
 
 app.Run();
 

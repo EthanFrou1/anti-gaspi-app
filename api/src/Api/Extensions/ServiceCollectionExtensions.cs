@@ -1,4 +1,5 @@
 using Api.Authorization;
+using Api.Common;
 using Api.Data;
 using Api.Entities;
 using Api.Options;
@@ -12,6 +13,7 @@ using Anthropic;
 using Api.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -164,6 +166,11 @@ public static class ServiceCollectionExtensions
         services.AddOptions<AiOptions>()
             .Bind(configuration.GetSection(AiOptions.SectionName))
             .ValidateDataAnnotations()
+            // Fuseau introuvable (ex. paquet tzdata absent de l'image Docker) : l'API refuse de
+            // démarrer, plutôt que de planter au premier calcul de quota.
+            .Validate(
+                ai => TimeZoneInfo.TryFindSystemTimeZoneById(ai.TimeZone, out _),
+                "Ai:TimeZone : fuseau horaire introuvable (tzdata est-il installé ?).")
             .ValidateOnStart();
 
         services.AddHostedService<RecipeCleanupService>();
@@ -190,6 +197,41 @@ public static class ServiceCollectionExtensions
             // Développement sans clé : l'API démarre, la génération répond « IA non configurée ».
             ? new UnconfiguredRecipeGenerator()
             : ActivatorUtilities.CreateInstance<ClaudeRecipeGenerator>(provider2));
+        return services;
+    }
+
+    /// <summary>
+    /// Derrière le proxy de Coolify, l'API voit l'IP du proxy pour toutes les requêtes, en HTTP.
+    /// Le proxy transmet la vraie IP du client (X-Forwarded-For) et le protocole d'origine
+    /// (X-Forwarded-Proto) : on ne les croit que s'ils viennent d'un réseau déclaré.
+    /// </summary>
+    public static IServiceCollection AddReverseProxySupport(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<ReverseProxyOptions>()
+            .Bind(configuration.GetSection(ReverseProxyOptions.SectionName))
+            .Validate(ReverseProxyOptions.AreValid, "ReverseProxy:KnownNetworks : notation CIDR attendue (ex. 10.0.1.0/24).")
+            .ValidateOnStart();
+
+        services.AddOptions<ForwardedHeadersOptions>()
+            .Configure<IOptions<ReverseProxyOptions>>((forwarded, proxy) =>
+            {
+                forwarded.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                // Un seul proxy : on ne lit que la dernière adresse ajoutée à X-Forwarded-For,
+                // celle que Traefik a vue. Les adresses ajoutées avant par le client sont ignorées.
+                forwarded.ForwardLimit = 1;
+                foreach (var network in proxy.Value.KnownNetworks)
+                {
+                    forwarded.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+                }
+            });
+
+        return services;
+    }
+
+    /// <summary>Endpoint /health : l'API répond et joint sa base (voir DatabaseHealthCheck).</summary>
+    public static IServiceCollection AddAppHealthChecks(this IServiceCollection services)
+    {
+        services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
         return services;
     }
 

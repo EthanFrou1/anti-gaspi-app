@@ -1,0 +1,17 @@
+# Contexte de construction de l'image : uniquement ce qui sert à compiler l'API.
+**/bin/
+**/obj/
+tests/
+**/*.user
+**/.vs/
+**/*.http
+
+# Réglages de développement (générateur de recettes factice…) : jamais dans l'image.
+**/appsettings.Development.json
+
+# Secrets éventuels (ils ne doivent de toute façon jamais être dans le repo).
+**/.env
+**/.env.*
+**/*.pfx
+**/*.pem
+**/*.key
