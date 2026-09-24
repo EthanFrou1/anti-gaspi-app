@@ -82,6 +82,15 @@ export function parseQuantity(input: string): number | null {
   return value >= 0.001 && value <= 100000 ? value : null;
 }
 
+/** Quantités proposées en boutons (« 3 pains », « 5 carottes ») ; « Autre » pour le reste. */
+export const QUANTITY_PRESETS = [1, 2, 3, 4, 5] as const;
+
+/** Bouton de quantité correspondant au texte saisi, ou null (autre valeur, ou saisie invalide). */
+export function presetQuantity(input: string): number | null {
+  const value = parseQuantity(input);
+  return value !== null && (QUANTITY_PRESETS as readonly number[]).includes(value) ? value : null;
+}
+
 /** Un produit commun est modifiable par tout membre ; un produit perso, par son seul propriétaire. */
 export function canModifyItem(item: Pick<InventoryItem, 'ownerUserId'>, myUserId: string): boolean {
   return item.ownerUserId === null || item.ownerUserId === myUserId;

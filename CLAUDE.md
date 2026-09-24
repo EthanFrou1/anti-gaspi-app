@@ -138,7 +138,7 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Sans foyer, l'onglet Frigo renvoie vers l'onglet Foyer.
 - [ ] Ajout d'un steak haché : la date proposée est le lendemain (DLC). Ajout de pâtes : DDM dans un an.
 - [ ] Changement de la date avec « +3 j », puis avec le calendrier natif ; « Revenir à l'estimation » fonctionne.
-- [ ] Quantité « 0,5 » en kg acceptée.
+- [ ] Quantité « 0,5 » en kg acceptée (bouton « Autre… »).
 - [ ] Avec un second compte du foyer : un produit perso est visible mais en lecture seule, sans boutons Mangé / Jeté.
 - [ ] « Mangé » et « Jeté » (avec confirmation) retirent le produit de la liste.
 - [ ] Une DDM dépassée s'affiche « à vérifier », jamais « périmé ».
@@ -204,6 +204,7 @@ Les écrans ne sont pas encore migrés : leur texte reste dans la police du syst
 - [ ] Bouton 🔔 de test des rappels : maintenant dans l'en-tête du Frigo (build de développement uniquement).
 - [ ] Pastilles (filtres du Frigo, unités, raccourcis de date) : la sélection a une coche et un bord plus épais. Champs : bord plus épais pendant la saisie. Sélecteur de catégorie : icône devant chaque catégorie, coche sur la catégorie choisie.
 - [ ] Sélecteur de catégorie : l'en-tête (« Catégorie », « Fermer ») ne passe plus sous la barre d'état. iOS : la liste s'ouvre en feuille et se ferme aussi en la glissant vers le bas ; Android : bouton retour. Après fermeture par glissement, elle se rouvre normalement.
+- [ ] Quantité (ajout, fiche produit, ligne de ticket) : boutons 1 à 5 en un appui ; « Autre… » affiche un champ et ouvre le clavier ; une fiche à 0,5 kg ou une ligne de ticket à 0,612 kg s'ouvre avec « Autre… » déjà sélectionné. « Autre… » laissé vide : message « Quantité invalide ».
 - [ ] Réglages → Accessibilité → Réduire les animations : le panneau apparaît sans glisser.
 - [ ] Texte agrandi (réglages d'accessibilité) : la barre d'onglets reste lisible.
 - [ ] Android : le « + » dépasse bien de la barre sans être coupé.

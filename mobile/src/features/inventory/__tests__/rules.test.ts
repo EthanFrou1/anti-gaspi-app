@@ -10,6 +10,7 @@ import {
   filterItems,
   formatQuantity,
   parseQuantity,
+  presetQuantity,
 } from '../rules';
 
 const TODAY = '2026-09-23';
@@ -73,6 +74,20 @@ describe('parseQuantity', () => {
 
   it.each(['', 'abc', '0', '-1', '1,2345', '100001', '1,5,2'])('refuse « %s »', (input) => {
     expect(parseQuantity(input)).toBeNull();
+  });
+});
+
+describe('presetQuantity', () => {
+  it.each([
+    ['3', 3],
+    [' 5 ', 5],
+    ['1,0', 1],
+  ])('« %s » correspond au bouton %d', (input, expected) => {
+    expect(presetQuantity(input)).toBe(expected);
+  });
+
+  it.each(['6', '0,5', '250', '', 'abc'])('« %s » n\'est pas un bouton (champ « Autre »)', (input) => {
+    expect(presetQuantity(input)).toBeNull();
   });
 });
 

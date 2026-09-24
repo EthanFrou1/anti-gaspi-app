@@ -12,6 +12,7 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
 import { CategoryPicker } from '@/features/inventory/CategoryPicker';
+import { QuantityPicker } from '@/features/inventory/QuantityPicker';
 import { estimateExpiry, formatQuantity, parseQuantity, UNITS, unitLabel } from '@/features/inventory/rules';
 import { useCategories } from '@/features/inventory/useCategories';
 import { askReminderPermission } from '@/features/notifications/reminders';
@@ -254,12 +255,7 @@ function LineCard({ line, category, categories, purchasedOn, today, expanded, er
         <View style={styles.editor}>
           <TextField label="Nom du produit" value={line.name} onChangeText={(name) => onChange({ name })} maxLength={100} />
           <CategoryPicker categories={categories} value={line.categoryId} onChange={(categoryId) => onChange({ categoryId })} />
-          <TextField
-            label="Quantité"
-            value={line.quantityText}
-            onChangeText={(quantityText) => onChange({ quantityText })}
-            keyboardType="decimal-pad"
-          />
+          <QuantityPicker value={line.quantityText} onChange={(quantityText) => onChange({ quantityText })} />
           <ChoiceChips
             options={UNITS.map((u) => ({ value: u, label: unitLabel(u) }))}
             value={line.unit}

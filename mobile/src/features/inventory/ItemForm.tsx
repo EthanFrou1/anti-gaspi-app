@@ -10,6 +10,7 @@ import { TextField } from '@/components/TextField';
 import { colors, spacing } from '@/theme';
 import { addDays, formatShortDate, toLocalDateString } from '@/utils/dates';
 import { CategoryPicker } from './CategoryPicker';
+import { QuantityPicker } from './QuantityPicker';
 import { estimateExpiry, parseQuantity, UNITS, unitLabel } from './rules';
 
 // Valeurs de départ du formulaire (produit existant, ou suggestion après un scan).
@@ -119,18 +120,7 @@ export function ItemForm({ categories, initial, submitLabel, onSubmit, error, re
         disabled={readOnly}
       />
 
-      <View style={styles.quantityRow}>
-        <View style={styles.quantityInput}>
-          <TextField
-            label="Quantité"
-            value={quantityText}
-            onChangeText={setQuantityText}
-            error={fieldError('Quantity')}
-            keyboardType="decimal-pad"
-            editable={!readOnly}
-          />
-        </View>
-      </View>
+      <QuantityPicker value={quantityText} onChange={setQuantityText} error={fieldError('Quantity')} disabled={readOnly} />
       <ChoiceChips
         options={UNITS.map((u) => ({ value: u, label: unitLabel(u) }))}
         value={unit}
@@ -192,8 +182,6 @@ export function ItemForm({ categories, initial, submitLabel, onSubmit, error, re
 
 const styles = StyleSheet.create({
   container: { gap: spacing.md },
-  quantityRow: { flexDirection: 'row' },
-  quantityInput: { flex: 1 },
   hint: { fontSize: 13, color: colors.mutedText },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   switchText: { flex: 1, gap: spacing.xs },
