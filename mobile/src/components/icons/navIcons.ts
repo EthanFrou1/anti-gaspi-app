@@ -2,6 +2,7 @@
 // Import icône par icône : Metro n'élimine pas le code inutilisé, et importer depuis
 // « lucide-react-native » chargerait les ~1 500 icônes de la bibliothèque dans l'app.
 export { default as Bell } from 'lucide-react-native/icons/bell';
+export { default as Check } from 'lucide-react-native/icons/check';
 export { default as ChefHat } from 'lucide-react-native/icons/chef-hat';
 export { default as ChevronRight } from 'lucide-react-native/icons/chevron-right';
 export { default as House } from 'lucide-react-native/icons/house';

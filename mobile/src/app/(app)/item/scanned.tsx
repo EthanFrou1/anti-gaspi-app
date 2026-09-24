@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError, type ApiError } from '@/api/errors';
 import type { ProductSuggestion, SaveInventoryItemRequest } from '@/api/types';
@@ -10,7 +10,7 @@ import { Screen } from '@/components/Screen';
 import { ItemForm, type ItemFormInitial } from '@/features/inventory/ItemForm';
 import { useCategories } from '@/features/inventory/useCategories';
 import { askReminderPermission } from '@/features/notifications/reminders';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 
 type Lookup =
   | { status: 'loading' }
@@ -24,6 +24,8 @@ type Lookup =
  * Produit inconnu ou recherche indisponible : on bascule en saisie manuelle, code-barres conservé.
  */
 export default function ScannedItemScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const { barcode } = useLocalSearchParams<{ barcode: string }>();
   const { state } = useAuth();
   const householdId = state.status === 'signedIn' ? state.user.householdId : null;
@@ -64,7 +66,7 @@ export default function ScannedItemScreen() {
   if (lookup.status === 'loading' || (!categories && !categoriesError)) {
     return (
       <Screen hasHeader>
-        <ActivityIndicator style={styles.loader} size="large" color={colors.primary} />
+        <ActivityIndicator style={styles.loader} size="large" color={theme.colors.primary} />
         <Text style={styles.centeredText}>Recherche du produit…</Text>
       </Screen>
     );
@@ -123,27 +125,31 @@ export default function ScannedItemScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xl },
-  centeredText: { textAlign: 'center', color: colors.mutedText },
+const useStyles = makeStyles((t) => ({
+  loader: { marginTop: t.space['2xl'] },
+  centeredText: { ...t.type.body, textAlign: 'center', color: t.colors.ink3 },
   preview: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: t.space.md,
     alignItems: 'center',
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    padding: t.space.md,
+    backgroundColor: t.colors.surface,
+    borderWidth: t.borderWidth.hairline,
+    borderColor: t.colors.line,
+    borderRadius: t.radius.lg,
   },
-  image: { width: 80, height: 80 },
-  previewText: { flex: 1, gap: spacing.xs },
-  productName: { fontSize: 18, fontWeight: '700', color: colors.text },
-  brand: { fontSize: 14, color: colors.mutedText },
-  source: { fontSize: 12, color: colors.mutedText, fontStyle: 'italic' },
+  // Fond blanc dans les deux modes : les photos de produits sont le plus souvent détourées sur blanc.
+  image: { width: 80, height: 80, borderRadius: t.radius.sm, backgroundColor: '#FFFFFF' },
+  previewText: { flex: 1, gap: t.space.xxs },
+  productName: { ...t.type.title3, color: t.colors.ink },
+  brand: { ...t.type.callout, color: t.colors.ink2 },
+  source: { ...t.type.caption, color: t.colors.ink3 },
+  // Bandeau neutre : information, pas une erreur.
   info: {
-    backgroundColor: '#FFF8E1',
-    color: colors.text,
-    padding: spacing.md,
-    borderRadius: 8,
+    ...t.type.callout,
+    backgroundColor: t.persoBadge.bg,
+    color: t.persoBadge.fg,
+    padding: t.space.md,
+    borderRadius: t.radius.sm,
   },
-});
+}));

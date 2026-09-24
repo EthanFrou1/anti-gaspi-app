@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError, type ApiError } from '@/api/errors';
 import type { SaveInventoryItemRequest } from '@/api/types';
@@ -10,9 +10,11 @@ import { Screen } from '@/components/Screen';
 import { ItemForm } from '@/features/inventory/ItemForm';
 import { useCategories } from '@/features/inventory/useCategories';
 import { askReminderPermission } from '@/features/notifications/reminders';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 
 export default function NewItemScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const { state } = useAuth();
   const householdId = state.status === 'signedIn' ? state.user.householdId : null;
   const userId = state.status === 'signedIn' ? state.user.id : null;
@@ -39,12 +41,12 @@ export default function NewItemScreen() {
       {categories ? (
         <ItemForm categories={categories} submitLabel="Ajouter au frigo" onSubmit={handleSubmit} error={error} />
       ) : categoriesError ? null : (
-        <ActivityIndicator style={styles.loader} size="large" color={colors.primary} />
+        <ActivityIndicator style={styles.loader} size="large" color={theme.colors.primary} />
       )}
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xl },
-});
+const useStyles = makeStyles((t) => ({
+  loader: { marginTop: t.space['2xl'] },
+}));

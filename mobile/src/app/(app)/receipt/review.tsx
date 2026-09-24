@@ -1,6 +1,6 @@
 import { router, useNavigation } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Switch, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
 import type { Category } from '@/api/types';
@@ -11,6 +11,7 @@ import { DateField } from '@/components/DateField';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
+import { Check } from '@/components/icons/navIcons';
 import { CategoryPicker } from '@/features/inventory/CategoryPicker';
 import { QuantityPicker } from '@/features/inventory/QuantityPicker';
 import { estimateExpiry, formatQuantity, parseQuantity, UNITS, unitLabel } from '@/features/inventory/rules';
@@ -27,7 +28,7 @@ import {
   validateLines,
   type ReviewLine,
 } from '@/features/receipts/rules';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 import { addDays, formatShortDate, toLocalDateString } from '@/utils/dates';
 
 /**
@@ -35,6 +36,8 @@ import { addDays, formatShortDate, toLocalDateString } from '@/utils/dates';
  * corrige ou écarte chaque ligne avant l'ajout au frigo, en une seule fois.
  */
 export default function ReceiptReviewScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const { state } = useAuth();
   const householdId = state.status === 'signedIn' ? state.user.householdId : null;
   const userId = state.status === 'signedIn' ? state.user.id : null;
@@ -123,7 +126,7 @@ export default function ReceiptReviewScreen() {
   if (!categories) {
     return (
       <Screen hasHeader>
-        <ActivityIndicator style={styles.loader} size="large" color={colors.primary} />
+        <ActivityIndicator style={styles.loader} size="large" color={theme.colors.primary} />
       </Screen>
     );
   }
@@ -170,7 +173,12 @@ export default function ReceiptReviewScreen() {
           <Text style={styles.switchLabel}>Produits perso</Text>
           <Text style={styles.hint}>Pour tous les produits de ce ticket : visibles par le foyer, modifiables par toi seul.</Text>
         </View>
-        <Switch value={isPersonal} onValueChange={setIsPersonal} />
+        <Switch
+          value={isPersonal}
+          onValueChange={setIsPersonal}
+          trackColor={{ true: theme.colors.primary, false: theme.colors.line }}
+          ios_backgroundColor={theme.colors.line}
+        />
       </View>
 
       <View style={styles.list}>
@@ -215,6 +223,8 @@ type LineCardProps = {
 
 /** Une ligne du ticket : case à cocher, résumé, et formulaire de correction une fois ouverte. */
 function LineCard({ line, category, categories, purchasedOn, today, expanded, error, onToggleExpanded, onChange }: LineCardProps) {
+  const theme = useTheme();
+  const styles = useStyles();
   const expiresOn = lineExpiresOn(line, purchasedOn, category);
   const quantity = parseQuantity(line.quantityText);
   const summary = [
@@ -236,7 +246,7 @@ function LineCard({ line, category, categories, purchasedOn, today, expanded, er
           hitSlop={8}
           style={[styles.checkbox, line.selected && styles.checkboxChecked]}
         >
-          {line.selected ? <Text style={styles.checkmark}>✓</Text> : null}
+          {line.selected ? <Check size={18} strokeWidth={3} color={theme.colors.onPrimary} /> : null}
         </Pressable>
         <Pressable
           onPress={onToggleExpanded}
@@ -288,34 +298,42 @@ function LineCard({ line, category, categories, purchasedOn, today, expanded, er
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '700', color: colors.text },
-  text: { fontSize: 15, color: colors.mutedText },
-  hint: { fontSize: 13, color: colors.mutedText },
-  loader: { marginTop: spacing.xl },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  switchText: { flex: 1, gap: spacing.xs },
-  switchLabel: { fontSize: 16, fontWeight: '600', color: colors.text },
-  list: { gap: spacing.sm },
-  card: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, padding: spacing.md, gap: spacing.sm },
-  cardUnselected: { opacity: 0.5 },
-  cardError: { borderColor: colors.error },
-  cardRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
+const useStyles = makeStyles((t) => ({
+  title: { ...t.type.title2, color: t.colors.ink },
+  text: { ...t.type.body, color: t.colors.ink2 },
+  hint: { ...t.type.caption, color: t.colors.ink3 },
+  loader: { marginTop: t.space['2xl'] },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: t.space.md },
+  switchText: { flex: 1, gap: t.space.xxs },
+  switchLabel: { ...t.type.bodyBold, color: t.colors.ink },
+  list: { gap: t.space.sm },
+  card: {
+    backgroundColor: t.colors.surface,
+    borderWidth: t.borderWidth.hairline,
+    borderColor: t.colors.line,
+    borderRadius: t.radius.lg,
+    padding: t.space.md,
+    gap: t.space.xs,
+  },
+  cardUnselected: { opacity: 0.55 },
+  cardError: { borderWidth: t.borderWidth.selected, borderColor: t.colors.danger },
+  cardRow: { flexDirection: 'row', gap: t.space.sm, alignItems: 'flex-start' },
+  // Case à cocher : cochée = fond mandarine ET coche (jamais la couleur seule).
   checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.border,
+    width: 28,
+    height: 28,
+    borderRadius: t.radius.sm - 4,
+    borderWidth: t.borderWidth.selected,
+    borderColor: t.colors.border,
+    backgroundColor: t.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkmark: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  checkboxChecked: { backgroundColor: t.colors.primary },
   cardContent: { flex: 1, gap: 2 },
-  cardName: { fontSize: 16, fontWeight: '600', color: colors.text },
-  cardMeta: { fontSize: 14, color: colors.text },
-  cardReceipt: { fontSize: 12, color: colors.mutedText },
-  error: { fontSize: 13, color: colors.error },
-  editor: { gap: spacing.md, marginTop: spacing.sm },
-});
+  cardName: { ...t.type.card, color: t.colors.ink },
+  cardMeta: { ...t.type.callout, color: t.colors.ink2 },
+  cardReceipt: { ...t.type.caption, color: t.colors.ink3 },
+  error: { ...t.type.caption, color: t.colors.danger },
+  editor: { gap: t.space.md, marginTop: t.space.xs },
+}));

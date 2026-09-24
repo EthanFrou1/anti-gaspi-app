@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { Switch, Text, View } from 'react-native';
 import type { ApiError } from '@/api/errors';
 import type { Category, InventoryItem, QuantityUnit, SaveInventoryItemRequest } from '@/api/types';
 import { Button } from '@/components/Button';
@@ -7,7 +7,7 @@ import { ChoiceChips } from '@/components/ChoiceChips';
 import { DateField } from '@/components/DateField';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { TextField } from '@/components/TextField';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 import { addDays, formatShortDate, toLocalDateString } from '@/utils/dates';
 import { CategoryPicker } from './CategoryPicker';
 import { QuantityPicker } from './QuantityPicker';
@@ -38,6 +38,8 @@ type Props = {
  * n'en a pas choisi une : on envoie alors null et c'est l'API qui fait le calcul.
  */
 export function ItemForm({ categories, initial, submitLabel, onSubmit, error, readOnly = false }: Props) {
+  const theme = useTheme();
+  const styles = useStyles();
   const today = toLocalDateString();
 
   const [name, setName] = useState(initial?.name ?? '');
@@ -172,7 +174,13 @@ export function ItemForm({ categories, initial, submitLabel, onSubmit, error, re
           <Text style={styles.switchLabel}>Produit perso</Text>
           <Text style={styles.hint}>Visible par tout le foyer, mais modifiable par toi seul.</Text>
         </View>
-        <Switch value={isPersonal} onValueChange={setIsPersonal} disabled={readOnly} />
+        <Switch
+          value={isPersonal}
+          onValueChange={setIsPersonal}
+          disabled={readOnly}
+          trackColor={{ true: theme.colors.primary, false: theme.colors.line }}
+          ios_backgroundColor={theme.colors.line}
+        />
       </View>
 
       {readOnly ? null : <Button title={submitLabel} onPress={() => void handleSubmit()} loading={submitting} />}
@@ -180,10 +188,10 @@ export function ItemForm({ categories, initial, submitLabel, onSubmit, error, re
   );
 }
 
-const styles = StyleSheet.create({
-  container: { gap: spacing.md },
-  hint: { fontSize: 13, color: colors.mutedText },
-  switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  switchText: { flex: 1, gap: spacing.xs },
-  switchLabel: { fontSize: 16, fontWeight: '600', color: colors.text },
-});
+const useStyles = makeStyles((t) => ({
+  container: { gap: t.space.md },
+  hint: { ...t.type.caption, color: t.colors.ink3 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: t.space.md },
+  switchText: { flex: 1, gap: t.space.xxs },
+  switchLabel: { ...t.type.bodyBold, color: t.colors.ink },
+}));

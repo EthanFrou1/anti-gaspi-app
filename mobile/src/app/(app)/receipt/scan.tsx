@@ -1,7 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, Platform, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Platform, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
 import type { ReceiptQuota } from '@/api/types';
@@ -12,7 +12,8 @@ import { Screen } from '@/components/Screen';
 import { prepareReceiptImage } from '@/features/receipts/image';
 import { setPendingScan } from '@/features/receipts/pendingScan';
 import { receiptQuotaLabel } from '@/features/receipts/rules';
-import { colors, spacing } from '@/theme';
+import { WaitingOverlay } from '@/components/WaitingOverlay';
+import { makeStyles } from '@/theme';
 
 type Phase = 'idle' | 'preparing' | 'reading';
 
@@ -30,6 +31,7 @@ const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
  * Le résultat part vers l'écran de validation : rien n'est ajouté au frigo ici.
  */
 export default function ReceiptScanScreen() {
+  const styles = useStyles();
   const { state } = useAuth();
   const householdId = state.status === 'signedIn' ? state.user.householdId : null;
   const [quota, setQuota] = useState<ReceiptQuota | null>(null);
@@ -140,28 +142,20 @@ export default function ReceiptScanScreen() {
       <Text style={styles.privacy}>La photo sert uniquement à lire le ticket : elle n'est pas conservée.</Text>
 
       {/* Écran d'attente : la lecture peut prendre jusqu'à une minute. */}
-      <Modal visible={busy} transparent animationType="fade">
-        <View style={styles.overlay}>
-          <View style={styles.overlayCard}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.overlayTitle}>{phase === 'preparing' ? 'Préparation de la photo…' : 'Lecture du ticket…'}</Text>
-            <Text style={styles.overlayText}>Ça peut prendre jusqu'à une minute.</Text>
-          </View>
-        </View>
-      </Modal>
+      <WaitingOverlay
+        visible={busy}
+        title={phase === 'preparing' ? 'Préparation de la photo…' : 'Lecture du ticket…'}
+        text="Ça peut prendre jusqu'à une minute."
+      />
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '700', color: colors.text },
-  text: { fontSize: 15, color: colors.mutedText },
-  tips: { gap: spacing.xs },
-  tip: { fontSize: 14, color: colors.text },
-  quota: { fontSize: 13, color: colors.mutedText, textAlign: 'center' },
-  privacy: { fontSize: 13, color: colors.mutedText, marginTop: spacing.md },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: spacing.lg },
-  overlayCard: { backgroundColor: colors.background, borderRadius: 12, padding: spacing.lg, gap: spacing.md, alignItems: 'center' },
-  overlayTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
-  overlayText: { fontSize: 14, color: colors.mutedText, textAlign: 'center' },
-});
+const useStyles = makeStyles((t) => ({
+  title: { ...t.type.title2, color: t.colors.ink },
+  text: { ...t.type.body, color: t.colors.ink2 },
+  tips: { gap: t.space.xxs },
+  tip: { ...t.type.body, color: t.colors.ink },
+  quota: { ...t.type.caption, color: t.colors.ink3, textAlign: 'center' },
+  privacy: { ...t.type.caption, color: t.colors.ink3, marginTop: t.space.md },
+}));

@@ -220,6 +220,9 @@ L'app reste en mode clair jusqu'au dernier groupe d'écrans.
 - [ ] Frigo : une DDM dépassée affiche le badge violet « À vérifier » (œil) et « DDM dépassée : encore bon ? », jamais « Périmé ».
 - [ ] Frigo : un produit perso affiche le badge neutre « Perso · Prénom » avec l'avatar ; deux colocataires ont deux couleurs différentes.
 - [ ] Frigo : filtres Tout / Commun / À moi, tirer pour rafraîchir, état vide et état « sans foyer » aux couleurs de la charte.
+- [ ] Ajout et fiche produit : titres en Fredoka, interrupteur « Produit perso » mandarine, bandeau « lecture seule » neutre sur le produit perso d'un autre membre, lien « Supprimer (erreur de saisie) » en rouge souligné.
+- [ ] Scan du code-barres : cadre de visée mandarine, consigne sur fond sombre arrondi ; confirmation avec aperçu du produit en carte (image sur fond blanc).
+- [ ] Ticket : écran d'attente en carte sur fond assombri ; validation avec cartes, cases à cocher encre (cochée : fond mandarine et coche), ligne décochée atténuée, ligne en erreur bordée de rouge.
 
 ### Scan du ticket de caisse (V2)
 

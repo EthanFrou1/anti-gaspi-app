@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError, type ApiError } from '@/api/errors';
 import type { InventoryItem, SaveInventoryItemRequest } from '@/api/types';
@@ -11,9 +11,11 @@ import { Screen } from '@/components/Screen';
 import { ItemForm } from '@/features/inventory/ItemForm';
 import { canModifyItem } from '@/features/inventory/rules';
 import { useCategories } from '@/features/inventory/useCategories';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 
 export default function EditItemScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useAuth();
   const user = state.status === 'signedIn' ? state.user : null;
@@ -49,7 +51,7 @@ export default function EditItemScreen() {
   if (!item || !categories) {
     return (
       <Screen hasHeader>
-        <ActivityIndicator style={styles.loader} size="large" color={colors.primary} />
+        <ActivityIndicator style={styles.loader} size="large" color={theme.colors.primary} />
       </Screen>
     );
   }
@@ -118,29 +120,32 @@ export default function EditItemScreen() {
         <View style={styles.actions}>
           <Button title="Consommé" variant="secondary" onPress={() => void runAction(() => api.inventory.consume(householdId, item.id))} />
           <Button title="Jeté" variant="secondary" onPress={() => void runAction(() => api.inventory.discard(householdId, item.id))} />
-          <Text style={styles.deleteLink} onPress={confirmDelete} accessibilityRole="button">
-            Supprimer (erreur de saisie)
-          </Text>
+          <Pressable onPress={confirmDelete} accessibilityRole="button" style={styles.deleteButton} hitSlop={6}>
+            <Text style={styles.deleteText}>Supprimer (erreur de saisie)</Text>
+          </Pressable>
         </View>
       ) : null}
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xl },
+const useStyles = makeStyles((t) => ({
+  loader: { marginTop: t.space['2xl'] },
+  // Bandeau neutre (mêmes couleurs que le badge « Perso ») : information, pas une erreur.
   readOnly: {
-    backgroundColor: '#FFF8E1',
-    color: colors.text,
-    padding: spacing.md,
-    borderRadius: 8,
+    ...t.type.callout,
+    backgroundColor: t.persoBadge.bg,
+    color: t.persoBadge.fg,
+    padding: t.space.md,
+    borderRadius: t.radius.sm,
   },
   actions: {
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    gap: t.space.sm,
+    marginTop: t.space.md,
+    paddingTop: t.space.md,
+    borderTopWidth: t.borderWidth.hairline,
+    borderTopColor: t.colors.line,
   },
-  deleteLink: { color: colors.error, textAlign: 'center', padding: spacing.sm },
-});
+  deleteButton: { minHeight: t.layout.minTouch, alignItems: 'center', justifyContent: 'center' },
+  deleteText: { ...t.type.callout, color: t.colors.danger, textDecorationLine: 'underline' },
+}));

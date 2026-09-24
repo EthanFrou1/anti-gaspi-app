@@ -5,13 +5,15 @@ import { ActivityIndicator, Linking, StyleSheet, Text, View } from 'react-native
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { FOOD_BARCODE_TYPES, readFoodBarcode } from '@/features/scan/barcode';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 
 /**
  * Scan d'un code-barres. Dès qu'un code valide est lu, on passe à l'écran de
  * confirmation (qui interroge l'API) : rien n'est ajouté sans validation.
  */
 export default function ScanScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const [permission, requestPermission] = useCameraPermissions();
   // La caméra signale le même code plusieurs fois par seconde : on ne traite que le premier.
   const handled = useRef(false);
@@ -25,7 +27,7 @@ export default function ScanScreen() {
   if (!permission) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -83,28 +85,33 @@ export default function ScanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
-  title: { fontSize: 20, fontWeight: '700', color: colors.text },
-  text: { fontSize: 15, color: colors.mutedText },
-  overlay: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, padding: spacing.lg },
+const useStyles = makeStyles((t) => ({
+  // L'image de la caméra reste sur fond noir, dans les deux modes.
+  container: { flex: 1, backgroundColor: '#000000' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.colors.bg },
+  title: { ...t.type.title3, color: t.colors.ink },
+  text: { ...t.type.body, color: t.colors.ink2 },
+  overlay: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: t.space.xl, padding: t.layout.screenPadding },
   frame: {
     width: '85%',
     aspectRatio: 2,
     borderWidth: 3,
-    borderColor: '#FFFFFF',
-    borderRadius: 12,
+    borderColor: t.palette.tangerine.base,
+    borderRadius: t.radius.lg,
   },
   instructions: {
+    ...t.type.bodyBold,
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
     textAlign: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
+    backgroundColor: t.colors.scrim,
+    paddingHorizontal: t.space.md,
+    paddingVertical: t.space.xs,
+    borderRadius: t.radius.pill,
   },
-  manual: { position: 'absolute', bottom: spacing.xl, left: spacing.lg, right: spacing.lg, backgroundColor: colors.background, borderRadius: 8 },
-});
+  manual: {
+    position: 'absolute',
+    bottom: t.space['2xl'],
+    left: t.layout.screenPadding,
+    right: t.layout.screenPadding,
+  },
+}));
