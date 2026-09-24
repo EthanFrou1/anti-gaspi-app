@@ -203,6 +203,7 @@ Les écrans ne sont pas encore migrés : leur texte reste dans la police du syst
 - [ ] L'ancien onglet Compte s'appelle Profil (déconnexion, préférences, suppression du compte inchangées).
 - [ ] Bouton 🔔 de test des rappels : maintenant dans l'en-tête du Frigo (build de développement uniquement).
 - [ ] Pastilles (filtres du Frigo, unités, raccourcis de date) : la sélection a une coche et un bord plus épais. Champs : bord plus épais pendant la saisie. Sélecteur de catégorie : icône devant chaque catégorie, coche sur la catégorie choisie.
+- [ ] Sélecteur de catégorie : l'en-tête (« Catégorie », « Fermer ») ne passe plus sous la barre d'état. iOS : la liste s'ouvre en feuille et se ferme aussi en la glissant vers le bas ; Android : bouton retour. Après fermeture par glissement, elle se rouvre normalement.
 - [ ] Réglages → Accessibilité → Réduire les animations : le panneau apparaît sans glisser.
 - [ ] Texte agrandi (réglages d'accessibilité) : la barre d'onglets reste lisible.
 - [ ] Android : le « + » dépasse bien de la barre sans être coupé.

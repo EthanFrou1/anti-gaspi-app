@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FlatList, Modal, Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import type { Category } from '@/api/types';
 import { CategoryIcon } from '@/components/CategoryIcon';
 import { useFieldStyles } from '@/components/TextField';
@@ -40,39 +40,49 @@ export function CategoryPicker({ categories, value, onChange, error, disabled }:
       </Pressable>
       {error ? <Text style={field.error}>{error}</Text> : null}
 
-      <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
-        <SafeAreaView style={styles.modal}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Catégorie</Text>
-            <Pressable onPress={() => setOpen(false)} accessibilityRole="button" hitSlop={8}>
-              <Text style={styles.close}>Fermer</Text>
-            </Pressable>
-          </View>
-          <FlatList
-            data={categories}
-            keyExtractor={(c) => String(c.id)}
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => {
-                  onChange(item.id);
-                  setOpen(false);
-                }}
-                accessibilityRole="button"
-                accessibilityState={{ selected: item.id === value }}
-                style={({ pressed }) => [styles.option, item.id === value && styles.optionSelected, pressed && styles.optionPressed]}
-              >
-                <CategoryIcon code={item.code} />
-                <View style={styles.optionText}>
-                  <Text style={styles.optionName}>{item.name}</Text>
-                  <Text style={styles.optionMeta}>
-                    ≈ {formatDuration(item.defaultShelfLifeDays)} · {item.expiryKind === 'UseBy' ? 'DLC' : 'DDM'}
-                  </Text>
-                </View>
-                {item.id === value ? <Text style={styles.check}>✓</Text> : null}
+      {/*
+        pageSheet (iOS) : la liste s'ouvre en « feuille » sous la barre d'état, et se ferme aussi
+        en la faisant glisser vers le bas (onRequestClose est alors appelé). Ignoré sur Android.
+      */}
+      <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOpen(false)}>
+        {/*
+          Une Modal s'affiche dans sa propre fenêtre native : sans son propre SafeAreaProvider,
+          les marges de l'encoche y valent 0 et l'en-tête passe sous la barre d'état.
+        */}
+        <SafeAreaProvider>
+          <SafeAreaView style={styles.modal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Catégorie</Text>
+              <Pressable onPress={() => setOpen(false)} accessibilityRole="button" hitSlop={12} style={styles.closeButton}>
+                <Text style={styles.close}>Fermer</Text>
               </Pressable>
-            )}
-          />
-        </SafeAreaView>
+            </View>
+            <FlatList
+              data={categories}
+              keyExtractor={(c) => String(c.id)}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => {
+                    onChange(item.id);
+                    setOpen(false);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: item.id === value }}
+                  style={({ pressed }) => [styles.option, item.id === value && styles.optionSelected, pressed && styles.optionPressed]}
+                >
+                  <CategoryIcon code={item.code} />
+                  <View style={styles.optionText}>
+                    <Text style={styles.optionName}>{item.name}</Text>
+                    <Text style={styles.optionMeta}>
+                      ≈ {formatDuration(item.defaultShelfLifeDays)} · {item.expiryKind === 'UseBy' ? 'DLC' : 'DDM'}
+                    </Text>
+                  </View>
+                  {item.id === value ? <Text style={styles.check}>✓</Text> : null}
+                </Pressable>
+              )}
+            />
+          </SafeAreaView>
+        </SafeAreaProvider>
       </Modal>
     </View>
   );
@@ -104,6 +114,7 @@ const useStyles = makeStyles((t) => ({
   },
   modalTitle: { ...t.type.title3, color: t.colors.ink },
   close: { ...t.type.bodyBold, color: t.colors.primaryText },
+  closeButton: { minHeight: t.layout.minTouch, justifyContent: 'center' },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
