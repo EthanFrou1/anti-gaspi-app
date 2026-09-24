@@ -189,32 +189,36 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 ## Scan du ticket de caisse (V2)
 
 Flux :
-1. L'app prend la photo et la compresse.
+1. L'app prend la photo (appareil ou galerie, recadrage), la redimensionne à 1568 px sur le grand côté (résolution maximale lue par Haiku 4.5) et la compresse en JPEG.
 2. L'app l'envoie à l'API .NET.
-3. L'API appelle le modèle de vision avec un prompt et un **format de sortie JSON imposé**.
-4. L'API mappe chaque catégorie vers une durée de conservation estimée.
-5. L'app affiche **un écran de validation obligatoire** : l'utilisateur coche, corrige ou supprime les lignes avant l'ajout à l'inventaire.
+3. L'API appelle le modèle de vision avec un prompt et un **format de sortie JSON imposé**, derrière l'interface `IReceiptReader` (`Fake` en développement, `Claude` sinon, comme les recettes).
+4. L'API valide la réponse et estime la date de péremption de chaque ligne à partir de sa catégorie.
+5. L'app affiche **un écran de validation obligatoire** : l'utilisateur coche, corrige ou supprime les lignes avant l'ajout à l'inventaire (en une seule transaction).
 
-Format de sortie attendu :
+Format de sortie imposé (catégories et unités en listes fermées, construites depuis la base) :
 
 ```json
 {
-  "enseigne": "string",
-  "date_achat": "YYYY-MM-DD",
-  "produits": [
+  "purchaseDate": "YYYY-MM-DD ou null",
+  "lines": [
     {
-      "libelle_ticket": "string (texte brut du ticket)",
-      "nom_normalise": "string (nom lisible)",
-      "categorie": "string (catégorie connue de l'app)",
-      "quantite": 0,
-      "unite": "string",
-      "alimentaire": true
+      "receiptText": "string (libellé brut du ticket)",
+      "isFood": true,
+      "name": "string (nom lisible)",
+      "category": "code d'une catégorie de l'app (ex. ground-meat)",
+      "quantity": 0,
+      "unit": "Piece | Gram | Kilogram | Milliliter | Liter"
     }
   ]
 }
 ```
 
-Règles : ignorer les produits non alimentaires, valider le JSON côté API avant de l'utiliser, **ne jamais stocker l'image** après traitement (RGPD).
+Règles :
+- **Ne jamais stocker l'image** après traitement (RGPD), ni la journaliser.
+- **Minimisation** : seuls les articles et la date d'achat sont extraits (ni magasin, ni adresse, ni carte bancaire ou de fidélité).
+- Validation côté API : lignes non alimentaires écartées, 60 lignes au plus, noms nettoyés, catégorie inconnue remplacée par « Autre », unité ou quantité invalide remplacée par 1 pièce, date d'achat future ou de plus de 30 jours remplacée par aujourd'hui. Une réponse inexploitable dans son ensemble (refus, coupée, illisible) donne une erreur 503, non décomptée du quota.
+- Quotas : 3 lectures par jour et par utilisateur, 50 par jour pour toute l'API, séparés de ceux des recettes. Modèle réglable à part (`Ai:ReceiptModel`, Haiku 4.5 par défaut) : si la lecture de vrais tickets déçoit, on passe à un modèle plus précis sans toucher aux recettes.
+- Tickets longs : les photographier en plusieurs fois (un scan par partie).
 
 ## Règles de sécurité (non négociables)
 

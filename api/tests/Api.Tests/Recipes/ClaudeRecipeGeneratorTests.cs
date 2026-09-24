@@ -1,18 +1,19 @@
 using System.Net;
-using System.Text;
 using System.Text.Json;
-using Anthropic;
 using Api.Entities;
 using Api.Options;
+using Api.Services.Ai;
 using Api.Services.Recipes;
+using Api.Tests.Infrastructure;
 using Microsoft.Extensions.Logging.Abstractions;
+using static Api.Tests.Infrastructure.FakeAnthropicServer;
 using static Api.Tests.Recipes.RecipePromptBuilderTests;
 
 namespace Api.Tests.Recipes;
 
 /// <summary>
 /// Le vrai client Claude, branché sur un faux serveur Anthropic : on vérifie la requête
-/// envoyée et le traitement de chaque type de réponse, sans clé ni crédits consommés.
+/// envoyée et le traitement de chaque type de réponse (ClaudeStructuredCall).
 /// </summary>
 public class ClaudeRecipeGeneratorTests
 {
@@ -58,7 +59,7 @@ public class ClaudeRecipeGeneratorTests
         // Même avec un JSON valide, un refus ou une réponse coupée ne doit pas être utilisé.
         var (generator, _) = Create(_ => Message(RecipeJson, stopReason));
 
-        await Assert.ThrowsAsync<RecipeGenerationUnavailableException>(() =>
+        await Assert.ThrowsAsync<AiUnavailableException>(() =>
             generator.GenerateAsync(Prompt, CancellationToken.None));
     }
 
@@ -68,13 +69,9 @@ public class ClaudeRecipeGeneratorTests
     [InlineData(HttpStatusCode.Unauthorized, "authentication_error")]
     public async Task ApiErrors_AreUnavailable(HttpStatusCode status, string errorType)
     {
-        var (generator, _) = Create(_ => new HttpResponseMessage(status)
-        {
-            Content = new StringContent(
-                $$$"""{"type":"error","error":{"type":"{{{errorType}}}","message":"simulé"}}""", Encoding.UTF8, "application/json"),
-        });
+        var (generator, _) = Create(_ => Error(status, errorType));
 
-        await Assert.ThrowsAsync<RecipeGenerationUnavailableException>(() =>
+        await Assert.ThrowsAsync<AiUnavailableException>(() =>
             generator.GenerateAsync(Prompt, CancellationToken.None));
     }
 
@@ -83,54 +80,15 @@ public class ClaudeRecipeGeneratorTests
     {
         var (generator, _) = Create(_ => throw new HttpRequestException("connexion refusée"));
 
-        await Assert.ThrowsAsync<RecipeGenerationUnavailableException>(() =>
+        await Assert.ThrowsAsync<AiUnavailableException>(() =>
             generator.GenerateAsync(Prompt, CancellationToken.None));
     }
 
-    // ---------- Faux serveur Anthropic ----------
-
-    private static HttpResponseMessage Message(string text, string stopReason)
+    private static (ClaudeRecipeGenerator Generator, FakeAnthropicServer Server) Create(Func<HttpRequestMessage, HttpResponseMessage> respond)
     {
-        var body = JsonSerializer.Serialize(new
-        {
-            id = "msg_test",
-            type = "message",
-            role = "assistant",
-            model = "claude-haiku-4-5-20251001",
-            content = new[] { new { type = "text", text } },
-            stop_reason = stopReason,
-            stop_sequence = (string?)null,
-            usage = new { input_tokens = 900, output_tokens = 250, cache_creation_input_tokens = 0, cache_read_input_tokens = 0 },
-        });
-        return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
-    }
-
-    private static (ClaudeRecipeGenerator Generator, FakeServer Server) Create(Func<HttpRequestMessage, HttpResponseMessage> respond)
-    {
-        var server = new FakeServer(respond);
-        var client = new AnthropicClient
-        {
-            ApiKey = "cle-factice",
-            HttpClient = new HttpClient(server),
-            // Pas de nouvelle tentative : les tests restent rapides et déterministes.
-            MaxRetries = 0,
-        };
+        var server = new FakeAnthropicServer(respond);
         var generator = new ClaudeRecipeGenerator(
-            client, Microsoft.Extensions.Options.Options.Create(new AiOptions()), NullLogger<ClaudeRecipeGenerator>.Instance);
+            server.CreateClient(), Microsoft.Extensions.Options.Options.Create(new AiOptions()), NullLogger<ClaudeRecipeGenerator>.Instance);
         return (generator, server);
-    }
-
-    private sealed class FakeServer(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
-    {
-        public string? LastBody { get; private set; }
-
-        public Uri? LastUri { get; private set; }
-
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
-        {
-            LastUri = request.RequestUri;
-            LastBody = request.Content is null ? null : await request.Content.ReadAsStringAsync(ct);
-            return respond(request);
-        }
     }
 }

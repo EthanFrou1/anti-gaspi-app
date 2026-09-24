@@ -23,7 +23,7 @@ builder.Services
     .AddAppAuthorization()
     .AddApplicationServices()
     .AddOpenFoodFacts(builder.Configuration)
-    .AddRecipeGeneration(builder.Configuration, builder.Environment)
+    .AddAiFeatures(builder.Configuration, builder.Environment)
     .AddReverseProxySupport(builder.Configuration)
     .AddAppHealthChecks();
 

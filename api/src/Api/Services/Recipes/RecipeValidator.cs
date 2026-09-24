@@ -1,3 +1,5 @@
+using Api.Services.Ai;
+
 namespace Api.Services.Recipes;
 
 public sealed record ValidatedIngredient(string Name, string Quantity, Guid? InventoryItemId);
@@ -68,7 +70,7 @@ public static class RecipeValidator
     {
         if (!condition)
         {
-            throw new RecipeGenerationUnavailableException($"Réponse de l'IA invalide : {reason}.");
+            throw new AiUnavailableException($"Réponse de l'IA invalide : {reason}.");
         }
     }
 }

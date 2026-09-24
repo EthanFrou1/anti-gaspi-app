@@ -46,13 +46,6 @@ public sealed record RecipeDraft(
 public sealed record RecipeDraftIngredient(string? Name, string? Quantity, string? InventoryRef);
 
 /// <summary>
-/// L'IA n'a pas pu fournir de recette exploitable (panne, délai, refus, réponse invalide…).
-/// L'API répond 503 et la génération n'est pas décomptée du quota.
-/// </summary>
-public sealed class RecipeGenerationUnavailableException(string reason, Exception? inner = null)
-    : Exception(reason, inner);
-
-/// <summary>
 /// Point d'entrée unique vers l'IA : changer de fournisseur = écrire une autre implémentation.
 /// </summary>
 public interface IRecipeGenerator

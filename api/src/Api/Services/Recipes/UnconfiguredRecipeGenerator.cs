@@ -1,3 +1,5 @@
+using Api.Services.Ai;
+
 namespace Api.Services.Recipes;
 
 /// <summary>
@@ -8,6 +10,6 @@ namespace Api.Services.Recipes;
 public sealed class UnconfiguredRecipeGenerator : IRecipeGenerator
 {
     public Task<RecipeDraft> GenerateAsync(RecipePrompt prompt, CancellationToken ct) =>
-        throw new RecipeGenerationUnavailableException(
+        throw new AiUnavailableException(
             "IA non configurée : renseigne la clé Anthropic:ApiKey dans les user-secrets.");
 }

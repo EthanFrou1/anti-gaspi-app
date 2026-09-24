@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
+using Api.Common;
 using Api.Entities;
 using Api.Services.Profiles;
 
@@ -10,7 +10,7 @@ namespace Api.Services.Recipes;
 /// Construit le prompt envoyé à l'IA. Fonction pure : testable, et utilisée telle quelle
 /// par l'aperçu du prompt (endpoint de développement).
 /// </summary>
-public static partial class RecipePromptBuilder
+public static class RecipePromptBuilder
 {
     // Au-delà, on coupe : le prompt reste court (coût) et ce qui périme en premier est en tête.
     public const int MaxItems = 40;
@@ -89,12 +89,7 @@ public static partial class RecipePromptBuilder
     /// Nom de produit (texte libre) : caractères de contrôle et retours à la ligne retirés,
     /// espaces normalisés, longueur bornée. Il est ensuite transmis comme valeur JSON.
     /// </summary>
-    public static string Sanitize(string name)
-    {
-        var cleaned = ControlCharacters().Replace(name, " ");
-        cleaned = MultipleSpaces().Replace(cleaned, " ").Trim();
-        return cleaned.Length <= MaxNameLength ? cleaned : cleaned[..MaxNameLength];
-    }
+    public static string Sanitize(string name) => TextSanitizer.SingleLine(name, MaxNameLength);
 
     private static string BuildUserContent(MealConstraints c, IReadOnlyList<PromptItemRef> items, DateOnly today)
     {
@@ -136,10 +131,4 @@ public static partial class RecipePromptBuilder
         builder.Append(json);
         return builder.ToString();
     }
-
-    [GeneratedRegex(@"[\p{C}]")]
-    private static partial Regex ControlCharacters();
-
-    [GeneratedRegex(@"\s+")]
-    private static partial Regex MultipleSpaces();
 }

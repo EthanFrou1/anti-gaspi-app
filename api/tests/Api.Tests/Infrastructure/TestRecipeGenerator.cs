@@ -1,3 +1,4 @@
+using Api.Services.Ai;
 using Api.Services.Recipes;
 
 namespace Api.Tests.Infrastructure;
@@ -33,7 +34,7 @@ public sealed class TestRecipeGenerator : IRecipeGenerator
         }
         if (FailWithUnavailable)
         {
-            throw new RecipeGenerationUnavailableException("panne simulée");
+            throw new AiUnavailableException("panne simulée");
         }
         return Override?.Invoke(prompt) ?? await _fake.GenerateAsync(prompt, ct);
     }

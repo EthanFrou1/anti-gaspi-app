@@ -48,6 +48,23 @@ public sealed class AiOptions
     // Fuseau qui définit « aujourd'hui » pour les quotas (remise à zéro à minuit).
     [Required]
     public string TimeZone { get; init; } = "Europe/Paris";
+
+    // ---------- Lecture des tickets de caisse ----------
+
+    // Modèle séparé des recettes (il doit accepter les images) : si la lecture de vrais
+    // tickets déçoit, on passe à un modèle plus précis sans toucher aux recettes.
+    [Required]
+    public string ReceiptModel { get; init; } = "claude-haiku-4-5-20251001";
+
+    // Un ticket de 60 lignes produit environ 2 500 tokens : la limite n'est qu'un plafond.
+    [Range(1000, 16000)]
+    public int ReceiptMaxOutputTokens { get; init; } = 4000;
+
+    [Range(1, 20)]
+    public int ReceiptDailyLimitPerUser { get; init; } = 3;
+
+    [Range(1, 100_000)]
+    public int ReceiptGlobalDailyLimit { get; init; } = 50;
 }
 
 /// <summary>

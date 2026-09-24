@@ -4,6 +4,7 @@ using Api.Data;
 using Api.Dtos.Recipes;
 using Api.Entities;
 using Api.Options;
+using Api.Services.Ai;
 using Api.Services.Inventory;
 using Api.Services.Profiles;
 using Microsoft.EntityFrameworkCore;
@@ -142,7 +143,7 @@ public sealed class RecipeService(
             var draft = await generator.GenerateAsync(prompt.Value, ct);
             recipe = RecipeValidator.Validate(draft, prompt.Value);
         }
-        catch (RecipeGenerationUnavailableException ex)
+        catch (AiUnavailableException ex)
         {
             logger.LogWarning("Recette non générée : {Reason}", ex.Message);
             await CancelReservationAsync(reservation.Value);

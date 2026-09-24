@@ -1,4 +1,5 @@
 using Api.Services.Products;
+using Api.Services.Receipts;
 using Api.Services.Recipes;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -34,6 +35,7 @@ public sealed class ApiFactory(string connectionString, FakeOpenFoodFactsClient 
         {
             services.AddSingleton<IOpenFoodFactsClient>(openFoodFacts);
             services.AddSingleton<IRecipeGenerator, FakeRecipeGenerator>();
+            services.AddSingleton<IReceiptReader, FakeReceiptReader>();
         });
     }
 }

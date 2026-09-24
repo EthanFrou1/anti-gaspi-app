@@ -8,6 +8,7 @@ using Api.Services.Households;
 using Api.Services.Inventory;
 using Api.Services.Products;
 using Api.Services.Profiles;
+using Api.Services.Receipts;
 using Api.Services.Recipes;
 using Anthropic;
 using Api.Services.Users;
@@ -150,11 +151,11 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Génération de recettes : choisit le générateur selon Ai:Provider, après le garde-fou
-    /// (Fake interdit hors Development, clé obligatoire en production). Une configuration
-    /// invalide lève une exception : l'API ne démarre pas.
+    /// Fonctionnalités d'IA (recettes, lecture des tickets) : choisit les implémentations
+    /// selon Ai:Provider, après le garde-fou (Fake interdit hors Development, clé obligatoire
+    /// en production). Une configuration invalide lève une exception : l'API ne démarre pas.
     /// </summary>
-    public static IServiceCollection AddRecipeGeneration(
+    public static IServiceCollection AddAiFeatures(
         this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         var apiKey = configuration[$"{AnthropicOptions.SectionName}:{nameof(AnthropicOptions.ApiKey)}"];
@@ -178,6 +179,7 @@ public static class ServiceCollectionExtensions
         if (provider == AiProvider.Fake)
         {
             services.AddSingleton<IRecipeGenerator, FakeRecipeGenerator>();
+            services.AddSingleton<IReceiptReader, FakeReceiptReader>();
             return services;
         }
 
@@ -197,6 +199,9 @@ public static class ServiceCollectionExtensions
             // Développement sans clé : l'API démarre, la génération répond « IA non configurée ».
             ? new UnconfiguredRecipeGenerator()
             : ActivatorUtilities.CreateInstance<ClaudeRecipeGenerator>(provider2));
+        services.AddSingleton<IReceiptReader>(provider2 => string.IsNullOrWhiteSpace(apiKey)
+            ? new UnconfiguredReceiptReader()
+            : ActivatorUtilities.CreateInstance<ClaudeReceiptReader>(provider2));
         return services;
     }
 

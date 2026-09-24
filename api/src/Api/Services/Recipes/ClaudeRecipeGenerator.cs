@@ -1,24 +1,23 @@
 using System.Text.Json;
 using Anthropic;
-using Anthropic.Exceptions;
 using Anthropic.Models.Messages;
 using Api.Options;
+using Api.Services.Ai;
 using Microsoft.Extensions.Options;
 
 namespace Api.Services.Recipes;
 
 /// <summary>
-/// Génération par Claude (API Anthropic, SDK officiel). Seule classe du projet qui connaît
-/// le fournisseur : le reste du code ne voit que IRecipeGenerator.
+/// Génération par Claude (API Anthropic, SDK officiel). Avec ClaudeReceiptReader, seules
+/// classes du projet qui construisent une requête Anthropic : le reste du code ne voit que
+/// IRecipeGenerator.
 /// </summary>
 public sealed class ClaudeRecipeGenerator(
     AnthropicClient client,
     IOptions<AiOptions> options,
     ILogger<ClaudeRecipeGenerator> logger) : IRecipeGenerator
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
-    public async Task<RecipeDraft> GenerateAsync(RecipePrompt prompt, CancellationToken ct)
+    public Task<RecipeDraft> GenerateAsync(RecipePrompt prompt, CancellationToken ct)
     {
         var settings = options.Value;
         var parameters = new MessageCreateParams
@@ -39,68 +38,6 @@ public sealed class ClaudeRecipeGenerator(
             },
         };
 
-        Message response;
-        try
-        {
-            response = await client.Messages.Create(parameters, ct);
-        }
-        // Du plus précis au plus général : le SDK a déjà réessayé les erreurs temporaires
-        // (429, 5xx, réseau) selon MaxRetries ; ici, c'est l'échec définitif.
-        catch (AnthropicRateLimitException ex)
-        {
-            throw Unavailable("limite de débit Anthropic atteinte (429)", ex);
-        }
-        catch (Anthropic5xxException ex)
-        {
-            throw Unavailable("Anthropic indisponible ou surchargé (5xx)", ex);
-        }
-        catch (AnthropicApiException ex)
-        {
-            // 4xx (requête invalide, clé refusée…) : erreur de configuration à corriger.
-            logger.LogError(ex, "Requête refusée par l'API Anthropic.");
-            throw Unavailable("requête refusée par l'API Anthropic", ex);
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or AnthropicException
-                                   && !ct.IsCancellationRequested)
-        {
-            throw Unavailable("Anthropic injoignable ou délai dépassé", ex);
-        }
-
-        // Coût réel mesuré à chaque appel (aucune donnée personnelle dans ce journal).
-        logger.LogInformation(
-            "Recette générée par {Model} : {InputTokens} tokens en entrée ({CacheRead} lus en cache), {OutputTokens} en sortie, arrêt {StopReason}.",
-            settings.Model,
-            response.Usage.InputTokens,
-            response.Usage.CacheReadInputTokens,
-            response.Usage.OutputTokens,
-            response.StopReason);
-
-        // Décision du projet : un refus du modèle est une erreur (pas de repli sur un autre modèle).
-        if (response.StopReason == StopReason.Refusal)
-        {
-            throw new RecipeGenerationUnavailableException("le modèle a refusé la demande");
-        }
-
-        if (response.StopReason == StopReason.MaxTokens)
-        {
-            throw new RecipeGenerationUnavailableException("réponse coupée (limite de tokens atteinte)");
-        }
-
-        var text = string.Concat(response.Content.Select(b => b.Value).OfType<TextBlock>().Select(t => t.Text));
-        try
-        {
-            return JsonSerializer.Deserialize<RecipeDraft>(text, JsonOptions)
-                ?? throw new RecipeGenerationUnavailableException("réponse vide");
-        }
-        catch (JsonException ex)
-        {
-            throw new RecipeGenerationUnavailableException("réponse JSON illisible", ex);
-        }
-    }
-
-    private RecipeGenerationUnavailableException Unavailable(string reason, Exception inner)
-    {
-        logger.LogWarning(inner, "Génération de recette impossible : {Reason}.", reason);
-        return new RecipeGenerationUnavailableException(reason, inner);
+        return ClaudeStructuredCall.SendAsync<RecipeDraft>(client, parameters, logger, "Génération de recette", ct);
     }
 }

@@ -1,4 +1,5 @@
 using Api.Entities;
+using Api.Services.Ai;
 using Api.Services.Recipes;
 using static Api.Tests.Recipes.RecipePromptBuilderTests;
 
@@ -36,13 +37,13 @@ public class RecipeValidatorTests
     {
         var draft = Draft(ingredients: [new("Poulet", "200 g", "p99")]);
 
-        Assert.Throws<RecipeGenerationUnavailableException>(() => RecipeValidator.Validate(draft, Prompt));
+        Assert.Throws<AiUnavailableException>(() => RecipeValidator.Validate(draft, Prompt));
     }
 
     [Fact]
     public void TooLongPreparation_ForTheConstraint_IsRejected()
     {
-        Assert.Throws<RecipeGenerationUnavailableException>(() => RecipeValidator.Validate(Draft(minutes: 45), Prompt));
+        Assert.Throws<AiUnavailableException>(() => RecipeValidator.Validate(Draft(minutes: 45), Prompt));
     }
 
     [Theory]
@@ -51,15 +52,15 @@ public class RecipeValidatorTests
     [InlineData(null)]
     public void MissingTitle_IsRejected(string? title)
     {
-        Assert.Throws<RecipeGenerationUnavailableException>(() => RecipeValidator.Validate(Draft(title: title), Prompt));
+        Assert.Throws<AiUnavailableException>(() => RecipeValidator.Validate(Draft(title: title), Prompt));
     }
 
     [Fact]
     public void NoStepsOrTooManySteps_AreRejected()
     {
-        Assert.Throws<RecipeGenerationUnavailableException>(() => RecipeValidator.Validate(Draft(steps: []), Prompt));
+        Assert.Throws<AiUnavailableException>(() => RecipeValidator.Validate(Draft(steps: []), Prompt));
         var tooMany = Enumerable.Repeat("Étape.", RecipeValidator.MaxSteps + 1).ToArray();
-        Assert.Throws<RecipeGenerationUnavailableException>(() => RecipeValidator.Validate(Draft(steps: tooMany), Prompt));
+        Assert.Throws<AiUnavailableException>(() => RecipeValidator.Validate(Draft(steps: tooMany), Prompt));
     }
 
     [Fact]
