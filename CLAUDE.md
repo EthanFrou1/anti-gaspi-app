@@ -241,17 +241,6 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Réduire les animations activé : pas de confettis, pas de rebond ni de balancement ; le message s'affiche quand même.
 - [ ] Mode sombre : les illustrations restent lisibles (disque crème).
 
-### Profil et réglages
-
-- [ ] Profil : avatar, nom et email, puis des sections comme les Réglages d'iOS (Apparence, Mon compte, Notifications, À propos, Session), chaque ligne avec son icône.
-- [ ] Profil → Thème : Automatique, Clair ou Sombre, avec une coche sur le choix actuel ; l'app change aussitôt, alertes, calendrier et clavier compris.
-- [ ] Le thème choisi est gardé après avoir fermé puis relancé l'app, sans passer un instant par l'autre mode au démarrage.
-- [ ] Automatique : l'app suit le réglage du téléphone (y compris quand il bascule seul le soir).
-- [ ] Préférences alimentaires, Mon foyer (ouvre l'onglet Foyer), Rappels de péremption (ouvre les réglages de l'app dans le téléphone), Open Food Facts (ouvre le site).
-- [ ] Version de Leftly affichée (1.0.0) ; « Se déconnecter » affiche un indicateur puis renvoie à la connexion.
-- [ ] « Supprimer mon compte » (en rouge) ouvre un écran à part ; la suppression marche comme avant (mot de passe, puis confirmation).
-- [ ] VoiceOver : sur l'écran Thème, les choix sont annoncés comme des boutons radio, « sélectionné » pour le choix actuel.
-
 ### Scan du ticket de caisse (V2)
 
 - [ ] Frigo → « Ticket » : l'écran affiche les conseils et « 3 scans de ticket restants aujourd'hui ».
