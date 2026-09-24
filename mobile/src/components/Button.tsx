@@ -10,6 +10,10 @@ type ButtonProps = {
   loading?: boolean;
   disabled?: boolean;
   variant?: ButtonVariant;
+  // « small » : bouton compact dans une liste (ex. « Mangé » / « Jeté » d'une ligne du frigo).
+  size?: 'regular' | 'small';
+  // Libellé lu par VoiceOver / TalkBack, si le texte seul ne suffit pas (« Yaourt : consommé »).
+  accessibilityLabel?: string;
 };
 
 /**
@@ -20,7 +24,15 @@ type ButtonProps = {
  * pour Android, où elevation floute toujours). On l'utilise aussi sur iOS : l'ombre native y
  * suivrait le bouton quand il s'enfonce, alors qu'elle doit rester en place. Même rendu partout.
  */
-export function Button({ title, onPress, loading = false, disabled = false, variant = 'primary' }: ButtonProps) {
+export function Button({
+  title,
+  onPress,
+  loading = false,
+  disabled = false,
+  variant = 'primary',
+  size = 'regular',
+  accessibilityLabel,
+}: ButtonProps) {
   const theme = useTheme();
   const styles = useStyles();
   const isDisabled = disabled || loading;
@@ -34,14 +46,17 @@ export function Button({ title, onPress, loading = false, disabled = false, vari
       onPressOut={onPressOut}
       disabled={isDisabled}
       accessibilityRole="button"
-      accessibilityLabel={title}
+      accessibilityLabel={accessibilityLabel ?? title}
+      // Zone tactile d'au moins 44 pt, même pour la taille compacte.
+      hitSlop={size === 'small' ? 6 : undefined}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={styles.wrapper}
     >
-      {isDisabled ? null : <View style={styles.shadow} />}
+      {isDisabled ? null : <View style={[styles.shadow, size === 'small' && styles.smallRadius]} />}
       <Animated.View
         style={[
           styles.face,
+          size === 'small' && [styles.smallFace, styles.smallRadius],
           { backgroundColor: background },
           isDisabled && styles.disabled,
           { transform: [{ translateY }] },
@@ -50,7 +65,7 @@ export function Button({ title, onPress, loading = false, disabled = false, vari
         {loading ? (
           <ActivityIndicator color={foreground} />
         ) : (
-          <Text style={[styles.text, { color: foreground }]}>{title}</Text>
+          <Text style={[styles.text, size === 'small' && styles.smallText, { color: foreground }]}>{title}</Text>
         )}
       </Animated.View>
     </Pressable>
@@ -90,6 +105,9 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: t.space.lg,
     paddingVertical: t.space.xs,
   },
+  smallFace: { minHeight: 36, paddingHorizontal: t.space.sm, paddingVertical: t.space.xxs },
+  smallRadius: { borderRadius: t.radius.sm },
   disabled: { opacity: 0.45 },
   text: { ...t.type.button, textAlign: 'center' },
+  smallText: { ...t.type.callout },
 }));

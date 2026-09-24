@@ -91,7 +91,11 @@ export function DateField({ label, value, onChange, shortcuts = [], minimumDate,
           themeVariant={theme.scheme}
           minimumDate={min}
           maximumDate={max}
-          onValueChange={(_event, date) => onChange(toLocalDateString(date))}
+          onValueChange={(_event, date) => {
+            onChange(toLocalDateString(date));
+            // Un jour choisi : le calendrier se referme (changer de mois ne déclenche pas cet appel).
+            setIosPickerOpen(false);
+          }}
         />
       ) : null}
 

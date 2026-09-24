@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Category, InventoryItem } from '@/api/types';
+import { Button } from '@/components/Button';
 import { colors, spacing } from '@/theme';
 import { expiryStatus, formatQuantity, type Urgency } from './rules';
 
@@ -53,12 +54,8 @@ export function InventoryRow({ item, category, today, canModify, onPress, onCons
       </View>
       {canModify ? (
         <View style={styles.actions}>
-          <Pressable onPress={onConsume} accessibilityRole="button" accessibilityLabel={`${item.name} : consommé`} hitSlop={6} style={styles.action}>
-            <Text style={styles.consume}>Mangé</Text>
-          </Pressable>
-          <Pressable onPress={onDiscard} accessibilityRole="button" accessibilityLabel={`${item.name} : jeté`} hitSlop={6} style={styles.action}>
-            <Text style={styles.discard}>Jeté</Text>
-          </Pressable>
+          <Button title="Mangé" size="small" onPress={onConsume} accessibilityLabel={`${item.name} : consommé`} />
+          <Button title="Jeté" size="small" variant="secondary" onPress={onDiscard} accessibilityLabel={`${item.name} : jeté`} />
         </View>
       ) : null}
     </Pressable>
@@ -89,8 +86,6 @@ const styles = StyleSheet.create({
   },
   meta: { fontSize: 13, color: colors.mutedText },
   expiry: { fontSize: 13, fontWeight: '600' },
-  actions: { gap: spacing.xs },
-  action: { paddingVertical: 2, paddingHorizontal: spacing.xs },
-  consume: { color: colors.primary, fontWeight: '600' },
-  discard: { color: colors.mutedText, fontWeight: '600' },
+  // Largeur fixe : les deux boutons ont la même taille, d'une ligne à l'autre.
+  actions: { width: 88, gap: spacing.xs, paddingVertical: spacing.sm },
 });
