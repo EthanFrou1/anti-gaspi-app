@@ -1,6 +1,6 @@
 import { router, Tabs } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
@@ -10,12 +10,13 @@ import { Button } from '@/components/Button';
 import { ChoiceChips } from '@/components/ChoiceChips';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Bell } from '@/components/icons/navIcons';
+import { useHousehold } from '@/features/household/useHousehold';
 import { InventoryRow } from '@/features/inventory/InventoryRow';
 import { canModifyItem, filterItems, type InventoryFilter } from '@/features/inventory/rules';
 import { useCategories } from '@/features/inventory/useCategories';
 import { useInventory } from '@/features/inventory/useInventory';
 import { sendTestReminder, syncExpiryReminders } from '@/features/notifications/reminders';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 import { toLocalDateString } from '@/utils/dates';
 
 const FILTERS: { value: InventoryFilter; label: string }[] = [
@@ -28,12 +29,17 @@ const FILTERS: { value: InventoryFilter; label: string }[] = [
  * Le frigo du foyer, trié par date de péremption : ce qui périme en premier est en haut.
  */
 export default function FridgeScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const { state } = useAuth();
   const user = state.status === 'signedIn' ? state.user : null;
   const householdId = user?.householdId ?? null;
 
   const { items, loading, error, reload } = useInventory(householdId);
   const { byId: categoriesById } = useCategories();
+  // Ordre d'arrivée des membres : chacun garde sa couleur d'avatar sur les produits perso.
+  const { household } = useHousehold();
+  const memberIds = useMemo(() => household?.members.map((m) => m.userId), [household]);
   const [filter, setFilter] = useState<InventoryFilter>('all');
   const today = toLocalDateString();
 
@@ -118,7 +124,7 @@ export default function FridgeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Envoyer le prochain rappel dans 10 secondes (outil de développement)"
               >
-                <Bell size={22} strokeWidth={2} color={colors.text} />
+                <Bell size={22} strokeWidth={2} color={theme.colors.ink} />
               </Pressable>
             ),
           }}
@@ -134,7 +140,7 @@ export default function FridgeScreen() {
         </View>
       ) : null}
 
-      {items === null && loading ? <ActivityIndicator style={styles.loader} size="large" color={colors.primary} /> : null}
+      {items === null && loading ? <ActivityIndicator style={styles.loader} size="large" color={theme.colors.primary} /> : null}
 
       <FlatList
         data={visibleItems}
@@ -145,12 +151,16 @@ export default function FridgeScreen() {
             category={categoriesById.get(item.categoryId)}
             today={today}
             canModify={canModifyItem(item, user.id)}
+            memberIds={memberIds}
             onPress={() => router.push({ pathname: '/item/[id]', params: { id: item.id } })}
             onConsume={() => confirmStatus(item, 'consume')}
             onDiscard={() => confirmStatus(item, 'discard')}
           />
         )}
-        refreshControl={<RefreshControl refreshing={loading && items !== null} onRefresh={() => void reload()} />}
+        contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl refreshing={loading && items !== null} onRefresh={() => void reload()} tintColor={theme.colors.primary} />
+        }
         ListEmptyComponent={
           items !== null ? (
             <View style={styles.empty}>
@@ -164,20 +174,21 @@ export default function FridgeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  toolbar: { padding: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  padded: { padding: spacing.md },
-  loader: { marginTop: spacing.xl },
-  empty: { padding: spacing.xl, gap: spacing.sm, alignItems: 'center' },
+const useStyles = makeStyles((t) => ({
+  container: { flex: 1, backgroundColor: t.colors.bg },
+  toolbar: { paddingHorizontal: t.layout.screenPadding, paddingTop: t.space.xs, paddingBottom: t.space.sm },
+  padded: { paddingHorizontal: t.layout.screenPadding, paddingBottom: t.space.sm },
+  loader: { marginTop: t.space['2xl'] },
+  list: { paddingHorizontal: t.layout.screenPadding, paddingBottom: t.space['2xl'], gap: t.space.sm },
+  empty: { paddingVertical: t.space['2xl'], gap: t.space.xs, alignItems: 'center' },
   centered: {
     flex: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
+    padding: t.layout.screenPadding,
+    gap: t.space.md,
     justifyContent: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: t.colors.bg,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center' },
-  emptyText: { fontSize: 15, color: colors.mutedText, textAlign: 'center' },
-  devButton: { paddingHorizontal: spacing.md },
-});
+  emptyTitle: { ...t.type.title3, color: t.colors.ink, textAlign: 'center' },
+  emptyText: { ...t.type.body, color: t.colors.ink2, textAlign: 'center' },
+  devButton: { paddingHorizontal: t.space.md },
+}));

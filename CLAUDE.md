@@ -212,6 +212,15 @@ Les écrans ne sont pas encore migrés : leur texte reste dans la police du syst
 - [ ] Android : le « + » dépasse bien de la barre sans être coupé.
 - [ ] Development build seulement (Expo Go affiche les siens) : icône d'app claire et sombre (iOS 18), icône adaptative et monochrome (Android 13+), splash clair et sombre.
 
+### Charte Leftly, étape 4 : écrans migrés
+
+L'app reste en mode clair jusqu'au dernier groupe d'écrans.
+
+- [ ] Frigo : chaque produit est une carte (icône de catégorie, nom, quantité et catégorie, badge d'urgence avec fond, icône et libellé court : Périmé, Urgent, Bientôt, OK, À vérifier, puis le détail « À consommer demain », « Dans 5 j »…).
+- [ ] Frigo : une DDM dépassée affiche le badge violet « À vérifier » (œil) et « DDM dépassée : encore bon ? », jamais « Périmé ».
+- [ ] Frigo : un produit perso affiche le badge neutre « Perso · Prénom » avec l'avatar ; deux colocataires ont deux couleurs différentes.
+- [ ] Frigo : filtres Tout / Commun / À moi, tirer pour rafraîchir, état vide et état « sans foyer » aux couleurs de la charte.
+
 ### Scan du ticket de caisse (V2)
 
 - [ ] Frigo → « Ticket » : l'écran affiche les conseils et « 3 scans de ticket restants aujourd'hui ».
