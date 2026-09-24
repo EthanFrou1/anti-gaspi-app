@@ -165,6 +165,7 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] 4e scan du jour : boutons désactivés, « reviens demain », lien vers la saisie manuelle.
 - [ ] API arrêtée pendant la lecture : message d'erreur, quota non décompté.
 - [ ] Avec la vraie clé (`Ai__Provider=Claude`) sur un vrai ticket : lecture en moins d'une minute, noms lisibles, lessive et sacs écartés, date d'achat lue.
+- [ ] Avec la vraie clé, les 5 tickets fictifs de `design/test-tickets/` (régénérés à la date du jour) : résultat comparé aux articles attendus de leur README ; le ticket long entier déclenche « Image très longue », ses deux parties se lisent en deux scans.
 - [ ] Charte : écran d'attente en carte sur fond assombri ; validation avec cartes, cases à cocher encre (cochée : fond mandarine et coche), ligne décochée atténuée, ligne en erreur bordée de rouge.
 
 ### Android
