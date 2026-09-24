@@ -1,18 +1,55 @@
+import { Figtree_400Regular, Figtree_500Medium, Figtree_700Bold, Figtree_800ExtraBold } from '@expo-google-fonts/figtree';
+import { Fredoka_600SemiBold, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { useExpiryReminderSync } from '@/features/notifications/hooks';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, ThemeProvider, useTheme } from '@/theme';
+
+// Le splash reste affiché tant que les polices de la charte ne sont pas chargées :
+// sinon, les textes s'afficheraient un instant dans la police du système.
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // Fichiers de police inclus dans l'app : aucun appel réseau au lancement.
+  const [fontsLoaded, fontError] = useFonts({
+    Fredoka_600SemiBold,
+    Fredoka_700Bold,
+    Figtree_400Regular,
+    Figtree_500Medium,
+    Figtree_700Bold,
+    Figtree_800ExtraBold,
+  });
+  // En cas d'échec, on continue avec la police du système plutôt que de rester bloqué.
+  const fontsReady = fontsLoaded || fontError !== null;
+
+  useEffect(() => {
+    if (fontsReady) SplashScreen.hide();
+  }, [fontsReady]);
+
+  if (!fontsReady) {
+    return null;
+  }
+
   return (
-    <AuthProvider>
-      <StatusBar style="dark" />
-      <RootNavigator />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ThemedStatusBar />
+        <RootNavigator />
+      </AuthProvider>
+    </ThemeProvider>
   );
+}
+
+/** Heure et batterie en foncé sur fond clair, en clair sur fond sombre. */
+function ThemedStatusBar() {
+  const theme = useTheme();
+  return <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />;
 }
 
 /**

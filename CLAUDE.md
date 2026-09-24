@@ -20,7 +20,8 @@ Cible de lancement : étudiants et alternants (petit budget, peu de temps, peu d
 - **Objectif** : projet portfolio, avec un petit revenu possible (modèle freemium). La qualité du code, la sécurité et la documentation comptent autant que les fonctionnalités.
 - **Coûts** : garder les coûts d'hébergement et d'IA au minimum. Toute fonctionnalité qui appelle l'IA doit être limitée par utilisateur.
 - **Concurrence directe** : Friio (inventaire, tri par urgence, frigo partagé, recettes). Notre différence : scan de ticket par IA, recettes générées selon le profil, cible étudiante.
-- **Nom** : **Leftly** (définitif). Le repo garde son nom technique `anti-gaspi-app`, ainsi que la base et le rôle PostgreSQL (`antigaspi`). La DA viendra plus tard. Ne pas coder le nom de l'app en dur partout : il est centralisé dans `mobile/app.config.ts` (mobile) et `App:Name` (API).
+- **Nom** : **Leftly** (définitif). Le repo garde son nom technique `anti-gaspi-app`, ainsi que la base et le rôle PostgreSQL (`antigaspi`). Ne pas coder le nom de l'app en dur partout : il est centralisé dans `mobile/app.config.ts` (mobile) et `App:Name` (API).
+- **Charte graphique** : livrée dans `design/leftly/` (tokens, logos, illustrations, icônes). Application en cours : fondations, composants et navigation d'abord, puis les écrans un groupe à la fois, puis les moments forts (illustrations, célébration « Produit sauvé »).
 
 ## Stack technique
 
@@ -38,6 +39,7 @@ Cible de lancement : étudiants et alternants (petit budget, peu de temps, peu d
 ```
 /api        → projet ASP.NET Core Web API
 /mobile     → app Expo (React Native, TypeScript)
+/design     → fichiers de conception non utilisés par l'app (charte Leftly complète)
 CLAUDE.md
 ```
 
@@ -250,6 +252,7 @@ Règles :
 - Code (noms de classes, variables, méthodes) en **anglais** ; commentaires, messages de commit et documentation en **français**.
 - Backend : architecture en couches claire (Controllers → Services → accès aux données), injection de dépendances, DTOs pour les entrées et sorties de l'API (jamais les entités EF directement).
 - Mobile : TypeScript strict, composants fonctionnels et hooks, appels API centralisés dans un seul module.
+- Mobile, apparence : couleurs, polices, espacements et rayons viennent du thème (`src/theme/`, tokens de la charte), via `useTheme()` et `makeStyles()` ; aucune couleur en dur dans les écrans. Thème clair et sombre selon le réglage du téléphone. Titres en Fredoka, texte en Figtree. Les SVG s'importent comme des composants (`react-native-svg-transformer`) ; les icônes en `currentColor` prennent la couleur de la propriété `color`. Seuls les fichiers utilisés par l'app vont dans `mobile/assets/brand/` (le reste reste dans `design/`).
 - Tests unitaires sur la logique métier importante (estimation des dates, combinaison des profils, droits d'accès au foyer).
 
 ## Façon de travailler avec moi

@@ -8,7 +8,9 @@ Plateformes cibles : iOS et Android (le web n'est pas supporté : `expo-secure-s
 ```
 mobile/
 ├── app.config.ts        → config Expo ; SEUL endroit où le nom de l'app est défini
+├── metro.config.js      → import des .svg comme composants (react-native-svg-transformer)
 ├── .env.example         → modèle de configuration locale (URL de l'API)
+├── assets/brand/        → fichiers de la charte Leftly utilisés par l'app (icônes, splash, SVG)
 └── src/
     ├── app/             → écrans (Expo Router : un fichier = une route)
     │   ├── _layout.tsx  → racine : session, écrans de chargement, routes protégées
@@ -18,14 +20,16 @@ mobile/
     │       ├── preferences.tsx → modification des préférences alimentaires
     │       ├── (tabs)/  → onglets Frigo, Recettes, Foyer, Compte
     │       ├── recipe/  → détail d'une recette, « J'ai cuisiné »
+    │       ├── receipt/ → scan d'un ticket de caisse et validation des lignes
     │       └── item/    → ajout et modification d'un produit
     ├── api/             → client API : SEUL module qui appelle le serveur
     ├── auth/            → contexte de session, stockage sécurisé des jetons
     ├── components/      → composants d'interface réutilisables
-    ├── features/        → logique et vues par fonctionnalité (household/, inventory/, notifications/, profile/, recipes/, scan/)
+    ├── features/        → logique et vues par fonctionnalité (household/, inventory/, notifications/, profile/, receipts/, recipes/, scan/)
     ├── utils/           → utilitaires sans interface (dates « jour » en calendrier local)
+    ├── types/           → déclarations de types (fichiers .svg)
     ├── config.ts        → nom de l'app, URL de l'API
-    └── theme.ts         → couleurs et espacements provisoires
+    └── theme/           → thème de la charte Leftly : tokens, clair / sombre, useTheme(), makeStyles()
 ```
 
 ## Lancer en local
