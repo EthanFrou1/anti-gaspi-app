@@ -9,6 +9,7 @@ export { default as ChevronRight } from 'lucide-react-native/icons/chevron-right
 export { default as Clock } from 'lucide-react-native/icons/clock';
 export { default as Crown } from 'lucide-react-native/icons/crown';
 export { default as House } from 'lucide-react-native/icons/house';
+export { default as Minus } from 'lucide-react-native/icons/minus';
 export { default as PencilLine } from 'lucide-react-native/icons/pencil-line';
 export { default as Plus } from 'lucide-react-native/icons/plus';
 export { default as ReceiptText } from 'lucide-react-native/icons/receipt-text';

@@ -227,6 +227,8 @@ L'app reste en mode clair jusqu'au dernier groupe d'écrans.
 - [ ] Détail d'une recette : durée avec une icône d'horloge ; « Favori » en pastille (étoile pleine citron et bord épais quand la recette est en favori) ; « Partager » avec son icône ; avertissement IA sur fond citron ; ingrédients du frigo marqués d'une icône de frigo et en gras ; étapes numérotées dans des pastilles ; « J'ai cuisiné » avec les cases à cocher de la charte (grisées pour le produit perso d'un autre membre).
 - [ ] Foyer : nom en grand titre ; membres en cartes avec avatar (même couleur que sur leurs produits perso), badge « Propriétaire » avec couronne, « Exclure » en petit bouton rouge (propriétaire seulement) ; codes d'invitation en cartes (icône de partage, « Révoquer » en petit bouton rouge) ; « Quitter le foyer » inchangé.
 - [ ] Sans foyer : « Créer un foyer » et « Rejoindre un foyer » séparés par « ou » entre deux traits.
+- [ ] Profil : grand avatar à l'initiale, nom et email ; « Supprimer définitivement » en bouton rouge (désactivé tant que le mot de passe est vide).
+- [ ] Préférences : titres de section en Fredoka, interrupteur de consentement aux allergies mandarine, boutons − / + des portions en cercles à bord encre.
 
 ### Scan du ticket de caisse (V2)
 

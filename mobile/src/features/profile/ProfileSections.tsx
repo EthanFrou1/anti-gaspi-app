@@ -1,8 +1,9 @@
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 import type { Profile } from '@/api/types';
 import { ChoiceChips } from '@/components/ChoiceChips';
 import { MultiChoiceChips } from '@/components/MultiChoiceChips';
-import { colors, spacing } from '@/theme';
+import { Minus, Plus } from '@/components/icons/lucide';
+import { makeStyles, useTheme } from '@/theme';
 import {
   ALLERGEN_OPTIONS,
   BUDGET_OPTIONS,
@@ -23,6 +24,7 @@ type SectionProps = {
 };
 
 export function DietSection({ profile, onChange }: SectionProps) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <ChoiceChips options={DIET_OPTIONS} value={profile.diet} onChange={(diet) => onChange({ ...profile, diet })} />
@@ -37,6 +39,8 @@ export function DietSection({ profile, onChange }: SectionProps) {
 }
 
 export function AllergiesSection({ profile, onChange }: SectionProps) {
+  const theme = useTheme();
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <Text style={styles.help}>
@@ -54,6 +58,8 @@ export function AllergiesSection({ profile, onChange }: SectionProps) {
           value={profile.healthDataConsent}
           onValueChange={(consent) => onChange(setHealthDataConsent(profile, consent))}
           accessibilityLabel="Consentement à l'enregistrement de mes allergies"
+          trackColor={{ true: theme.colors.primary, false: theme.colors.line }}
+          ios_backgroundColor={theme.colors.line}
         />
         <Text style={styles.consentText}>
           J'accepte que mes allergies soient enregistrées pour adapter les recettes. Elles ne sont jamais montrées aux
@@ -65,6 +71,7 @@ export function AllergiesSection({ profile, onChange }: SectionProps) {
 }
 
 export function CookingTimeSection({ profile, onChange }: SectionProps) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <ChoiceChips
@@ -77,6 +84,7 @@ export function CookingTimeSection({ profile, onChange }: SectionProps) {
 }
 
 export function BudgetSection({ profile, onChange }: SectionProps) {
+  const styles = useStyles();
   return (
     <View style={styles.section}>
       <ChoiceChips options={BUDGET_OPTIONS} value={profile.budget} onChange={(budget) => onChange({ ...profile, budget })} />
@@ -85,6 +93,7 @@ export function BudgetSection({ profile, onChange }: SectionProps) {
 }
 
 export function GoalSection({ profile, onChange }: SectionProps) {
+  const styles = useStyles();
   const setServings = (value: number) =>
     onChange({ ...profile, defaultServings: Math.min(MAX_SERVINGS, Math.max(MIN_SERVINGS, value)) });
 
@@ -105,6 +114,8 @@ export function GoalSection({ profile, onChange }: SectionProps) {
 }
 
 function StepperButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled: boolean }) {
+  const theme = useTheme();
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -113,28 +124,32 @@ function StepperButton({ label, onPress, disabled }: { label: string; onPress: (
       accessibilityLabel={label === '+' ? 'Une portion de plus' : 'Une portion de moins'}
       style={[styles.stepperButton, disabled && styles.disabled]}
     >
-      <Text style={styles.stepperButtonText}>{label}</Text>
+      {label === '+' ? (
+        <Plus size={22} strokeWidth={2.5} color={theme.colors.ink} />
+      ) : (
+        <Minus size={22} strokeWidth={2.5} color={theme.colors.ink} />
+      )}
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  section: { gap: spacing.md },
-  subtitle: { fontSize: 15, fontWeight: '600', color: colors.text, marginTop: spacing.sm },
-  help: { fontSize: 13, color: colors.mutedText },
-  consent: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start', marginTop: spacing.sm },
-  consentText: { flex: 1, fontSize: 13, color: colors.text },
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+const useStyles = makeStyles((t) => ({
+  section: { gap: t.space.md },
+  subtitle: { ...t.type.bodyBold, color: t.colors.ink, marginTop: t.space.xs },
+  help: { ...t.type.caption, color: t.colors.ink3 },
+  consent: { flexDirection: 'row', gap: t.space.md, alignItems: 'flex-start', marginTop: t.space.xs },
+  consentText: { ...t.type.callout, flex: 1, color: t.colors.ink2 },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: t.space.xl },
   stepperButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.primary,
+    width: t.layout.minTouch,
+    height: t.layout.minTouch,
+    borderRadius: t.layout.minTouch / 2,
+    borderWidth: t.borderWidth.selected,
+    borderColor: t.colors.border,
+    backgroundColor: t.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepperButtonText: { fontSize: 22, color: colors.primary, fontWeight: '600' },
-  stepperValue: { fontSize: 24, fontWeight: '700', color: colors.text, minWidth: 32, textAlign: 'center' },
+  stepperValue: { ...t.type.title1, color: t.colors.ink, minWidth: 40, textAlign: 'center' },
   disabled: { opacity: 0.4 },
-});
+}));

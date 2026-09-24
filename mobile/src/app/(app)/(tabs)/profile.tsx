@@ -1,15 +1,17 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { asApiError, type ApiError } from '@/api/errors';
 import { useAuth } from '@/auth/AuthContext';
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
-import { colors, spacing } from '@/theme';
+import { makeStyles } from '@/theme';
 
 export default function ProfileScreen() {
+  const styles = useStyles();
   const { state, signOut, deleteAccount } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const [password, setPassword] = useState('');
@@ -51,9 +53,12 @@ export default function ProfileScreen() {
 
   return (
     <Screen hasHeader>
-      <View style={styles.section}>
-        <Text style={styles.name}>{state.user.displayName}</Text>
-        <Text style={styles.email}>{state.user.email}</Text>
+      <View style={styles.header}>
+        <Avatar userId={state.user.id} displayName={state.user.displayName} size={64} />
+        <View style={styles.headerText}>
+          <Text style={styles.name}>{state.user.displayName}</Text>
+          <Text style={styles.email}>{state.user.email}</Text>
+        </View>
       </View>
 
       <Button title="Mes préférences alimentaires" onPress={() => router.push('/preferences')} />
@@ -77,6 +82,7 @@ export default function ProfileScreen() {
         />
         <Button
           title="Supprimer définitivement"
+          variant="danger"
           onPress={confirmDelete}
           loading={deleting}
           disabled={password.length === 0}
@@ -86,16 +92,18 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  section: { gap: spacing.sm },
-  name: { fontSize: 24, fontWeight: '700', color: colors.text },
-  email: { fontSize: 16, color: colors.mutedText },
+const useStyles = makeStyles((t) => ({
+  header: { flexDirection: 'row', alignItems: 'center', gap: t.space.md, marginBottom: t.space.xs },
+  headerText: { flex: 1, gap: 2 },
+  section: { gap: t.space.sm },
+  name: { ...t.type.title2, color: t.colors.ink },
+  email: { ...t.type.callout, color: t.colors.ink3 },
   dangerZone: {
-    marginTop: spacing.xl,
-    paddingTop: spacing.lg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    marginTop: t.space.xl,
+    paddingTop: t.space.xl,
+    borderTopWidth: t.borderWidth.hairline,
+    borderTopColor: t.colors.line,
   },
-  title: { fontSize: 18, fontWeight: '700', color: colors.error },
-  text: { fontSize: 14, color: colors.mutedText },
-});
+  title: { ...t.type.title3, color: t.colors.danger },
+  text: { ...t.type.callout, color: t.colors.ink2 },
+}));

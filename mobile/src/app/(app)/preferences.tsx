@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Text } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
 import type { Profile } from '@/api/types';
@@ -15,13 +15,15 @@ import {
   DietSection,
   GoalSection,
 } from '@/features/profile/ProfileSections';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 
 /**
  * Toutes les préférences sur un seul écran, modifiables à tout moment
  * (mêmes blocs de questions que l'onboarding).
  */
 export default function PreferencesScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -54,7 +56,7 @@ export default function PreferencesScreen() {
   if (!profile) {
     return (
       <Screen hasHeader>
-        {error ? <ErrorBanner message={error} /> : <ActivityIndicator style={styles.loader} size="large" color={colors.primary} />}
+        {error ? <ErrorBanner message={error} /> : <ActivityIndicator style={styles.loader} size="large" color={theme.colors.primary} />}
       </Screen>
     );
   }
@@ -90,8 +92,8 @@ export default function PreferencesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xl },
-  heading: { fontSize: 18, fontWeight: '700', color: colors.text, marginTop: spacing.md },
-  note: { fontSize: 13, color: colors.mutedText, textAlign: 'center' },
-});
+const useStyles = makeStyles((t) => ({
+  loader: { marginTop: t.space['2xl'] },
+  heading: { ...t.type.title3, color: t.colors.ink, marginTop: t.space.md },
+  note: { ...t.type.caption, color: t.colors.ink3, textAlign: 'center' },
+}));
