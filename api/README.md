@@ -85,4 +85,4 @@ dotnet ef database update --project src/Api
 | `Ai:Provider` | `appsettings.json` (Claude), `appsettings.Development.json` (Fake) | Générateur de recettes. Fake interdit hors Development (l'API refuse de démarrer) |
 | `Ai:Model`, `MaxOutputTokens`, `TimeoutSeconds`, `MaxRetries`, `DailyLimitPerUser`, `GlobalDailyLimit`, `TimeZone` | `appsettings.json` | Modèle Claude, taille maximale des réponses, délais, quotas |
 | `Anthropic:ApiKey` | user-secrets (dev), variable d'env `Anthropic__ApiKey` (prod) | Clé de l'API Anthropic (obligatoire en production avec Ai:Provider = Claude) |
-| `App:Name` | `appsettings.json` | Nom de l'application (provisoire, centralisé ici) |
+| `App:Name` | `appsettings.json` | Nom de l'application (Leftly), centralisé ici |

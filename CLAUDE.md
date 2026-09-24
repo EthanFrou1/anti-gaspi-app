@@ -1,10 +1,10 @@
-# CLAUDE.md — App anti-gaspi (nom provisoire)
+# CLAUDE.md — Leftly
 
 Ce fichier donne le contexte du projet à Claude Code. Lis-le entièrement avant toute action.
 
 ## Le projet
 
-Application mobile anti-gaspillage alimentaire. L'utilisateur tient à jour l'inventaire de son frigo (scan de code-barres, saisie manuelle, puis scan de ticket de caisse par IA). L'app le prévient avant la péremption des produits et lui propose des recettes qui utilisent **en priorité ce qui périme en premier**, adaptées à son profil (temps, budget, équipement, régime, objectif).
+**Leftly** est une application mobile anti-gaspillage alimentaire. L'utilisateur tient à jour l'inventaire de son frigo (scan de code-barres, saisie manuelle, puis scan de ticket de caisse par IA). L'app le prévient avant la péremption des produits et lui propose des recettes qui utilisent **en priorité ce qui périme en premier**, adaptées à son profil (temps, budget, équipement, régime, objectif).
 
 ### Ce qui nous différencie
 
@@ -20,7 +20,7 @@ Cible de lancement : étudiants et alternants (petit budget, peu de temps, peu d
 - **Objectif** : projet portfolio, avec un petit revenu possible (modèle freemium). La qualité du code, la sécurité et la documentation comptent autant que les fonctionnalités.
 - **Coûts** : garder les coûts d'hébergement et d'IA au minimum. Toute fonctionnalité qui appelle l'IA doit être limitée par utilisateur.
 - **Concurrence directe** : Friio (inventaire, tri par urgence, frigo partagé, recettes). Notre différence : scan de ticket par IA, recettes générées selon le profil, cible étudiante.
-- **Nom** : provisoire, repo `anti-gaspi-app`. Le nom définitif et la DA viendront plus tard ; ne pas coder le nom de l'app en dur partout (le centraliser dans la config).
+- **Nom** : **Leftly** (définitif). Le repo garde son nom technique `anti-gaspi-app`, ainsi que la base et le rôle PostgreSQL (`antigaspi`). La DA viendra plus tard. Ne pas coder le nom de l'app en dur partout : il est centralisé dans `mobile/app.config.ts` (mobile) et `App:Name` (API).
 
 ## Stack technique
 
@@ -186,6 +186,21 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Produit perso d'un colocataire : n'apparaît pas dans mes rappels.
 - [ ] Déconnexion : plus aucune notification ; les notifications déjà affichées de l'app disparaissent.
 - [ ] Autorisation refusée : l'app fonctionne normalement, sans message d'erreur.
+
+### Scan du ticket de caisse (V2)
+
+- [ ] Frigo → « Ticket » : l'écran affiche les conseils et « 3 scans de ticket restants aujourd'hui ».
+- [ ] « Prendre le ticket en photo » : la demande d'accès à l'appareil photo s'affiche ; après un refus définitif, « Ouvrir les réglages ».
+- [ ] Android : le recadrage libre s'affiche après la photo. iOS : pas de recadrage (celui du système est carré), la photo est envoyée entière.
+- [ ] « Choisir une photo dans la galerie » fonctionne sans demande d'autorisation.
+- [ ] En développement (lecteur Fake) : écran d'attente, puis validation avec 5 produits et « 1 article ignoré ».
+- [ ] Décocher une ligne ; corriger nom, catégorie (la date estimée suit), quantité « 0,5 » kg et date ; « Revenir à l'estimation » fonctionne.
+- [ ] Changer la date d'achat : les dates estimées se décalent, pas celles choisies à la main.
+- [ ] « Ajouter N produits au frigo » : retour au frigo avec les produits ; l'interrupteur « Produits perso » est respecté.
+- [ ] Retour arrière avant l'ajout : confirmation « Abandonner ce ticket ? ».
+- [ ] 4e scan du jour : boutons désactivés, « reviens demain », lien vers la saisie manuelle.
+- [ ] API arrêtée pendant la lecture : message d'erreur, quota non décompté.
+- [ ] Avec la vraie clé (`Ai__Provider=Claude`) sur un vrai ticket : lecture en moins d'une minute, noms lisibles, lessive et sacs écartés, date d'achat lue.
 
 ## Scan du ticket de caisse (V2)
 

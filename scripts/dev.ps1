@@ -331,7 +331,7 @@ function Start-Api {
 
     # device : écoute sur toutes les interfaces pour que le téléphone la joigne.
     $urls = if ($Target -eq 'device') { "http://0.0.0.0:$ApiPort" } else { "http://localhost:$ApiPort" }
-    $command = "`$Host.UI.RawUI.WindowTitle = 'API anti-gaspi'; Set-Location '$ApiDir'; dotnet run --project src/Api --urls $urls"
+    $command = "`$Host.UI.RawUI.WindowTitle = 'API Leftly'; Set-Location '$ApiDir'; dotnet run --project src/Api --urls $urls"
     Start-Process powershell -ArgumentList '-NoExit', '-NoProfile', '-Command', $command | Out-Null
     Write-Info "Démarrage dans une nouvelle fenêtre ($urls)..."
 
@@ -356,7 +356,7 @@ function Get-LockHash {
 function Install-MobileDependencies {
     Write-Step 'Dépendances mobiles'
     $nodeModules = Join-Path $MobileDir 'node_modules'
-    $stamp = Join-Path $nodeModules '.anti-gaspi-lock-hash'
+    $stamp = Join-Path $nodeModules '.leftly-lock-hash'
 
     if ((Test-Path $stamp) -and ((Get-Content $stamp -Raw).Trim() -eq (Get-LockHash))) {
         Write-Ok 'Dépendances à jour'
@@ -430,7 +430,7 @@ function Invoke-Tests {
     Push-Location $ApiDir
     try {
         # Dossier de compilation séparé : les tests passent même si l'API tourne (Api.exe verrouillé).
-        $artifacts = Join-Path $env:TEMP 'anti-gaspi-test-artifacts'
+        $artifacts = Join-Path $env:TEMP 'leftly-test-artifacts'
         Invoke-Checked 'Les tests de l''API' { dotnet test --artifacts-path $artifacts }
     }
     finally {

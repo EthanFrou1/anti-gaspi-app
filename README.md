@@ -1,4 +1,4 @@
-# anti-gaspi-app (nom provisoire)
+# Leftly
 
 Application mobile anti-gaspillage alimentaire : inventaire du frigo partagé par foyer,
 alertes avant péremption et recettes qui utilisent en priorité ce qui périme en premier.

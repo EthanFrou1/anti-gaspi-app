@@ -208,6 +208,31 @@ export type RecipeQuota = {
   resetsAt: string;
 };
 
+// ---------- Tickets de caisse ----------
+
+// Lecture d'un ticket, à valider par l'utilisateur : rien n'est encore dans le frigo.
+export type ReceiptScan = {
+  purchasedOn: string;
+  // false : date absente du ticket ou invraisemblable, remplacée par aujourd'hui.
+  purchaseDateFromReceipt: boolean;
+  lines: ReceiptLine[];
+  // Articles non alimentaires ou illisibles, écartés par l'API.
+  skippedLineCount: number;
+};
+
+export type ReceiptLine = {
+  // Libellé brut du ticket, pour aider à reconnaître la ligne.
+  receiptText: string;
+  name: string;
+  categoryId: number;
+  quantity: number;
+  unit: QuantityUnit;
+  expiresOn: string;
+  expiryKind: ExpiryKind;
+};
+
+export type ReceiptQuota = RecipeQuota;
+
 // Prompt exact (outil de développement uniquement).
 export type RecipePromptPreview = {
   model: string;

@@ -23,6 +23,8 @@ export default function AppLayout() {
         <Stack.Screen name="item/scan" options={{ title: 'Scanner un produit' }} />
         <Stack.Screen name="item/scanned" options={{ title: 'Nouveau produit' }} />
         <Stack.Screen name="item/[id]" options={{ title: 'Produit' }} />
+        <Stack.Screen name="receipt/scan" options={{ title: 'Scanner un ticket' }} />
+        <Stack.Screen name="receipt/review" options={{ title: 'Vérifier le ticket' }} />
         <Stack.Screen name="preferences" options={{ title: 'Mes préférences' }} />
         <Stack.Screen name="recipe/[id]" options={{ title: 'Recette' }} />
       </Stack.Protected>

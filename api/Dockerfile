@@ -1,6 +1,6 @@
 # Image de production de l'API (déploiement préparé, mis en place plus tard : voir CLAUDE.md).
 # Construction depuis le dossier api/ (workflow GitHub Actions prévu plus tard) :
-#   docker build -t anti-gaspi-api ./api
+#   docker build -t leftly-api ./api
 
 # ---------- Étape 1 : compilation (SDK complet, jeté à la fin) ----------
 FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build

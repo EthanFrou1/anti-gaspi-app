@@ -29,7 +29,7 @@ describe('formatRecipeForSharing', () => {
       favoriteCount: 0,
     };
 
-    expect(formatRecipeForSharing(recipe, 'Anti-Gaspi')).toBe(
+    expect(formatRecipeForSharing(recipe, 'Leftly')).toBe(
       [
         'Riz sauté à la courgette',
         '20 min · 2 portions',
@@ -42,7 +42,7 @@ describe('formatRecipeForSharing', () => {
         '1. Cuire le riz.',
         '2. Faire sauter la courgette.',
         '',
-        'Recette anti-gaspi proposée par Anti-Gaspi.',
+        'Recette anti-gaspi proposée par Leftly.',
       ].join('\n'),
     );
   });

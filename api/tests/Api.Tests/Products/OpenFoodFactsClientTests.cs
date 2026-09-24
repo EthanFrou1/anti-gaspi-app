@@ -157,8 +157,9 @@ public class OpenFoodFactsClientTests
     }
 
     [Theory]
-    [InlineData("Anti-Gaspi", "contact@example.com", "AntiGaspi/1.0 (contact@example.com)")]
-    [InlineData("Anti-Gaspi", "", "AntiGaspi/1.0")]
+    [InlineData("Leftly", "contact@example.com", "Leftly/1.0 (contact@example.com)")]
+    [InlineData("Leftly", "", "Leftly/1.0")]
+    [InlineData("Mon-Frigo", null, "MonFrigo/1.0")]
     [InlineData("Mon Frigo !", null, "MonFrigo/1.0")]
     public void UserAgent_FollowsOpenFoodFactsFormat(string appName, string? contact, string expected)
     {

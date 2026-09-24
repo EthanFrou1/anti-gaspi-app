@@ -17,6 +17,8 @@ import type {
   Recipe,
   RecipePromptPreview,
   RecipeQuota,
+  ReceiptQuota,
+  ReceiptScan,
   RegisterRequest,
   SaveInventoryItemRequest,
   User,
@@ -36,6 +38,9 @@ const REQUEST_TIMEOUT_MS = 15_000;
 
 // La génération d'une recette par IA peut prendre plusieurs dizaines de secondes.
 export const RECIPE_GENERATION_TIMEOUT_MS = 60_000;
+
+// Lecture d'un ticket : envoi de la photo, puis lecture par l'IA (même ordre de grandeur).
+export const RECEIPT_SCAN_TIMEOUT_MS = 60_000;
 
 let accessToken: string | null = null;
 
@@ -65,8 +70,11 @@ async function send(path: string, options: RequestOptions, token: string | null)
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? REQUEST_TIMEOUT_MS);
 
+  // FormData (envoi d'une photo) : fetch écrit lui-même l'en-tête Content-Type, avec la
+  // « frontière » qui sépare les parties du formulaire multipart.
+  const isForm = options.body instanceof FormData;
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.body !== undefined) {
+  if (options.body !== undefined && !isForm) {
     headers['Content-Type'] = 'application/json';
   }
   if (token) {
@@ -77,7 +85,7 @@ async function send(path: string, options: RequestOptions, token: string | null)
     return await fetch(`${API_URL}${path}`, {
       method: options.method ?? 'GET',
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.body === undefined ? undefined : isForm ? (options.body as FormData) : JSON.stringify(options.body),
       signal: controller.signal,
     });
   } catch {
@@ -293,6 +301,11 @@ export const api = {
       return request<InventoryItem>(`/api/households/${householdId}/items`, { method: 'POST', body });
     },
 
+    /** Ajout groupé (lignes validées d'un ticket) : tous les produits, ou aucun. */
+    createMany(householdId: string, items: SaveInventoryItemRequest[]): Promise<InventoryItem[]> {
+      return request<InventoryItem[]>(`/api/households/${householdId}/items/batch`, { method: 'POST', body: { items } });
+    },
+
     update(householdId: string, itemId: string, body: SaveInventoryItemRequest): Promise<InventoryItem> {
       return request<InventoryItem>(`/api/households/${householdId}/items/${itemId}`, { method: 'PUT', body });
     },
@@ -326,6 +339,27 @@ export const api = {
         }
         throw error;
       }
+    },
+  },
+
+  receipts: {
+    quota(): Promise<ReceiptQuota> {
+      return request<ReceiptQuota>('/api/me/receipt-quota');
+    },
+
+    /**
+     * Envoie la photo (déjà redimensionnée et compressée) pour lecture par l'IA.
+     * Rien n'est ajouté au frigo : l'utilisateur valide d'abord les lignes.
+     */
+    scan(householdId: string, imageUri: string): Promise<ReceiptScan> {
+      const form = new FormData();
+      // Format propre à React Native : le fichier est lu depuis son URI locale au moment de l'envoi.
+      form.append('image', { uri: imageUri, name: 'ticket.jpg', type: 'image/jpeg' } as unknown as Blob);
+      return request<ReceiptScan>(`/api/households/${householdId}/receipts/scan`, {
+        method: 'POST',
+        body: form,
+        timeoutMs: RECEIPT_SCAN_TIMEOUT_MS,
+      });
     },
   },
 

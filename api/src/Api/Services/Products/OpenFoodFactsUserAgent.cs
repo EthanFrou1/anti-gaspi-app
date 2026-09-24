@@ -13,7 +13,7 @@ public static partial class OpenFoodFactsUserAgent
     public static string Build(string appName, string? contactEmail)
     {
         // Le nom de produit d'un User-Agent ne peut contenir ni espace ni tiret spécial :
-        // « Anti-Gaspi » devient « AntiGaspi ».
+        // « Mon-Frigo » deviendrait « MonFrigo ».
         var product = NonAlphanumeric().Replace(appName, string.Empty);
         if (product.Length == 0)
         {

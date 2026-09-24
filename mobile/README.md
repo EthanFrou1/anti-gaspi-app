@@ -79,7 +79,7 @@ connexions entrantes, en particulier quand le Wi-Fi est classé « réseau publi
   dans un PowerShell administrateur :
 
   ```powershell
-  New-NetFirewallRule -DisplayName "API anti-gaspi (dev)" -Direction Inbound `
+  New-NetFirewallRule -DisplayName "API Leftly (dev)" -Direction Inbound `
     -Protocol TCP -LocalPort 5122 -Action Allow -Profile Private
   ```
 
@@ -89,7 +89,7 @@ connexions entrantes, en particulier quand le Wi-Fi est classé « réseau publi
   le téléphone (réseau classé « Privé »), ou un tunnel.
 
 Supprimer la règle quand elle ne sert plus :
-`Remove-NetFirewallRule -DisplayName "API anti-gaspi (dev)"`.
+`Remove-NetFirewallRule -DisplayName "API Leftly (dev)"`.
 
 ## Vérifications
 

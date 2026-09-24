@@ -144,10 +144,13 @@ export default function FridgeScreen() {
 
       <View style={styles.bottomBar}>
         <View style={styles.bottomButton}>
-          <Button title="Scanner" onPress={() => router.push('/item/scan')} />
+          <Button title="Code-barres" onPress={() => router.push('/item/scan')} />
         </View>
         <View style={styles.bottomButton}>
-          <Button title="Saisir à la main" variant="secondary" onPress={() => router.push('/item/new')} />
+          <Button title="Ticket" onPress={() => router.push('/receipt/scan')} />
+        </View>
+        <View style={styles.bottomButton}>
+          <Button title="À la main" variant="secondary" onPress={() => router.push('/item/new')} />
         </View>
         {__DEV__ ? (
           <Pressable
