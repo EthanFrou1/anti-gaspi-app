@@ -90,6 +90,7 @@ Chaque catégorie indique aussi son type de date : **DLC** (« à consommer jusq
 
 - Prix d'achat des produits (nécessaire au compteur « argent économisé » de la V2, non stocké au MVP).
 - Système d'amis hors foyer, pour voir et partager les recettes favorites de ses proches.
+- Découpage automatique des captures de ticket trop longues : l'app coupe l'image en plusieurs morceaux lisibles, envoyés ensemble à l'IA (l'API n'accepte aujourd'hui qu'une image par scan). En attendant, l'app prévient et conseille plusieurs scans.
 - Réglages des rappels de péremption dans l'app : interrupteur pour les activer ou désactiver, et choix de l'heure du résumé quotidien (aujourd'hui fixée à 18 h ; on les coupe dans les réglages du téléphone).
 
 ## À faire avant publication
@@ -153,7 +154,9 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Frigo → « Ticket » : l'écran affiche les conseils et « 3 scans de ticket restants aujourd'hui ».
 - [ ] « Prendre le ticket en photo » : la demande d'accès à l'appareil photo s'affiche ; après un refus définitif, « Ouvrir les réglages ».
 - [ ] Android : le recadrage libre s'affiche après la photo. iOS : pas de recadrage (celui du système est carré), la photo est envoyée entière.
-- [ ] « Choisir une photo dans la galerie » fonctionne sans demande d'autorisation.
+- [ ] « Importer une image (photo ou capture d'écran) » ouvre le sélecteur du système, sans demande d'autorisation ; le conseil « Ticket numérique… capture d'écran » s'affiche.
+- [ ] Capture d'écran d'un ticket numérique (app d'un magasin, PNG) : lue comme une photo, produits proposés à la validation.
+- [ ] Capture défilante très longue (deux écrans ou plus) : avertissement « Image très longue » avant l'envoi ; « Choisir une autre image » ne consomme pas de scan, « Envoyer quand même » lance la lecture.
 - [ ] En développement (lecteur Fake) : écran d'attente, puis validation avec 5 produits et « 1 article ignoré ».
 - [ ] Décocher une ligne ; corriger nom, catégorie (la date estimée suit), quantité « 0,5 » kg et date ; « Revenir à l'estimation » fonctionne.
 - [ ] Changer la date d'achat : les dates estimées se décalent, pas celles choisies à la main.
@@ -185,7 +188,7 @@ Réglages du téléphone ou build particulier, non couverts par le test dans Exp
 ## Scan du ticket de caisse (V2)
 
 Flux :
-1. L'app prend la photo (appareil ou galerie, recadrage), la redimensionne à 1568 px sur le grand côté (résolution maximale lue par Haiku 4.5) et la compresse en JPEG.
+1. L'app prend la photo, ou importe une image par le sélecteur du système (photo ou capture d'écran d'un ticket numérique, souvent en PNG) ; ce sélecteur ne donne que l'image choisie, **sans autorisation d'accès à la galerie** (volontaire : l'accès ouvrirait toutes les photos). Elle la redimensionne à 1568 px sur le grand côté (résolution maximale lue par Haiku 4.5) et la réencode en JPEG. Une image trop étroite une fois réduite (moins de 500 px sur le petit côté, ex. capture défilante) déclenche un avertissement avant l'envoi, qui consommerait un scan du quota.
 2. L'app l'envoie à l'API .NET.
 3. L'API appelle le modèle de vision avec un prompt et un **format de sortie JSON imposé**, derrière l'interface `IReceiptReader` (`Fake` en développement, `Claude` sinon, comme les recettes).
 4. L'API valide la réponse et estime la date de péremption de chaque ligne à partir de sa catégorie.
