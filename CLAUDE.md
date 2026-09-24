@@ -21,7 +21,7 @@ Cible de lancement : étudiants et alternants (petit budget, peu de temps, peu d
 - **Coûts** : garder les coûts d'hébergement et d'IA au minimum. Toute fonctionnalité qui appelle l'IA doit être limitée par utilisateur.
 - **Concurrence directe** : Friio (inventaire, tri par urgence, frigo partagé, recettes). Notre différence : scan de ticket par IA, recettes générées selon le profil, cible étudiante.
 - **Nom** : **Leftly** (définitif). Le repo garde son nom technique `anti-gaspi-app`, ainsi que la base et le rôle PostgreSQL (`antigaspi`). Ne pas coder le nom de l'app en dur partout : il est centralisé dans `mobile/app.config.ts` (mobile) et `App:Name` (API).
-- **Charte graphique** : livrée dans `design/leftly/` (tokens, logos, illustrations, icônes). Appliquée à toute l'app (thème clair et sombre, composants, navigation, écrans) ; reste l'étape des moments forts (illustrations, célébration « Produit sauvé »).
+- **Charte graphique** : livrée dans `design/leftly/` (tokens, logos, illustrations, icônes), appliquée à toute l'app : thème clair et sombre, composants, navigation, écrans, et moments forts (illustrations des états vides, mascotte de l'onboarding, marmite pendant la génération, célébration « Produit sauvé »). Les illustrations ont des contours encre : elles sont posées sur un disque clair pour rester lisibles en mode sombre.
 
 ## Stack technique
 
@@ -227,8 +227,19 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Préférences : titres de section en Fredoka, interrupteur de consentement aux allergies mandarine, boutons − / + des portions en cercles à bord encre.
 - [ ] Onboarding : « QUESTION 2 SUR 5 » en petites capitales, barre de progression mandarine arrondie, question en grand titre ; « Question précédente » et « Se déconnecter » faciles à toucher.
 - [ ] Connexion : logo vertical de la charte (version sombre en mode sombre), sous-titre centré ; inscription et écran « serveur injoignable » (API arrêtée au lancement) aux couleurs de la charte.
-- [ ] Mode sombre (Réglages → Luminosité → Sombre) : tous les écrans passent en sombre (fond violet très foncé, textes clairs), y compris la barre d'onglets, le panneau « + », le sélecteur de catégorie, le calendrier iOS, les écrans d'attente et les badges d'urgence (toujours lisibles). Le clavier iOS est sombre lui aussi.
+- [x] Mode sombre (Réglages → Luminosité → Sombre) : tous les écrans passent en sombre (fond violet très foncé, textes clairs), y compris la barre d'onglets, le panneau « + », le sélecteur de catégorie, le calendrier iOS, les écrans d'attente et les badges d'urgence (toujours lisibles). Le clavier iOS est sombre lui aussi.
 - [ ] Changer le mode du téléphone app ouverte : l'app suit immédiatement, sans redémarrer.
+
+### Charte Leftly, étape 5 : moments forts
+
+- [ ] Frigo vide : illustration du frigo vide (sur un disque pêche, crème en mode sombre), titre et texte ; sans foyer : illustration du frigo et bouton vers l'onglet Foyer.
+- [ ] Recettes : « Aucune recette ces 30 derniers jours » et « Pas encore de favori » avec l'illustration des pâtes.
+- [ ] Génération d'une recette : la marmite se balance doucement au-dessus de « Le chef réfléchit… ».
+- [ ] Onboarding : la mascotte accueille en haut de chaque question.
+- [ ] « Mangé » puis confirmation : la mascotte ravie apparaît avec un rebond et une gerbe de confettis, « Produit sauvé ! » et le nom du produit ; tout disparaît seul au bout de 2 secondes environ, ou d'un appui. VoiceOver annonce « Produit sauvé ».
+- [ ] « Jeté » : pas de célébration.
+- [ ] Réduire les animations activé : pas de confettis, pas de rebond ni de balancement ; le message s'affiche quand même.
+- [ ] Mode sombre : les illustrations restent lisibles (disque crème).
 
 ### Scan du ticket de caisse (V2)
 

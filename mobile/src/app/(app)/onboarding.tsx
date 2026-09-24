@@ -6,6 +6,7 @@ import type { Profile } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
+import { Illustration } from '@/components/Illustration';
 import { Screen } from '@/components/Screen';
 import {
   AllergiesSection,
@@ -74,6 +75,10 @@ export default function OnboardingScreen() {
 
   return (
     <Screen>
+      {/* La mascotte accueille l'utilisateur pendant les 5 questions. */}
+      <View style={styles.mascot}>
+        <Illustration name="mascotWelcoming" size={72} />
+      </View>
       <Text style={styles.progress} accessibilityRole="progressbar">
         Question {stepIndex + 1} sur {ONBOARDING_STEPS.length}
       </Text>
@@ -105,7 +110,8 @@ export default function OnboardingScreen() {
 }
 
 const useStyles = makeStyles((t) => ({
-  progress: { ...t.type.overline, color: t.colors.ink3, marginTop: t.space.md },
+  mascot: { alignItems: 'center', marginTop: t.space.md },
+  progress: { ...t.type.overline, color: t.colors.ink3 },
   progressBar: { height: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.surface2, overflow: 'hidden' },
   progressFill: { height: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.primary },
   title: { ...t.type.title1, color: t.colors.ink, marginTop: t.space.xs },

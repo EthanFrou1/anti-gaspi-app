@@ -8,8 +8,10 @@ import type { InventoryItem } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ChoiceChips } from '@/components/ChoiceChips';
+import { EmptyState } from '@/components/EmptyState';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Bell } from '@/components/icons/lucide';
+import { SavedCelebration } from '@/features/celebration/SavedCelebration';
 import { useHousehold } from '@/features/household/useHousehold';
 import { InventoryRow } from '@/features/inventory/InventoryRow';
 import { canModifyItem, filterItems, type InventoryFilter } from '@/features/inventory/rules';
@@ -41,6 +43,8 @@ export default function FridgeScreen() {
   const { household } = useHousehold();
   const memberIds = useMemo(() => household?.members.map((m) => m.userId), [household]);
   const [filter, setFilter] = useState<InventoryFilter>('all');
+  // Produit qui vient d'être mangé : célébration « Produit sauvé » (visuelle seulement).
+  const [savedProduct, setSavedProduct] = useState<string | null>(null);
   const today = toLocalDateString();
 
   // Chaque chargement du frigo (retour sur l'écran, produit consommé ou jeté…) reprogramme
@@ -62,9 +66,13 @@ export default function FridgeScreen() {
   if (!householdId) {
     return (
       <SafeAreaView style={styles.centered} edges={['left', 'right']}>
-        <Text style={styles.emptyTitle}>Ton frigo est partagé au sein d'un foyer</Text>
-        <Text style={styles.emptyText}>Crée ton foyer ou rejoins celui de ta coloc pour commencer.</Text>
-        <Button title="Aller à l'onglet Foyer" onPress={() => router.navigate('/household')} />
+        <EmptyState
+          illustration="fridge"
+          title="Ton frigo est partagé au sein d'un foyer"
+          text="Crée ton foyer ou rejoins celui de ta coloc pour commencer."
+        >
+          <Button title="Aller à l'onglet Foyer" onPress={() => router.navigate('/household')} />
+        </EmptyState>
       </SafeAreaView>
     );
   }
@@ -73,7 +81,7 @@ export default function FridgeScreen() {
     const consumed = action === 'consume';
     Alert.alert(
       consumed ? `${item.name} : consommé ?` : `${item.name} : jeté ?`,
-      consumed ? 'Il sera retiré du frigo. Bravo, un produit sauvé !' : 'Il sera retiré du frigo.',
+      'Il sera retiré du frigo.',
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -88,6 +96,7 @@ export default function FridgeScreen() {
   async function changeStatus(item: InventoryItem, action: 'consume' | 'discard') {
     try {
       await api.inventory[action](householdId!, item.id);
+      if (action === 'consume') setSavedProduct(item.name);
       await reload();
     } catch (e) {
       Alert.alert('Impossible de modifier ce produit', asApiError(e).message);
@@ -163,13 +172,16 @@ export default function FridgeScreen() {
         }
         ListEmptyComponent={
           items !== null ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{filter === 'all' ? 'Le frigo est vide' : 'Rien dans cette sélection'}</Text>
-              <Text style={styles.emptyText}>Ajoute tes courses avec le bouton « + » pour être prévenu avant qu'elles ne périment.</Text>
-            </View>
+            <EmptyState
+              illustration="emptyFridge"
+              title={filter === 'all' ? 'Le frigo est vide' : 'Rien dans cette sélection'}
+              text="Ajoute tes courses avec le bouton « + » pour être prévenu avant qu'elles ne périment."
+            />
           ) : null
         }
       />
+
+      <SavedCelebration productName={savedProduct} onDone={() => setSavedProduct(null)} />
     </SafeAreaView>
   );
 }
@@ -180,7 +192,6 @@ const useStyles = makeStyles((t) => ({
   padded: { paddingHorizontal: t.layout.screenPadding, paddingBottom: t.space.sm },
   loader: { marginTop: t.space['2xl'] },
   list: { paddingHorizontal: t.layout.screenPadding, paddingBottom: t.space['2xl'], gap: t.space.sm },
-  empty: { paddingVertical: t.space['2xl'], gap: t.space.xs, alignItems: 'center' },
   centered: {
     flex: 1,
     padding: t.layout.screenPadding,
@@ -188,7 +199,5 @@ const useStyles = makeStyles((t) => ({
     justifyContent: 'center',
     backgroundColor: t.colors.bg,
   },
-  emptyTitle: { ...t.type.title3, color: t.colors.ink, textAlign: 'center' },
-  emptyText: { ...t.type.body, color: t.colors.ink2, textAlign: 'center' },
   devButton: { paddingHorizontal: t.space.md },
 }));

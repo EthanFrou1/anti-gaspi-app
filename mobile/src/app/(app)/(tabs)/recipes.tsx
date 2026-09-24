@@ -8,6 +8,7 @@ import type { GenerateRecipeRequest, Recipe, RecipeQuota } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { EmptyState } from '@/components/EmptyState';
 import { ChoiceChips } from '@/components/ChoiceChips';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Bot, Star } from '@/components/icons/lucide';
@@ -158,9 +159,15 @@ export default function RecipesScreen() {
           <Text style={styles.hint}>Le carnet de recettes du foyer : les favoris de chacun, conservés sans limite de durée.</Text>
         ) : null}
         {(view === 'recent' ? history : favorites).length === 0 ? (
-          <Text style={styles.hint}>
-            {view === 'recent' ? 'Aucune recette ces 30 derniers jours.' : 'Aucun favori pour l\'instant : mets une étoile sur une recette pour la garder.'}
-          </Text>
+          <EmptyState
+            illustration="pasta"
+            title={view === 'recent' ? 'Aucune recette ces 30 derniers jours' : 'Pas encore de favori'}
+            text={
+              view === 'recent'
+                ? 'Touche « Proposer une recette » : elle partira de ce qui périme en premier.'
+                : 'Mets une étoile sur une recette pour la garder dans le carnet du foyer.'
+            }
+          />
         ) : null}
         {(view === 'recent' ? history : favorites).map((recipe) => (
           <Card
@@ -185,6 +192,7 @@ export default function RecipesScreen() {
       {/* Écran d'attente : la génération peut prendre jusqu'à une minute. */}
       <WaitingOverlay
         visible={generating}
+        illustration="aiPot"
         title="Le chef réfléchit…"
         text="Il regarde ce qui périme en premier dans ton frigo. Ça peut prendre jusqu'à une minute."
       />
