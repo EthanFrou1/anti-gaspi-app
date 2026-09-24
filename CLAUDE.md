@@ -223,6 +223,8 @@ L'app reste en mode clair jusqu'au dernier groupe d'écrans.
 - [ ] Ajout et fiche produit : titres en Fredoka, interrupteur « Produit perso » mandarine, bandeau « lecture seule » neutre sur le produit perso d'un autre membre, lien « Supprimer (erreur de saisie) » en rouge souligné.
 - [ ] Scan du code-barres : cadre de visée mandarine, consigne sur fond sombre arrondi ; confirmation avec aperçu du produit en carte (image sur fond blanc).
 - [ ] Ticket : écran d'attente en carte sur fond assombri ; validation avec cartes, cases à cocher encre (cochée : fond mandarine et coche), ligne décochée atténuée, ligne en erreur bordée de rouge.
+- [ ] Recettes : historique et favoris en cartes (étoile citron pour une recette en favori) ; écran d'attente « Le chef réfléchit… » en carte ; bouton de développement du prompt avec une icône de robot.
+- [ ] Détail d'une recette : durée avec une icône d'horloge ; « Favori » en pastille (étoile pleine citron et bord épais quand la recette est en favori) ; « Partager » avec son icône ; avertissement IA sur fond citron ; ingrédients du frigo marqués d'une icône de frigo et en gras ; étapes numérotées dans des pastilles ; « J'ai cuisiné » avec les cases à cocher de la charte (grisées pour le produit perso d'un autre membre).
 
 ### Scan du ticket de caisse (V2)
 

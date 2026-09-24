@@ -1,20 +1,24 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, Share, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
 import type { InventoryItem, Recipe } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
+import { CheckBox } from '@/components/CheckBox';
 import { ErrorBanner } from '@/components/ErrorBanner';
+import { Clock, Refrigerator, Share2, Star, TriangleAlert } from '@/components/icons/lucide';
 import { Screen } from '@/components/Screen';
 import { APP_NAME } from '@/config';
 import { canModifyItem } from '@/features/inventory/rules';
 import { refreshExpiryReminders } from '@/features/notifications/reminders';
 import { favoriteLabel, formatPrepTime, formatRecipeForSharing, fridgeIngredients } from '@/features/recipes/rules';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 
 export default function RecipeScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state } = useAuth();
   const user = state.status === 'signedIn' ? state.user : null;
@@ -43,7 +47,7 @@ export default function RecipeScreen() {
   if (!recipe) {
     return (
       <Screen hasHeader>
-        {error ? <ErrorBanner message={error} /> : <ActivityIndicator style={styles.loader} size="large" color={colors.primary} />}
+        {error ? <ErrorBanner message={error} /> : <ActivityIndicator style={styles.loader} size="large" color={theme.colors.primary} />}
       </Screen>
     );
   }
@@ -101,9 +105,12 @@ export default function RecipeScreen() {
   return (
     <Screen hasHeader>
       <Text style={styles.title}>{recipe.title}</Text>
-      <Text style={styles.meta}>
-        ⏱ {formatPrepTime(recipe.prepMinutes)} · {recipe.servings} portion{recipe.servings > 1 ? 's' : ''}
-      </Text>
+      <View style={styles.metaRow}>
+        <Clock size={18} strokeWidth={2} color={theme.colors.ink2} />
+        <Text style={styles.meta}>
+          {formatPrepTime(recipe.prepMinutes)} · {recipe.servings} portion{recipe.servings > 1 ? 's' : ''}
+        </Text>
+      </View>
 
       <View style={styles.actions}>
         <Pressable
@@ -112,33 +119,53 @@ export default function RecipeScreen() {
           accessibilityRole="button"
           accessibilityState={{ selected: recipe.isFavorite }}
         >
-          <Text style={[styles.actionText, recipe.isFavorite && styles.actionTextActive]}>
-            {recipe.isFavorite ? '★' : '☆'} {favoriteLabel(recipe)}
-          </Text>
+          {/* Favori : étoile pleine ET bord plus épais (jamais la couleur seule). */}
+          <Star
+            size={18}
+            strokeWidth={2}
+            color={recipe.isFavorite ? theme.palette.citron.text : theme.colors.ink2}
+            fill={recipe.isFavorite ? theme.palette.citron.base : 'transparent'}
+          />
+          <Text style={styles.actionText}>{favoriteLabel(recipe)}</Text>
         </Pressable>
         <Pressable onPress={share} style={styles.actionButton} accessibilityRole="button">
+          <Share2 size={18} strokeWidth={2} color={theme.colors.ink2} />
           <Text style={styles.actionText}>Partager</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.warning}>
-        ⚠ Recette proposée par une IA : vérifie toujours les étiquettes, en particulier en cas d'allergie.
-      </Text>
+      <View style={styles.warning} accessibilityRole="alert">
+        <TriangleAlert size={20} strokeWidth={2} color={styles.warningText.color} />
+        <Text style={styles.warningText}>
+          Recette proposée par une IA : vérifie toujours les étiquettes, en particulier en cas d'allergie.
+        </Text>
+      </View>
 
       <Text style={styles.heading}>Ingrédients</Text>
       {recipe.ingredients.map((ingredient, index) => (
-        <Text key={index} style={[styles.ingredient, ingredient.inventoryItemId ? styles.fromFridge : null]}>
-          {ingredient.inventoryItemId ? '🧊 ' : '• '}
-          {ingredient.name}
-          {ingredient.quantity ? ` : ${ingredient.quantity}` : ''}
-        </Text>
+        <View key={index} style={styles.ingredientRow}>
+          {ingredient.inventoryItemId ? (
+            <Refrigerator size={18} strokeWidth={2} color={theme.colors.primaryText} />
+          ) : (
+            <View style={styles.bullet} />
+          )}
+          <Text style={[styles.ingredient, ingredient.inventoryItemId ? styles.fromFridge : null]}>
+            {ingredient.name}
+            {ingredient.quantity ? ` : ${ingredient.quantity}` : ''}
+          </Text>
+        </View>
       ))}
-      <Text style={styles.hint}>🧊 = produit de ton frigo</Text>
+      <View style={styles.legend}>
+        <Refrigerator size={14} strokeWidth={2} color={theme.colors.primaryText} />
+        <Text style={styles.hint}>produit de ton frigo, à utiliser en priorité</Text>
+      </View>
 
       <Text style={styles.heading}>Préparation</Text>
       {recipe.steps.map((step, index) => (
         <View key={index} style={styles.step}>
-          <Text style={styles.stepNumber}>{index + 1}</Text>
+          <View style={styles.stepNumber}>
+            <Text style={styles.stepNumberText}>{index + 1}</Text>
+          </View>
           <Text style={styles.stepText}>{step}</Text>
         </View>
       ))}
@@ -165,7 +192,7 @@ export default function RecipeScreen() {
                 accessibilityState={{ checked: isChecked, disabled: !allowed }}
                 style={styles.checkRow}
               >
-                <Text style={styles.checkbox}>{isChecked ? '☑' : '☐'}</Text>
+                <CheckBox checked={isChecked} disabled={!allowed} />
                 <Text style={[styles.checkLabel, !allowed && styles.disabled]}>
                   {item.name}
                   {!allowed ? ` (perso de ${item.ownerDisplayName ?? 'un autre membre'})` : ''}
@@ -185,32 +212,55 @@ export default function RecipeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xl },
-  title: { fontSize: 24, fontWeight: '700', color: colors.text },
-  meta: { fontSize: 15, color: colors.mutedText },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+const useStyles = makeStyles((t) => ({
+  loader: { marginTop: t.space['2xl'] },
+  title: { ...t.type.title2, color: t.colors.ink },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: t.space.xxs },
+  meta: { ...t.type.callout, color: t.colors.ink2 },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: t.space.xs },
   actionButton: {
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space.xxs,
+    minHeight: t.layout.minTouch,
+    borderWidth: t.borderWidth.hairline,
+    borderColor: t.colors.line,
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radius.pill,
+    paddingHorizontal: t.space.md,
   },
-  actionButtonActive: { backgroundColor: colors.primary },
-  actionText: { fontSize: 14, color: colors.primary, fontWeight: '600' },
-  actionTextActive: { color: colors.primaryText },
-  warning: { backgroundColor: '#FFF8E1', color: colors.text, padding: spacing.md, borderRadius: 8, fontSize: 13 },
-  heading: { fontSize: 18, fontWeight: '700', color: colors.text, marginTop: spacing.md },
-  ingredient: { fontSize: 15, color: colors.text },
-  fromFridge: { fontWeight: '600' },
-  hint: { fontSize: 12, color: colors.mutedText },
-  step: { flexDirection: 'row', gap: spacing.sm },
-  stepNumber: { fontSize: 15, fontWeight: '700', color: colors.primary, minWidth: 20 },
-  stepText: { flex: 1, fontSize: 15, color: colors.text },
-  cooked: { gap: spacing.sm },
-  checkRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', paddingVertical: spacing.xs },
-  checkbox: { fontSize: 22, color: colors.primary },
-  checkLabel: { flex: 1, fontSize: 15, color: colors.text },
-  disabled: { color: colors.mutedText },
-});
+  actionButtonActive: { borderWidth: t.borderWidth.selected, borderColor: t.colors.border, backgroundColor: t.colors.primarySoft },
+  actionText: { ...t.type.callout, color: t.colors.ink },
+  // Avertissement IA : fond citron doux, texte citron foncé (contraste AA).
+  warning: {
+    flexDirection: 'row',
+    gap: t.space.xs,
+    alignItems: 'flex-start',
+    backgroundColor: t.scheme === 'dark' ? t.palette.citron.darkSoft : t.palette.citron.soft,
+    padding: t.space.md,
+    borderRadius: t.radius.sm,
+  },
+  warningText: { ...t.type.callout, flex: 1, color: t.scheme === 'dark' ? t.palette.citron.darkText : t.palette.citron.text },
+  heading: { ...t.type.title3, color: t.colors.ink, marginTop: t.space.md },
+  ingredientRow: { flexDirection: 'row', alignItems: 'center', gap: t.space.xs },
+  bullet: { width: 6, height: 6, borderRadius: 3, marginHorizontal: 6, backgroundColor: t.colors.ink3 },
+  ingredient: { ...t.type.body, flex: 1, color: t.colors.ink },
+  fromFridge: { fontFamily: t.fonts.bodyBold },
+  legend: { flexDirection: 'row', alignItems: 'center', gap: t.space.xxs },
+  hint: { ...t.type.caption, color: t.colors.ink3 },
+  step: { flexDirection: 'row', gap: t.space.sm, alignItems: 'flex-start' },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: t.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepNumberText: { ...t.type.callout, fontFamily: t.fonts.heading, color: t.colors.primaryText },
+  stepText: { ...t.type.body, flex: 1, color: t.colors.ink },
+  cooked: { gap: t.space.sm },
+  checkRow: { flexDirection: 'row', gap: t.space.sm, alignItems: 'center', minHeight: t.layout.minTouch },
+  checkLabel: { ...t.type.body, flex: 1, color: t.colors.ink },
+  disabled: { color: t.colors.ink3 },
+}));

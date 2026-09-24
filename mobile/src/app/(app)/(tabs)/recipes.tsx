@@ -1,19 +1,22 @@
 import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
 import type { GenerateRecipeRequest, Recipe, RecipeQuota } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ChoiceChips } from '@/components/ChoiceChips';
 import { ErrorBanner } from '@/components/ErrorBanner';
+import { Bot, Star } from '@/components/icons/lucide';
 import { MultiChoiceChips } from '@/components/MultiChoiceChips';
 import { Screen } from '@/components/Screen';
+import { WaitingOverlay } from '@/components/WaitingOverlay';
 import { useHousehold } from '@/features/household/useHousehold';
 import { formatPrepTime, quotaLabel, toggleDiner } from '@/features/recipes/rules';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 import { formatShortDate } from '@/utils/dates';
 
 /**
@@ -21,6 +24,8 @@ import { formatShortDate } from '@/utils/dates';
  * en premier. Quota : 3 par jour et par personne.
  */
 export default function RecipesScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const { state } = useAuth();
   const user = state.status === 'signedIn' ? state.user : null;
   const householdId = user?.householdId ?? null;
@@ -134,7 +139,7 @@ export default function RecipesScreen() {
             accessibilityRole="button"
             accessibilityLabel="Copier le prompt (outil de développement)"
           >
-            <Text style={styles.devButtonText}>🤖</Text>
+            <Bot size={24} strokeWidth={2} color={theme.colors.ink} />
           </Pressable>
         ) : null}
       </View>
@@ -158,66 +163,57 @@ export default function RecipesScreen() {
           </Text>
         ) : null}
         {(view === 'recent' ? history : favorites).map((recipe) => (
-          <Pressable
+          <Card
             key={recipe.id}
             onPress={() => router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } })}
-            style={styles.historyRow}
-            accessibilityRole="button"
+            accessibilityLabel={`${recipe.title}${recipe.favoriteCount > 0 ? ', en favori' : ''}`}
+            style={styles.historyCard}
           >
-            <Text style={styles.historyTitle}>
-              {recipe.favoriteCount > 0 ? '★ ' : ''}
-              {recipe.title}
-            </Text>
-            <Text style={styles.historyMeta}>
-              {formatPrepTime(recipe.prepMinutes)} · {formatShortDate(recipe.createdAt.slice(0, 10))}
-            </Text>
-          </Pressable>
+            <View style={styles.historyText}>
+              <Text style={styles.historyTitle}>{recipe.title}</Text>
+              <Text style={styles.historyMeta}>
+                {formatPrepTime(recipe.prepMinutes)} · {formatShortDate(recipe.createdAt.slice(0, 10))}
+              </Text>
+            </View>
+            {recipe.favoriteCount > 0 ? (
+              <Star size={20} strokeWidth={2} color={theme.palette.citron.text} fill={theme.palette.citron.base} />
+            ) : null}
+          </Card>
         ))}
       </View>
 
       {/* Écran d'attente : la génération peut prendre jusqu'à une minute. */}
-      <Modal visible={generating} transparent animationType="fade">
-        <View style={styles.overlay}>
-          <View style={styles.overlayCard}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.overlayTitle}>Le chef réfléchit…</Text>
-            <Text style={styles.overlayText}>Il regarde ce qui périme en premier dans ton frigo. Ça peut prendre jusqu'à une minute.</Text>
-          </View>
-        </View>
-      </Modal>
+      <WaitingOverlay
+        visible={generating}
+        title="Le chef réfléchit…"
+        text="Il regarde ce qui périme en premier dans ton frigo. Ça peut prendre jusqu'à une minute."
+      />
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '700', color: colors.text },
-  text: { fontSize: 15, color: colors.mutedText },
-  section: { gap: spacing.sm, marginTop: spacing.md },
-  subtitle: { fontSize: 17, fontWeight: '700', color: colors.text },
-  hint: { fontSize: 13, color: colors.mutedText },
-  generateRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+const useStyles = makeStyles((t) => ({
+  title: { ...t.type.title2, color: t.colors.ink },
+  text: { ...t.type.body, color: t.colors.ink2 },
+  section: { gap: t.space.sm, marginTop: t.space.md },
+  subtitle: { ...t.type.title3, color: t.colors.ink },
+  hint: { ...t.type.caption, color: t.colors.ink3 },
+  generateRow: { flexDirection: 'row', gap: t.space.sm, alignItems: 'flex-start' },
   generateButton: { flex: 1 },
+  // Outil de développement : même hauteur que le bouton à côté (sans ombre, ce n'est pas une action).
   devButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    width: 52,
+    height: 52,
+    borderRadius: t.radius.md,
+    borderWidth: t.borderWidth.hairline,
+    borderColor: t.colors.line,
+    backgroundColor: t.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  devButtonText: { fontSize: 22 },
-  quota: { fontSize: 13, color: colors.mutedText, textAlign: 'center' },
-  historyRow: {
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    gap: 2,
-  },
-  historyTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
-  historyMeta: { fontSize: 13, color: colors.mutedText },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: spacing.lg },
-  overlayCard: { backgroundColor: colors.background, borderRadius: 12, padding: spacing.lg, gap: spacing.md, alignItems: 'center' },
-  overlayTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
-  overlayText: { fontSize: 14, color: colors.mutedText, textAlign: 'center' },
-});
+  quota: { ...t.type.caption, color: t.colors.ink3, textAlign: 'center' },
+  historyCard: { flexDirection: 'row', alignItems: 'center', gap: t.space.sm },
+  historyText: { flex: 1, gap: 2 },
+  historyTitle: { ...t.type.card, color: t.colors.ink },
+  historyMeta: { ...t.type.caption, color: t.colors.ink3 },
+}));

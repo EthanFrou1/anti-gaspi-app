@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import type { ComponentProps } from 'react';
 import { Animated, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChefHat, House, Plus, Refrigerator, User } from '@/components/icons/navIcons';
+import { ChefHat, House, Plus, Refrigerator, User } from '@/components/icons/lucide';
 import { useStickerPress } from '@/components/useStickerPress';
 import { makeStyles, useTheme } from '@/theme';
 

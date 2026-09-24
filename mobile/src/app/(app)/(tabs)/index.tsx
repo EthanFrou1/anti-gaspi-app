@@ -9,7 +9,7 @@ import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ChoiceChips } from '@/components/ChoiceChips';
 import { ErrorBanner } from '@/components/ErrorBanner';
-import { Bell } from '@/components/icons/navIcons';
+import { Bell } from '@/components/icons/lucide';
 import { useHousehold } from '@/features/household/useHousehold';
 import { InventoryRow } from '@/features/inventory/InventoryRow';
 import { canModifyItem, filterItems, type InventoryFilter } from '@/features/inventory/rules';

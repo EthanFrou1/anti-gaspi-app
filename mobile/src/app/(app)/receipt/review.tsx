@@ -11,7 +11,7 @@ import { DateField } from '@/components/DateField';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
-import { Check } from '@/components/icons/navIcons';
+import { CheckBox } from '@/components/CheckBox';
 import { CategoryPicker } from '@/features/inventory/CategoryPicker';
 import { QuantityPicker } from '@/features/inventory/QuantityPicker';
 import { estimateExpiry, formatQuantity, parseQuantity, UNITS, unitLabel } from '@/features/inventory/rules';
@@ -223,7 +223,6 @@ type LineCardProps = {
 
 /** Une ligne du ticket : case à cocher, résumé, et formulaire de correction une fois ouverte. */
 function LineCard({ line, category, categories, purchasedOn, today, expanded, error, onToggleExpanded, onChange }: LineCardProps) {
-  const theme = useTheme();
   const styles = useStyles();
   const expiresOn = lineExpiresOn(line, purchasedOn, category);
   const quantity = parseQuantity(line.quantityText);
@@ -244,9 +243,8 @@ function LineCard({ line, category, categories, purchasedOn, today, expanded, er
           accessibilityState={{ checked: line.selected }}
           accessibilityLabel={`Ajouter ${line.name || 'ce produit'}`}
           hitSlop={8}
-          style={[styles.checkbox, line.selected && styles.checkboxChecked]}
         >
-          {line.selected ? <Check size={18} strokeWidth={3} color={theme.colors.onPrimary} /> : null}
+          <CheckBox checked={line.selected} />
         </Pressable>
         <Pressable
           onPress={onToggleExpanded}
@@ -318,18 +316,6 @@ const useStyles = makeStyles((t) => ({
   cardUnselected: { opacity: 0.55 },
   cardError: { borderWidth: t.borderWidth.selected, borderColor: t.colors.danger },
   cardRow: { flexDirection: 'row', gap: t.space.sm, alignItems: 'flex-start' },
-  // Case à cocher : cochée = fond mandarine ET coche (jamais la couleur seule).
-  checkbox: {
-    width: 28,
-    height: 28,
-    borderRadius: t.radius.sm - 4,
-    borderWidth: t.borderWidth.selected,
-    borderColor: t.colors.border,
-    backgroundColor: t.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: { backgroundColor: t.colors.primary },
   cardContent: { flex: 1, gap: 2 },
   cardName: { ...t.type.card, color: t.colors.ink },
   cardMeta: { ...t.type.callout, color: t.colors.ink2 },

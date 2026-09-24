@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import { Pressable, Text, View } from 'react-native';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
-import { ChefHat, ChevronRight, PencilLine, ReceiptText, ScanBarcode } from '@/components/icons/navIcons';
+import { ChefHat, ChevronRight, PencilLine, ReceiptText, ScanBarcode } from '@/components/icons/lucide';
 import { makeStyles, useTheme } from '@/theme';
 
 export type AddAction = 'scanProduct' | 'manualEntry' | 'suggestRecipe' | 'scanReceipt' | 'goToHousehold';
