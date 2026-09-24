@@ -1,16 +1,17 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { asApiError, type ApiError } from '@/api/errors';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
+import { Logo } from '@/components/Logo';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
-import { APP_NAME } from '@/config';
-import { colors, spacing } from '@/theme';
+import { makeStyles } from '@/theme';
 
 export default function LoginScreen() {
+  const styles = useStyles();
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,8 +32,10 @@ export default function LoginScreen() {
 
   return (
     <Screen>
-      <Text style={styles.title}>{APP_NAME}</Text>
-      <Text style={styles.subtitle}>Connecte-toi pour retrouver ton frigo.</Text>
+      <View style={styles.header}>
+        <Logo />
+        <Text style={styles.subtitle}>Connecte-toi pour retrouver ton frigo.</Text>
+      </View>
 
       <ErrorBanner message={error && Object.keys(error.fieldErrors).length === 0 ? error.message : undefined} />
 
@@ -65,8 +68,8 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontSize: 32, fontWeight: '700', color: colors.primary, marginTop: spacing.xl },
-  subtitle: { fontSize: 16, color: colors.mutedText, marginBottom: spacing.md },
-  link: { color: colors.primary, fontSize: 15, textAlign: 'center', padding: spacing.sm },
-});
+const useStyles = makeStyles((t) => ({
+  header: { alignItems: 'center', gap: t.space.md, marginTop: t.space.xl, marginBottom: t.space.md },
+  subtitle: { ...t.type.body, color: t.colors.ink2, textAlign: 'center' },
+  link: { ...t.type.bodyBold, color: t.colors.primaryText, textAlign: 'center', padding: t.space.sm },
+}));

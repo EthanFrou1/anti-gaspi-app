@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { Text } from 'react-native';
 import { asApiError, type ApiError } from '@/api/errors';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
-import { colors } from '@/theme';
+import { makeStyles } from '@/theme';
 
 // Doit rester aligné sur la règle de l'API (RequiredLength dans AddAppIdentity).
 const MIN_PASSWORD_LENGTH = 10;
 
 export default function RegisterScreen() {
+  const styles = useStyles();
   const { signUp } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
@@ -70,6 +71,6 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  hint: { fontSize: 13, color: colors.mutedText },
-});
+const useStyles = makeStyles((t) => ({
+  hint: { ...t.type.caption, color: t.colors.ink3 },
+}));

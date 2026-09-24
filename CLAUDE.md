@@ -21,7 +21,7 @@ Cible de lancement : étudiants et alternants (petit budget, peu de temps, peu d
 - **Coûts** : garder les coûts d'hébergement et d'IA au minimum. Toute fonctionnalité qui appelle l'IA doit être limitée par utilisateur.
 - **Concurrence directe** : Friio (inventaire, tri par urgence, frigo partagé, recettes). Notre différence : scan de ticket par IA, recettes générées selon le profil, cible étudiante.
 - **Nom** : **Leftly** (définitif). Le repo garde son nom technique `anti-gaspi-app`, ainsi que la base et le rôle PostgreSQL (`antigaspi`). Ne pas coder le nom de l'app en dur partout : il est centralisé dans `mobile/app.config.ts` (mobile) et `App:Name` (API).
-- **Charte graphique** : livrée dans `design/leftly/` (tokens, logos, illustrations, icônes). Application en cours : fondations, composants et navigation d'abord, puis les écrans un groupe à la fois, puis les moments forts (illustrations, célébration « Produit sauvé »).
+- **Charte graphique** : livrée dans `design/leftly/` (tokens, logos, illustrations, icônes). Appliquée à toute l'app (thème clair et sombre, composants, navigation, écrans) ; reste l'étape des moments forts (illustrations, célébration « Produit sauvé »).
 
 ## Stack technique
 
@@ -191,8 +191,6 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 
 ### Charte Leftly, étapes 1 à 3 : fondations, composants, navigation
 
-Les écrans ne sont pas encore migrés : leur texte reste dans la police du système, et l'app reste en mode clair (le mode sombre arrive à la fin de la migration des écrans).
-
 - [ ] Au lancement, le splash reste affiché le temps de charger les polices, sans « saut » de police ensuite.
 - [ ] Titres d'en-tête et boutons en Fredoka (police arrondie) ; fond crème ; boutons mandarine à bord encre avec une ombre nette décalée vers le bas.
 - [ ] Appui sur un bouton : il s'enfonce dans son ombre, puis remonte.
@@ -214,8 +212,6 @@ Les écrans ne sont pas encore migrés : leur texte reste dans la police du syst
 
 ### Charte Leftly, étape 4 : écrans migrés
 
-L'app reste en mode clair jusqu'au dernier groupe d'écrans.
-
 - [ ] Frigo : chaque produit est une carte (icône de catégorie, nom, quantité et catégorie, badge d'urgence avec fond, icône et libellé court : Périmé, Urgent, Bientôt, OK, À vérifier, puis le détail « À consommer demain », « Dans 5 j »…).
 - [ ] Frigo : une DDM dépassée affiche le badge violet « À vérifier » (œil) et « DDM dépassée : encore bon ? », jamais « Périmé ».
 - [ ] Frigo : un produit perso affiche le badge neutre « Perso · Prénom » avec l'avatar ; deux colocataires ont deux couleurs différentes.
@@ -230,6 +226,9 @@ L'app reste en mode clair jusqu'au dernier groupe d'écrans.
 - [ ] Profil : grand avatar à l'initiale, nom et email ; « Supprimer définitivement » en bouton rouge (désactivé tant que le mot de passe est vide).
 - [ ] Préférences : titres de section en Fredoka, interrupteur de consentement aux allergies mandarine, boutons − / + des portions en cercles à bord encre.
 - [ ] Onboarding : « QUESTION 2 SUR 5 » en petites capitales, barre de progression mandarine arrondie, question en grand titre ; « Question précédente » et « Se déconnecter » faciles à toucher.
+- [ ] Connexion : logo vertical de la charte (version sombre en mode sombre), sous-titre centré ; inscription et écran « serveur injoignable » (API arrêtée au lancement) aux couleurs de la charte.
+- [ ] Mode sombre (Réglages → Luminosité → Sombre) : tous les écrans passent en sombre (fond violet très foncé, textes clairs), y compris la barre d'onglets, le panneau « + », le sélecteur de catégorie, le calendrier iOS, les écrans d'attente et les badges d'urgence (toujours lisibles). Le clavier iOS est sombre lui aussi.
+- [ ] Changer le mode du téléphone app ouverte : l'app suit immédiatement, sans redémarrer.
 
 ### Scan du ticket de caisse (V2)
 

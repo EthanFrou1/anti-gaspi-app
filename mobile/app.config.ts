@@ -19,9 +19,8 @@ const config: ExpoConfig = {
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/brand/app-icon/ios/AppIcon-1024.png',
-  // TRANSITION : l'app reste en mode clair tant que tous les écrans ne sont pas migrés vers le
-  // thème de la charte ; passera à 'automatic' (suivre le réglage du téléphone) à la fin.
-  userInterfaceStyle: 'light',
+  // Clair ou sombre selon le réglage du téléphone (thème de la charte, splash, icône iOS).
+  userInterfaceStyle: 'automatic',
   ios: {
     supportsTablet: true,
     // Icône sombre d'iOS 18 : la « bouchée » de la tuile laisse voir le fond sombre.

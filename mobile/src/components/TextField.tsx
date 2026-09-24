@@ -20,6 +20,8 @@ export function TextField({ label, error, style, onFocus, onBlur, ...inputProps 
         style={[styles.input, focused && styles.inputFocused, error ? styles.inputError : null, style]}
         placeholderTextColor={theme.colors.ink3}
         selectionColor={theme.colors.primary}
+        // Clavier iOS assorti au mode (sombre avec le thème sombre).
+        keyboardAppearance={theme.scheme}
         accessibilityLabel={label}
         onFocus={(event) => {
           setFocused(true);

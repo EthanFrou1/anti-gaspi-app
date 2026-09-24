@@ -2,13 +2,6 @@ import { createContext, useContext, type ReactNode } from 'react';
 import { StyleSheet, useColorScheme } from 'react-native';
 import { darkTheme, lightTheme, type ColorScheme, type Theme } from './theme';
 
-/**
- * TRANSITION : l'app reste en mode clair tant que tous les écrans ne sont pas migrés vers
- * useTheme(). Sinon, un écran pas encore migré resterait clair au milieu d'éléments sombres.
- * Passera à true (avec userInterfaceStyle « automatic » dans app.config.ts) à la fin de la migration.
- */
-export const FOLLOW_SYSTEM_SCHEME = false;
-
 const ThemeContext = createContext<Theme>(lightTheme);
 
 type Props = {
@@ -20,7 +13,7 @@ type Props = {
 /** Fournit le thème de la charte (clair ou sombre selon le réglage du téléphone). */
 export function ThemeProvider({ children, scheme }: Props) {
   const system = useColorScheme();
-  const resolved = scheme ?? (FOLLOW_SYSTEM_SCHEME && system === 'dark' ? 'dark' : 'light');
+  const resolved = scheme ?? (system === 'dark' ? 'dark' : 'light');
   return <ThemeContext.Provider value={resolved === 'dark' ? darkTheme : lightTheme}>{children}</ThemeContext.Provider>;
 }
 
