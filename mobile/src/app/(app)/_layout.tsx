@@ -37,6 +37,8 @@ export default function AppLayout() {
         <Stack.Screen name="receipt/scan" options={{ title: 'Scanner un ticket' }} />
         <Stack.Screen name="receipt/review" options={{ title: 'Vérifier le ticket' }} />
         <Stack.Screen name="preferences" options={{ title: 'Mes préférences' }} />
+        <Stack.Screen name="settings/theme" options={{ title: 'Thème' }} />
+        <Stack.Screen name="settings/delete-account" options={{ title: 'Supprimer mon compte' }} />
         <Stack.Screen name="recipe/[id]" options={{ title: 'Recette' }} />
       </Stack.Protected>
     </Stack>

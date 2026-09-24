@@ -223,7 +223,7 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Détail d'une recette : durée avec une icône d'horloge ; « Favori » en pastille (étoile pleine citron et bord épais quand la recette est en favori) ; « Partager » avec son icône ; avertissement IA sur fond citron ; ingrédients du frigo marqués d'une icône de frigo et en gras ; étapes numérotées dans des pastilles ; « J'ai cuisiné » avec les cases à cocher de la charte (grisées pour le produit perso d'un autre membre).
 - [ ] Foyer : nom en grand titre ; membres en cartes avec avatar (même couleur que sur leurs produits perso), badge « Propriétaire » avec couronne, « Exclure » en petit bouton rouge (propriétaire seulement) ; codes d'invitation en cartes (icône de partage, « Révoquer » en petit bouton rouge) ; « Quitter le foyer » inchangé.
 - [ ] Sans foyer : « Créer un foyer » et « Rejoindre un foyer » séparés par « ou » entre deux traits.
-- [ ] Profil : grand avatar à l'initiale, nom et email ; « Supprimer définitivement » en bouton rouge (désactivé tant que le mot de passe est vide).
+- [ ] Profil → Supprimer mon compte : « Supprimer définitivement » en bouton rouge (désactivé tant que le mot de passe est vide).
 - [ ] Préférences : titres de section en Fredoka, interrupteur de consentement aux allergies mandarine, boutons − / + des portions en cercles à bord encre.
 - [ ] Onboarding : « QUESTION 2 SUR 5 » en petites capitales, barre de progression mandarine arrondie, question en grand titre ; « Question précédente » et « Se déconnecter » faciles à toucher.
 - [ ] Connexion : logo vertical de la charte (version sombre en mode sombre), sous-titre centré ; inscription et écran « serveur injoignable » (API arrêtée au lancement) aux couleurs de la charte.
@@ -240,6 +240,17 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] « Jeté » : pas de célébration.
 - [ ] Réduire les animations activé : pas de confettis, pas de rebond ni de balancement ; le message s'affiche quand même.
 - [ ] Mode sombre : les illustrations restent lisibles (disque crème).
+
+### Profil et réglages
+
+- [ ] Profil : avatar, nom et email, puis des sections comme les Réglages d'iOS (Apparence, Mon compte, Notifications, À propos, Session), chaque ligne avec son icône.
+- [ ] Profil → Thème : Automatique, Clair ou Sombre, avec une coche sur le choix actuel ; l'app change aussitôt, alertes, calendrier et clavier compris.
+- [ ] Le thème choisi est gardé après avoir fermé puis relancé l'app, sans passer un instant par l'autre mode au démarrage.
+- [ ] Automatique : l'app suit le réglage du téléphone (y compris quand il bascule seul le soir).
+- [ ] Préférences alimentaires, Mon foyer (ouvre l'onglet Foyer), Rappels de péremption (ouvre les réglages de l'app dans le téléphone), Open Food Facts (ouvre le site).
+- [ ] Version de Leftly affichée (1.0.0) ; « Se déconnecter » affiche un indicateur puis renvoie à la connexion.
+- [ ] « Supprimer mon compte » (en rouge) ouvre un écran à part ; la suppression marche comme avant (mot de passe, puis confirmation).
+- [ ] VoiceOver : sur l'écran Thème, les choix sont annoncés comme des boutons radio, « sélectionné » pour le choix actuel.
 
 ### Scan du ticket de caisse (V2)
 
@@ -304,7 +315,7 @@ Règles :
 - Code (noms de classes, variables, méthodes) en **anglais** ; commentaires, messages de commit et documentation en **français**.
 - Backend : architecture en couches claire (Controllers → Services → accès aux données), injection de dépendances, DTOs pour les entrées et sorties de l'API (jamais les entités EF directement).
 - Mobile : TypeScript strict, composants fonctionnels et hooks, appels API centralisés dans un seul module.
-- Mobile, apparence : couleurs, polices, espacements et rayons viennent du thème (`src/theme/`, tokens de la charte), via `useTheme()` et `makeStyles()` ; aucune couleur en dur dans les écrans. Thème clair et sombre selon le réglage du téléphone. Titres en Fredoka, texte en Figtree. Les SVG s'importent comme des composants (`react-native-svg-transformer`) ; les icônes en `currentColor` prennent la couleur de la propriété `color`. Seuls les fichiers utilisés par l'app vont dans `mobile/assets/brand/` (le reste reste dans `design/`).
+- Mobile, apparence : couleurs, polices, espacements et rayons viennent du thème (`src/theme/`, tokens de la charte), via `useTheme()` et `makeStyles()` ; aucune couleur en dur dans les écrans. Thème clair ou sombre : Automatique (réglage du téléphone), Clair ou Sombre au choix dans Profil → Thème (enregistré avec AsyncStorage, appliqué à toute l'app, composants natifs compris, par `Appearance.setColorScheme`). Titres en Fredoka, texte en Figtree. Les SVG s'importent comme des composants (`react-native-svg-transformer`) ; les icônes en `currentColor` prennent la couleur de la propriété `color`. Seuls les fichiers utilisés par l'app vont dans `mobile/assets/brand/` (le reste reste dans `design/`).
 - Tests unitaires sur la logique métier importante (estimation des dates, combinaison des profils, droits d'accès au foyer).
 
 ## Façon de travailler avec moi

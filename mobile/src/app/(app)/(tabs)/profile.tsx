@@ -1,22 +1,25 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
-import { asApiError, type ApiError } from '@/api/errors';
+import { Linking, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { Avatar } from '@/components/Avatar';
-import { Button } from '@/components/Button';
-import { ErrorBanner } from '@/components/ErrorBanner';
+import { Bell, Database, House, Info, LogOut, SunMoon, Trash, UtensilsCrossed } from '@/components/icons/lucide';
 import { Screen } from '@/components/Screen';
-import { TextField } from '@/components/TextField';
-import { makeStyles } from '@/theme';
+import { SettingsRow, SettingsSection } from '@/components/SettingsList';
+import { APP_NAME, APP_VERSION } from '@/config';
+import { makeStyles, THEME_PREFERENCE_LABELS, useThemePreference } from '@/theme';
 
+// Source des données produit (licence ODbL : la source doit être citée).
+const OPEN_FOOD_FACTS_URL = 'https://world.openfoodfacts.org';
+
+/**
+ * Profil et réglages, organisés par sections comme les Réglages d'iOS.
+ */
 export default function ProfileScreen() {
   const styles = useStyles();
-  const { state, signOut, deleteAccount } = useAuth();
+  const { state, signOut } = useAuth();
+  const { preference } = useThemePreference();
   const [signingOut, setSigningOut] = useState(false);
-  const [password, setPassword] = useState('');
-  const [deleting, setDeleting] = useState(false);
-  const [error, setError] = useState<ApiError | null>(null);
 
   if (state.status !== 'signedIn') {
     return null;
@@ -25,30 +28,6 @@ export default function ProfileScreen() {
   async function handleSignOut() {
     setSigningOut(true);
     await signOut();
-  }
-
-  function confirmDelete() {
-    Alert.alert(
-      'Supprimer ton compte ?',
-      'Cette action est définitive. Si tu es propriétaire d\'un foyer, la propriété passera au membre ' +
-        'le plus ancien ; si tu en es le seul membre, le foyer et son contenu seront supprimés.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Supprimer', style: 'destructive', onPress: () => void handleDelete() },
-      ],
-    );
-  }
-
-  async function handleDelete() {
-    setDeleting(true);
-    setError(null);
-    try {
-      // En cas de succès, la navigation protégée renvoie vers l'écran de connexion.
-      await deleteAccount(password);
-    } catch (e) {
-      setError(asApiError(e));
-      setDeleting(false);
-    }
   }
 
   return (
@@ -61,33 +40,60 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <Button title="Mes préférences alimentaires" onPress={() => router.push('/preferences')} />
-
-      <Button title="Se déconnecter" variant="secondary" onPress={() => void handleSignOut()} loading={signingOut} />
-
-      <View style={[styles.section, styles.dangerZone]}>
-        <Text style={styles.title}>Supprimer mon compte</Text>
-        <Text style={styles.text}>
-          Toutes tes données personnelles seront effacées. Saisis ton mot de passe pour confirmer.
-        </Text>
-        <ErrorBanner message={error && !error.fieldError('Password') ? error.message : undefined} />
-        <TextField
-          label="Mot de passe"
-          value={password}
-          onChangeText={setPassword}
-          error={error?.fieldError('Password')}
-          secureTextEntry
-          autoComplete="current-password"
-          textContentType="password"
+      <SettingsSection title="Apparence">
+        <SettingsRow
+          icon={SunMoon}
+          label="Thème"
+          value={THEME_PREFERENCE_LABELS[preference]}
+          onPress={() => router.push('/settings/theme')}
+          last
         />
-        <Button
-          title="Supprimer définitivement"
-          variant="danger"
-          onPress={confirmDelete}
-          loading={deleting}
-          disabled={password.length === 0}
+      </SettingsSection>
+
+      <SettingsSection title="Mon compte">
+        <SettingsRow
+          icon={UtensilsCrossed}
+          label="Préférences alimentaires"
+          onPress={() => router.push('/preferences')}
+          accessibilityHint="Régime, allergies, temps de cuisine, budget et objectif"
         />
-      </View>
+        <SettingsRow icon={House} label="Mon foyer" onPress={() => router.navigate('/household')} last />
+      </SettingsSection>
+
+      <SettingsSection
+        title="Notifications"
+        footer="Un résumé chaque jour à 18 h avec les produits à consommer. Pour les couper ou masquer leur contenu sur l'écran verrouillé, passe par les réglages du téléphone."
+      >
+        <SettingsRow
+          icon={Bell}
+          label="Rappels de péremption"
+          value="Réglages du téléphone"
+          onPress={() => void Linking.openSettings()}
+          last
+        />
+      </SettingsSection>
+
+      <SettingsSection title="À propos">
+        <SettingsRow icon={Info} label={`Version de ${APP_NAME}`} value={APP_VERSION} />
+        <SettingsRow
+          icon={Database}
+          label="Données produits : Open Food Facts"
+          onPress={() => void Linking.openURL(OPEN_FOOD_FACTS_URL)}
+          accessibilityHint="Ouvre le site d'Open Food Facts (licence ODbL)"
+          last
+        />
+      </SettingsSection>
+
+      <SettingsSection title="Session">
+        <SettingsRow icon={LogOut} label="Se déconnecter" onPress={() => void handleSignOut()} loading={signingOut} />
+        <SettingsRow
+          icon={Trash}
+          label="Supprimer mon compte"
+          onPress={() => router.push('/settings/delete-account')}
+          destructive
+          last
+        />
+      </SettingsSection>
     </Screen>
   );
 }
@@ -95,15 +101,6 @@ export default function ProfileScreen() {
 const useStyles = makeStyles((t) => ({
   header: { flexDirection: 'row', alignItems: 'center', gap: t.space.md, marginBottom: t.space.xs },
   headerText: { flex: 1, gap: 2 },
-  section: { gap: t.space.sm },
   name: { ...t.type.title2, color: t.colors.ink },
   email: { ...t.type.callout, color: t.colors.ink3 },
-  dangerZone: {
-    marginTop: t.space.xl,
-    paddingTop: t.space.xl,
-    borderTopWidth: t.borderWidth.hairline,
-    borderTopColor: t.colors.line,
-  },
-  title: { ...t.type.title3, color: t.colors.danger },
-  text: { ...t.type.callout, color: t.colors.ink2 },
 }));

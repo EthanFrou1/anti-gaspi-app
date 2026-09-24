@@ -7,6 +7,9 @@ import Constants from 'expo-constants';
 // Le nom vient de app.config.ts : on ne le recopie nulle part ailleurs.
 export const APP_NAME = Constants.expoConfig?.name ?? 'App';
 
+// Version affichée dans Profil → À propos (champ « version » de app.config.ts).
+export const APP_VERSION = Constants.expoConfig?.version ?? '';
+
 // Accès « statique » obligatoire (process.env.EXPO_PUBLIC_...) : Expo remplace
 // cette expression par sa valeur au moment du build.
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;

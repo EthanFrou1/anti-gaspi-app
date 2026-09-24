@@ -21,6 +21,7 @@ mobile/
     │       ├── (tabs)/  → onglets Frigo, Recettes, Foyer, Profil, et le bouton « + » central
     │       ├── recipe/  → détail d'une recette, « J'ai cuisiné »
     │       ├── receipt/ → scan d'un ticket de caisse et validation des lignes
+    │       ├── settings/ → réglages ouverts depuis le Profil (thème, suppression du compte)
     │       └── item/    → ajout et modification d'un produit
     ├── api/             → client API : SEUL module qui appelle le serveur
     ├── auth/            → contexte de session, stockage sécurisé des jetons

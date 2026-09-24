@@ -4,15 +4,15 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { useExpiryReminderSync } from '@/features/notifications/hooks';
-import { makeStyles, ThemeProvider, useTheme } from '@/theme';
+import { applyThemePreference, loadThemePreference, makeStyles, ThemeProvider, useTheme, type ThemePreference } from '@/theme';
 
-// Le splash reste affiché tant que les polices de la charte ne sont pas chargées :
-// sinon, les textes s'afficheraient un instant dans la police du système.
+// Le splash reste affiché tant que les polices de la charte et le choix du thème ne sont pas
+// chargés : sinon, l'app s'afficherait un instant dans la police du système ou le mauvais mode.
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -28,16 +28,26 @@ export default function RootLayout() {
   // En cas d'échec, on continue avec la police du système plutôt que de rester bloqué.
   const fontsReady = fontsLoaded || fontError !== null;
 
+  // Thème choisi dans le Profil (Automatique, Clair, Sombre), appliqué avant le premier affichage.
+  const [themePreference, setThemePreference] = useState<ThemePreference | null>(null);
   useEffect(() => {
-    if (fontsReady) SplashScreen.hide();
-  }, [fontsReady]);
+    void loadThemePreference().then((preference) => {
+      applyThemePreference(preference);
+      setThemePreference(preference);
+    });
+  }, []);
 
-  if (!fontsReady) {
+  const ready = fontsReady && themePreference !== null;
+  useEffect(() => {
+    if (ready) SplashScreen.hide();
+  }, [ready]);
+
+  if (!ready) {
     return null;
   }
 
   return (
-    <ThemeProvider>
+    <ThemeProvider initialPreference={themePreference}>
       <AuthProvider>
         <ThemedStatusBar />
         <RootNavigator />
