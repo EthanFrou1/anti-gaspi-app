@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError, type ApiError } from '@/api/errors';
 import type { Household, HouseholdMember } from '@/api/types';
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { ErrorBanner } from '@/components/ErrorBanner';
-import { colors, spacing } from '@/theme';
+import { Crown } from '@/components/icons/lucide';
+import { makeStyles, useTheme } from '@/theme';
 import { EquipmentSection } from './EquipmentSection';
 import { InvitationsSection } from './InvitationsSection';
 import { canRemoveMember, describeLeaveConsequence } from './rules';
@@ -18,6 +21,10 @@ type Props = {
 };
 
 export function HouseholdView({ household, myUserId, onChanged }: Props) {
+  const theme = useTheme();
+  const styles = useStyles();
+  // Ordre d'arrivée : chaque membre garde la couleur d'avatar de ses produits perso.
+  const memberIds = household.members.map((m) => m.userId);
   const [error, setError] = useState<ApiError | null>(null);
   const [leaving, setLeaving] = useState(false);
 
@@ -64,18 +71,30 @@ export function HouseholdView({ household, myUserId, onChanged }: Props) {
       <View style={styles.section}>
         <Text style={styles.title}>Membres ({household.members.length})</Text>
         {household.members.map((member) => (
-          <View key={member.userId} style={styles.memberRow}>
-            <Text style={styles.memberName}>
-              {member.displayName}
-              {member.userId === myUserId ? ' (toi)' : ''}
-            </Text>
-            {member.role === 'Owner' ? <Text style={styles.badge}>Propriétaire</Text> : null}
+          <Card key={member.userId} style={styles.memberRow}>
+            <Avatar userId={member.userId} displayName={member.displayName} size={36} memberIds={memberIds} />
+            <View style={styles.memberText}>
+              <Text style={styles.memberName}>
+                {member.displayName}
+                {member.userId === myUserId ? ' (toi)' : ''}
+              </Text>
+              {member.role === 'Owner' ? (
+                <View style={styles.badge}>
+                  <Crown size={14} strokeWidth={2} color={theme.persoBadge.fg} />
+                  <Text style={styles.badgeText}>Propriétaire</Text>
+                </View>
+              ) : null}
+            </View>
             {canRemoveMember(member, household, myUserId) ? (
-              <Pressable onPress={() => confirmExclude(member)} accessibilityRole="button" hitSlop={8}>
-                <Text style={styles.danger}>Exclure</Text>
-              </Pressable>
+              <Button
+                title="Exclure"
+                size="small"
+                variant="danger"
+                onPress={() => confirmExclude(member)}
+                accessibilityLabel={`Exclure ${member.displayName}`}
+              />
             ) : null}
-          </View>
+          </Card>
         ))}
       </View>
 
@@ -88,29 +107,24 @@ export function HouseholdView({ household, myUserId, onChanged }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { gap: spacing.lg },
-  name: { fontSize: 26, fontWeight: '700', color: colors.text },
-  section: { gap: spacing.sm },
-  title: { fontSize: 18, fontWeight: '700', color: colors.text },
-  memberRow: {
+const useStyles = makeStyles((t) => ({
+  container: { gap: t.space.xl },
+  name: { ...t.type.title1, color: t.colors.ink },
+  section: { gap: t.space.xs },
+  title: { ...t.type.title3, color: t.colors.ink },
+  memberRow: { flexDirection: 'row', alignItems: 'center', gap: t.space.sm, paddingVertical: t.space.sm },
+  memberText: { flex: 1, gap: t.space.xxs },
+  memberName: { ...t.type.bodyBold, color: t.colors.ink },
+  // Badge neutre, comme « Perso » : une information, pas une alerte.
+  badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  memberName: { flex: 1, fontSize: 16, color: colors.text },
-  badge: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.primary,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 4,
-    paddingHorizontal: spacing.xs,
+    alignSelf: 'flex-start',
+    gap: t.space.xxs,
+    backgroundColor: t.persoBadge.bg,
+    borderRadius: t.radius.pill,
+    paddingHorizontal: t.space.xs,
     paddingVertical: 2,
   },
-  danger: { color: colors.error, fontWeight: '600' },
-});
+  badgeText: { ...t.type.caption, color: t.persoBadge.fg },
+}));

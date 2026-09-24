@@ -225,6 +225,8 @@ L'app reste en mode clair jusqu'au dernier groupe d'écrans.
 - [ ] Ticket : écran d'attente en carte sur fond assombri ; validation avec cartes, cases à cocher encre (cochée : fond mandarine et coche), ligne décochée atténuée, ligne en erreur bordée de rouge.
 - [ ] Recettes : historique et favoris en cartes (étoile citron pour une recette en favori) ; écran d'attente « Le chef réfléchit… » en carte ; bouton de développement du prompt avec une icône de robot.
 - [ ] Détail d'une recette : durée avec une icône d'horloge ; « Favori » en pastille (étoile pleine citron et bord épais quand la recette est en favori) ; « Partager » avec son icône ; avertissement IA sur fond citron ; ingrédients du frigo marqués d'une icône de frigo et en gras ; étapes numérotées dans des pastilles ; « J'ai cuisiné » avec les cases à cocher de la charte (grisées pour le produit perso d'un autre membre).
+- [ ] Foyer : nom en grand titre ; membres en cartes avec avatar (même couleur que sur leurs produits perso), badge « Propriétaire » avec couronne, « Exclure » en petit bouton rouge (propriétaire seulement) ; codes d'invitation en cartes (icône de partage, « Révoquer » en petit bouton rouge) ; « Quitter le foyer » inchangé.
+- [ ] Sans foyer : « Créer un foyer » et « Rejoindre un foyer » séparés par « ou » entre deux traits.
 
 ### Scan du ticket de caisse (V2)
 

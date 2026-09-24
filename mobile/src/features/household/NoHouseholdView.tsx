@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError, type ApiError } from '@/api/errors';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { TextField } from '@/components/TextField';
-import { colors, spacing } from '@/theme';
+import { makeStyles } from '@/theme';
 
 type Props = {
   // Appelé une fois le foyer créé ou rejoint.
@@ -17,19 +17,25 @@ type Props = {
  * il faut donc en créer un ou en rejoindre un avant d'aller plus loin.
  */
 export function NoHouseholdView({ onDone }: Props) {
+  const styles = useStyles();
   return (
     <View style={styles.container}>
       <Text style={styles.intro}>
         Ton frigo est partagé au sein d'un foyer : crée le tien, ou rejoins celui de ta coloc ou de ta famille.
       </Text>
       <CreateHouseholdForm onDone={onDone} />
-      <Text style={styles.separator}>ou</Text>
+      <View style={styles.separator}>
+        <View style={styles.separatorLine} />
+        <Text style={styles.separatorText}>ou</Text>
+        <View style={styles.separatorLine} />
+      </View>
       <JoinHouseholdForm onDone={onDone} />
     </View>
   );
 }
 
 function CreateHouseholdForm({ onDone }: Props) {
+  const styles = useStyles();
   const [name, setName] = useState('');
   const [error, setError] = useState<ApiError | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -64,6 +70,7 @@ function CreateHouseholdForm({ onDone }: Props) {
 }
 
 function JoinHouseholdForm({ onDone }: Props) {
+  const styles = useStyles();
   const [code, setCode] = useState('');
   const [error, setError] = useState<ApiError | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -100,10 +107,12 @@ function JoinHouseholdForm({ onDone }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { gap: spacing.lg },
-  intro: { fontSize: 16, color: colors.mutedText },
-  section: { gap: spacing.md },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
-  separator: { textAlign: 'center', color: colors.mutedText },
-});
+const useStyles = makeStyles((t) => ({
+  container: { gap: t.space.xl },
+  intro: { ...t.type.body, color: t.colors.ink2 },
+  section: { gap: t.space.md },
+  sectionTitle: { ...t.type.title3, color: t.colors.ink },
+  separator: { flexDirection: 'row', alignItems: 'center', gap: t.space.sm },
+  separatorLine: { flex: 1, height: t.borderWidth.hairline, backgroundColor: t.colors.line },
+  separatorText: { ...t.type.callout, color: t.colors.ink3 },
+}));

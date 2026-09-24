@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, Share, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError, type ApiError } from '@/api/errors';
 import type { Household, Invitation } from '@/api/types';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
+import { Share2 } from '@/components/icons/lucide';
 import { APP_NAME } from '@/config';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 import { canRevokeInvitation, formatInvitationCode } from './rules';
 
 type Props = {
@@ -15,6 +16,8 @@ type Props = {
 };
 
 export function InvitationsSection({ household, myUserId }: Props) {
+  const theme = useTheme();
+  const styles = useStyles();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [error, setError] = useState<ApiError | null>(null);
   const [creating, setCreating] = useState(false);
@@ -91,13 +94,20 @@ export function InvitationsSection({ household, myUserId }: Props) {
             accessibilityRole="button"
             accessibilityLabel={`Partager le code ${formatInvitationCode(invitation.code)}`}
           >
-            <Text style={styles.code}>{formatInvitationCode(invitation.code)}</Text>
-            <Text style={styles.meta}>Valable jusqu'au {formatDate(invitation.expiresAt)}</Text>
+            <View style={styles.codeLine}>
+              <Text style={styles.code}>{formatInvitationCode(invitation.code)}</Text>
+              <Share2 size={18} strokeWidth={2} color={theme.colors.ink2} />
+            </View>
+            <Text style={styles.meta}>Valable jusqu'au {formatDate(invitation.expiresAt)} · toucher pour partager</Text>
           </Pressable>
           {canRevokeInvitation(invitation, household, myUserId) ? (
-            <Pressable onPress={() => confirmRevoke(invitation)} accessibilityRole="button" hitSlop={8}>
-              <Text style={styles.revoke}>Révoquer</Text>
-            </Pressable>
+            <Button
+              title="Révoquer"
+              size="small"
+              variant="danger"
+              onPress={() => confirmRevoke(invitation)}
+              accessibilityLabel={`Révoquer le code ${formatInvitationCode(invitation.code)}`}
+            />
           ) : null}
         </View>
       ))}
@@ -109,21 +119,22 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 }
 
-const styles = StyleSheet.create({
-  container: { gap: spacing.md },
-  title: { fontSize: 18, fontWeight: '700', color: colors.text },
-  subtitle: { fontSize: 14, fontWeight: '600', color: colors.mutedText },
+const useStyles = makeStyles((t) => ({
+  container: { gap: t.space.sm },
+  title: { ...t.type.title3, color: t.colors.ink },
+  subtitle: { ...t.type.overline, color: t.colors.ink3, marginTop: t.space.xs },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: spacing.md,
+    gap: t.space.sm,
+    backgroundColor: t.colors.surface,
+    borderWidth: t.borderWidth.hairline,
+    borderColor: t.colors.line,
+    borderRadius: t.radius.lg,
+    padding: t.space.md,
   },
-  codeBlock: { flex: 1, gap: spacing.xs },
-  code: { fontSize: 20, fontWeight: '700', letterSpacing: 2, color: colors.text },
-  meta: { fontSize: 13, color: colors.mutedText },
-  revoke: { color: colors.error, fontWeight: '600' },
-});
+  codeBlock: { flex: 1, gap: t.space.xxs },
+  codeLine: { flexDirection: 'row', alignItems: 'center', gap: t.space.xs },
+  code: { ...t.type.title2, letterSpacing: 2, color: t.colors.ink },
+  meta: { ...t.type.caption, color: t.colors.ink3 },
+}));

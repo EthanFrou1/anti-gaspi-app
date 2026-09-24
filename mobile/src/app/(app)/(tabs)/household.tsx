@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ErrorBanner } from '@/components/ErrorBanner';
@@ -6,13 +6,15 @@ import { Screen } from '@/components/Screen';
 import { HouseholdView } from '@/features/household/HouseholdView';
 import { NoHouseholdView } from '@/features/household/NoHouseholdView';
 import { useHousehold } from '@/features/household/useHousehold';
-import { colors, spacing } from '@/theme';
+import { makeStyles, useTheme } from '@/theme';
 
 /**
  * Accueil : le foyer de l'utilisateur, ou la création / l'entrée dans un foyer.
  * (L'inventaire viendra s'ajouter ici à la fonctionnalité 2.)
  */
 export default function HomeScreen() {
+  const theme = useTheme();
+  const styles = useStyles();
   const { state, refreshUser } = useAuth();
   const { household, loading, error, reload } = useHousehold();
 
@@ -29,7 +31,7 @@ export default function HomeScreen() {
   return (
     <Screen hasHeader refreshing={loading && household !== undefined} onRefresh={() => void reload()}>
       {household === undefined && loading ? (
-        <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
+        <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loader} />
       ) : null}
 
       {error ? (
@@ -48,6 +50,6 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  loader: { marginTop: spacing.xl },
-});
+const useStyles = makeStyles((t) => ({
+  loader: { marginTop: t.space['2xl'] },
+}));

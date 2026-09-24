@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
 import type { Household, KitchenEquipment } from '@/api/types';
@@ -7,13 +7,14 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { MultiChoiceChips } from '@/components/MultiChoiceChips';
 import { EQUIPMENT_OPTIONS } from '@/features/profile/labels';
 import { toggle } from '@/features/profile/onboarding';
-import { colors, spacing } from '@/theme';
+import { makeStyles } from '@/theme';
 
 /**
  * Équipement de la cuisine commune : tout membre peut le modifier, et chaque
  * changement est enregistré immédiatement.
  */
 export function EquipmentSection({ household }: { household: Household }) {
+  const styles = useStyles();
   const [equipment, setEquipment] = useState<KitchenEquipment[]>(household.equipment);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,8 +43,8 @@ export function EquipmentSection({ household }: { household: Household }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { gap: spacing.sm },
-  title: { fontSize: 18, fontWeight: '700', color: colors.text },
-  help: { fontSize: 13, color: colors.mutedText },
-});
+const useStyles = makeStyles((t) => ({
+  container: { gap: t.space.xs },
+  title: { ...t.type.title3, color: t.colors.ink },
+  help: { ...t.type.caption, color: t.colors.ink3 },
+}));
