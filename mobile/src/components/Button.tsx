@@ -1,6 +1,6 @@
-import { useRef } from 'react';
 import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native';
 import { makeStyles, useTheme, type Theme } from '@/theme';
+import { useStickerPress } from './useStickerPress';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger';
 
@@ -25,18 +25,13 @@ export function Button({ title, onPress, loading = false, disabled = false, vari
   const styles = useStyles();
   const isDisabled = disabled || loading;
   const { background, foreground } = variantColors(theme, variant);
-  const offset = theme.shadow.button.offsetY;
-
-  // 0 = au repos, 1 = enfoncé (animation de 90 ms, sur le fil natif).
-  const press = useRef(new Animated.Value(0)).current;
-  const animate = (to: number) =>
-    Animated.timing(press, { toValue: to, duration: theme.motion.press.duration, useNativeDriver: true }).start();
+  const { onPressIn, onPressOut, translateY } = useStickerPress();
 
   return (
     <Pressable
       onPress={onPress}
-      onPressIn={() => animate(1)}
-      onPressOut={() => animate(0)}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       disabled={isDisabled}
       accessibilityRole="button"
       accessibilityLabel={title}
@@ -49,7 +44,7 @@ export function Button({ title, onPress, loading = false, disabled = false, vari
           styles.face,
           { backgroundColor: background },
           isDisabled && styles.disabled,
-          { transform: [{ translateY: press.interpolate({ inputRange: [0, 1], outputRange: [0, offset] }) }] },
+          { transform: [{ translateY }] },
         ]}
       >
         {loading ? (

@@ -1,19 +1,30 @@
 import { Stack } from 'expo-router';
 import { useAuth } from '@/auth/AuthContext';
 import { useReminderTaps } from '@/features/notifications/hooks';
+import { useTheme } from '@/theme';
 
 /**
  * Espace connecté. Tant que le profil n'existe pas (hasProfile false), seul
  * l'onboarding est accessible ; ensuite, les onglets et les écrans produit.
  */
 export default function AppLayout() {
+  const theme = useTheme();
   const { state } = useAuth();
   const hasProfile = state.status === 'signedIn' && state.user.hasProfile;
   // Appui sur un rappel de péremption : ouvre le Frigo (une fois l'onboarding terminé).
   useReminderTaps(hasProfile);
 
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.colors.bg },
+        headerShadowVisible: false,
+        headerTintColor: theme.colors.ink,
+        headerTitleStyle: { fontFamily: theme.fonts.heading, fontSize: theme.type.card.fontSize, color: theme.colors.ink },
+        headerBackButtonDisplayMode: 'minimal',
+        contentStyle: { backgroundColor: theme.colors.bg },
+      }}
+    >
       <Stack.Protected guard={!hasProfile}>
         <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       </Stack.Protected>

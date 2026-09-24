@@ -98,7 +98,7 @@ export default function OnboardingScreen() {
           </Text>
         )}
       </View>
-      <Text style={styles.footnote}>Tu pourras tout modifier plus tard dans Compte → Mes préférences.</Text>
+      <Text style={styles.footnote}>Tu pourras tout modifier plus tard dans Profil → Mes préférences.</Text>
     </Screen>
   );
 }

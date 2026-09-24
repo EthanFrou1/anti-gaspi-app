@@ -189,6 +189,25 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Déconnexion : plus aucune notification ; les notifications déjà affichées de l'app disparaissent.
 - [ ] Autorisation refusée : l'app fonctionne normalement, sans message d'erreur.
 
+### Charte Leftly, étapes 1 à 3 : fondations, composants, navigation
+
+Les écrans ne sont pas encore migrés : leur texte reste dans la police du système, et l'app reste en mode clair (le mode sombre arrive à la fin de la migration des écrans).
+
+- [ ] Au lancement, le splash reste affiché le temps de charger les polices, sans « saut » de police ensuite.
+- [ ] Titres d'en-tête et boutons en Fredoka (police arrondie) ; fond crème ; boutons mandarine à bord encre avec une ombre nette décalée vers le bas.
+- [ ] Appui sur un bouton : il s'enfonce dans son ombre, puis remonte.
+- [ ] Barre d'onglets flottante : Frigo, Recettes, « + », Foyer, Profil. L'onglet actif a une pastille derrière l'icône et un libellé en gras.
+- [ ] « + » : le panneau monte du bas sur un fond assombri, avec 4 actions ; chacune ouvre le bon écran une fois le panneau refermé. Toucher le fond le ferme (et le bouton retour sur Android).
+- [ ] « Proposer une recette » ouvre l'onglet Recettes sans lancer de génération (le compteur ne bouge pas).
+- [ ] Sans foyer : le « + » propose d'aller à l'onglet Foyer.
+- [ ] L'ancien onglet Compte s'appelle Profil (déconnexion, préférences, suppression du compte inchangées).
+- [ ] Bouton 🔔 de test des rappels : maintenant dans l'en-tête du Frigo (build de développement uniquement).
+- [ ] Pastilles (filtres du Frigo, unités, raccourcis de date) : la sélection a une coche et un bord plus épais. Champs : bord plus épais pendant la saisie. Sélecteur de catégorie : icône devant chaque catégorie, coche sur la catégorie choisie.
+- [ ] Réglages → Accessibilité → Réduire les animations : le panneau apparaît sans glisser.
+- [ ] Texte agrandi (réglages d'accessibilité) : la barre d'onglets reste lisible.
+- [ ] Android : le « + » dépasse bien de la barre sans être coupé.
+- [ ] Development build seulement (Expo Go affiche les siens) : icône d'app claire et sombre (iOS 18), icône adaptative et monochrome (Android 13+), splash clair et sombre.
+
 ### Scan du ticket de caisse (V2)
 
 - [ ] Frigo → « Ticket » : l'écran affiche les conseils et « 3 scans de ticket restants aujourd'hui ».

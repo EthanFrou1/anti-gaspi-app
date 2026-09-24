@@ -9,7 +9,7 @@ import { Screen } from '@/components/Screen';
 import { TextField } from '@/components/TextField';
 import { colors, spacing } from '@/theme';
 
-export default function AccountScreen() {
+export default function ProfileScreen() {
   const { state, signOut, deleteAccount } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
   const [password, setPassword] = useState('');

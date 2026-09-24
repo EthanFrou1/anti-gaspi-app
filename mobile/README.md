@@ -18,14 +18,14 @@ mobile/
     │   └── (app)/       → écrans de l'app (accessibles connecté)
     │       ├── onboarding.tsx → 5 questions après l'inscription (tant que le profil n'existe pas)
     │       ├── preferences.tsx → modification des préférences alimentaires
-    │       ├── (tabs)/  → onglets Frigo, Recettes, Foyer, Compte
+    │       ├── (tabs)/  → onglets Frigo, Recettes, Foyer, Profil, et le bouton « + » central
     │       ├── recipe/  → détail d'une recette, « J'ai cuisiné »
     │       ├── receipt/ → scan d'un ticket de caisse et validation des lignes
     │       └── item/    → ajout et modification d'un produit
     ├── api/             → client API : SEUL module qui appelle le serveur
     ├── auth/            → contexte de session, stockage sécurisé des jetons
     ├── components/      → composants d'interface réutilisables
-    ├── features/        → logique et vues par fonctionnalité (household/, inventory/, notifications/, profile/, receipts/, recipes/, scan/)
+    ├── features/        → logique et vues par fonctionnalité (household/, inventory/, navigation/, notifications/, profile/, receipts/, recipes/, scan/)
     ├── utils/           → utilitaires sans interface (dates « jour » en calendrier local)
     ├── types/           → déclarations de types (fichiers .svg)
     ├── config.ts        → nom de l'app, URL de l'API

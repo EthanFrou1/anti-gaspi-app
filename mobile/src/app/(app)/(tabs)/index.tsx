@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ChoiceChips } from '@/components/ChoiceChips';
 import { ErrorBanner } from '@/components/ErrorBanner';
+import { Bell } from '@/components/icons/navIcons';
 import { InventoryRow } from '@/features/inventory/InventoryRow';
 import { canModifyItem, filterItems, type InventoryFilter } from '@/features/inventory/rules';
 import { useCategories } from '@/features/inventory/useCategories';
@@ -105,6 +106,24 @@ export default function FridgeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      {/* Outil de mise au point dans l'en-tête (build de développement uniquement). */}
+      {__DEV__ ? (
+        <Tabs.Screen
+          options={{
+            headerRight: () => (
+              <Pressable
+                onPress={() => void testReminder()}
+                style={styles.devButton}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Envoyer le prochain rappel dans 10 secondes (outil de développement)"
+              >
+                <Bell size={22} strokeWidth={2} color={colors.text} />
+              </Pressable>
+            ),
+          }}
+        />
+      ) : null}
       <View style={styles.toolbar}>
         <ChoiceChips options={FILTERS} value={filter} onChange={setFilter} />
       </View>
@@ -136,33 +155,11 @@ export default function FridgeScreen() {
           items !== null ? (
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>{filter === 'all' ? 'Le frigo est vide' : 'Rien dans cette sélection'}</Text>
-              <Text style={styles.emptyText}>Ajoute tes courses pour être prévenu avant qu'elles ne périment.</Text>
+              <Text style={styles.emptyText}>Ajoute tes courses avec le bouton « + » pour être prévenu avant qu'elles ne périment.</Text>
             </View>
           ) : null
         }
       />
-
-      <View style={styles.bottomBar}>
-        <View style={styles.bottomButton}>
-          <Button title="Code-barres" onPress={() => router.push('/item/scan')} />
-        </View>
-        <View style={styles.bottomButton}>
-          <Button title="Ticket" onPress={() => router.push('/receipt/scan')} />
-        </View>
-        <View style={styles.bottomButton}>
-          <Button title="À la main" variant="secondary" onPress={() => router.push('/item/new')} />
-        </View>
-        {__DEV__ ? (
-          <Pressable
-            onPress={() => void testReminder()}
-            style={styles.devButton}
-            accessibilityRole="button"
-            accessibilityLabel="Envoyer le prochain rappel dans 10 secondes (outil de développement)"
-          >
-            <Text style={styles.devButtonText}>🔔</Text>
-          </Pressable>
-        ) : null}
-      </View>
     </SafeAreaView>
   );
 }
@@ -182,22 +179,5 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center' },
   emptyText: { fontSize: 15, color: colors.mutedText, textAlign: 'center' },
-  bottomBar: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  bottomButton: { flex: 1 },
-  devButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  devButtonText: { fontSize: 22 },
+  devButton: { paddingHorizontal: spacing.md },
 });
