@@ -1,10 +1,10 @@
-namespace Api.Services.Recipes;
+namespace Api.Services.Ai;
 
 /// <summary>
 /// « Aujourd'hui » au sens des quotas : de minuit à minuit dans le fuseau configuré
 /// (Europe/Paris), converti en instants UTC pour interroger la base. Fonction pure.
 /// </summary>
-public static class RecipeDay
+public static class QuotaDay
 {
     public static (DateTimeOffset StartUtc, DateTimeOffset EndUtc, DateOnly LocalDate) Window(DateTimeOffset now, TimeZoneInfo zone)
     {

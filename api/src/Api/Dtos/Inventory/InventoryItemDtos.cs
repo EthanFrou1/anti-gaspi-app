@@ -55,3 +55,15 @@ public sealed record SaveInventoryItemRequest(
 
     // true = produit perso de l'utilisateur qui l'enregistre ; false = produit commun.
     bool IsPersonal);
+
+/// <summary>
+/// Ajout groupé : lignes validées par l'utilisateur après la lecture d'un ticket de caisse.
+/// </summary>
+public sealed record CreateInventoryItemsRequest(
+    [Required(ErrorMessage = "La liste des produits est obligatoire.")]
+    [Length(1, CreateInventoryItemsRequest.MaxItems, ErrorMessage = "Ajoute entre 1 et 60 produits à la fois.")]
+    IReadOnlyList<SaveInventoryItemRequest> Items)
+{
+    // Même limite que la lecture d'un ticket (60 lignes au plus).
+    public const int MaxItems = 60;
+}

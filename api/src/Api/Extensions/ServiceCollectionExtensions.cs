@@ -3,6 +3,7 @@ using Api.Common;
 using Api.Data;
 using Api.Entities;
 using Api.Options;
+using Api.Services.Ai;
 using Api.Services.Auth;
 using Api.Services.Households;
 using Api.Services.Inventory;
@@ -174,7 +175,7 @@ public static class ServiceCollectionExtensions
                 "Ai:TimeZone : fuseau horaire introuvable (tzdata est-il installé ?).")
             .ValidateOnStart();
 
-        services.AddHostedService<RecipeCleanupService>();
+        services.AddHostedService<AiCleanupService>();
 
         if (provider == AiProvider.Fake)
         {
@@ -256,6 +257,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IRecipeService, RecipeService>();
+        services.AddScoped<IReceiptService, ReceiptService>();
 
         return services;
     }

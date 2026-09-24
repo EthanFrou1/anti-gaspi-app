@@ -6,6 +6,7 @@ using Api.Dtos.Profiles;
 using Api.Dtos.Recipes;
 using Api.Entities;
 using Api.Options;
+using Api.Services.Ai;
 using Api.Services.Inventory;
 using Api.Services.Profiles;
 using Api.Services.Recipes;
@@ -21,7 +22,7 @@ public class RecipeServiceTests(DatabaseFixture database) : HouseholdTestBase(da
 {
     private static readonly TimeZoneInfo Paris = TimeZoneInfo.FindSystemTimeZoneById("Europe/Paris");
 
-    private DateOnly Today => RecipeDay.Window(Clock.Now, Paris).LocalDate;
+    private DateOnly Today => QuotaDay.Window(Clock.Now, Paris).LocalDate;
 
     // ---------- Génération ----------
 
@@ -111,7 +112,7 @@ public class RecipeServiceTests(DatabaseFixture database) : HouseholdTestBase(da
             await GenerateAsync(alice, householdId);
         }
 
-        var nextMidnight = RecipeDay.Window(Clock.Now, Paris).EndUtc;
+        var nextMidnight = QuotaDay.Window(Clock.Now, Paris).EndUtc;
         Clock.Advance(nextMidnight - Clock.Now + TimeSpan.FromMinutes(1));
 
         Assert.True((await GenerateAsync(alice, householdId)).IsSuccess);

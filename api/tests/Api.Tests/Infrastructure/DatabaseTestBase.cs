@@ -3,6 +3,7 @@ using Api.Data;
 using Api.Dtos.Auth;
 using Api.Extensions;
 using Api.Services.Auth;
+using Api.Services.Receipts;
 using Api.Services.Recipes;
 using Api.Options;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,9 @@ public abstract class DatabaseTestBase(DatabaseFixture database) : IAsyncLifetim
     // Générateur de recettes pilotable (jamais d'appel à une vraie IA dans les tests).
     protected TestRecipeGenerator Generator { get; } = new();
 
+    // Lecteur de tickets pilotable, lui aussi sans appel à une vraie IA.
+    protected TestReceiptReader ReceiptReader { get; } = new();
+
     // Horloge fixée à l'heure réelle au début du test, avançable ensuite.
     protected TestClock Clock { get; } = new(DateTimeOffset.UtcNow);
 
@@ -46,6 +50,7 @@ public abstract class DatabaseTestBase(DatabaseFixture database) : IAsyncLifetim
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(TestJwtOptions));
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new Api.Options.AiOptions()));
         services.AddSingleton<IRecipeGenerator>(Generator);
+        services.AddSingleton<IReceiptReader>(ReceiptReader);
         // Enregistré après AddApplicationServices : c'est la dernière inscription qui gagne.
         services.AddSingleton<TimeProvider>(Clock);
 

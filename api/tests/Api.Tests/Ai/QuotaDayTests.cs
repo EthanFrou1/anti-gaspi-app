@@ -1,8 +1,8 @@
-using Api.Services.Recipes;
+using Api.Services.Ai;
 
-namespace Api.Tests.Recipes;
+namespace Api.Tests.Ai;
 
-public class RecipeDayTests
+public class QuotaDayTests
 {
     private static readonly TimeZoneInfo Paris = TimeZoneInfo.FindSystemTimeZoneById("Europe/Paris");
 
@@ -10,7 +10,7 @@ public class RecipeDayTests
     public void SummerDay_RunsFromMidnightToMidnightParisTime()
     {
         // 23 septembre 2026, 14 h UTC = 16 h à Paris (UTC+2).
-        var (start, end, date) = RecipeDay.Window(new DateTimeOffset(2026, 9, 23, 14, 0, 0, TimeSpan.Zero), Paris);
+        var (start, end, date) = QuotaDay.Window(new DateTimeOffset(2026, 9, 23, 14, 0, 0, TimeSpan.Zero), Paris);
 
         Assert.Equal(new DateOnly(2026, 9, 23), date);
         Assert.Equal(new DateTimeOffset(2026, 9, 22, 22, 0, 0, TimeSpan.Zero), start);
@@ -21,7 +21,7 @@ public class RecipeDayTests
     public void LateEveningUtc_IsAlreadyTomorrowInParis()
     {
         // 22 h 30 UTC = 0 h 30 le lendemain à Paris : nouveau jour, nouveaux quotas.
-        var (_, _, date) = RecipeDay.Window(new DateTimeOffset(2026, 9, 23, 22, 30, 0, TimeSpan.Zero), Paris);
+        var (_, _, date) = QuotaDay.Window(new DateTimeOffset(2026, 9, 23, 22, 30, 0, TimeSpan.Zero), Paris);
 
         Assert.Equal(new DateOnly(2026, 9, 24), date);
     }
@@ -34,7 +34,7 @@ public class RecipeDayTests
     {
         var noonUtc = new DateTimeOffset(year, month, day, 10, 0, 0, TimeSpan.Zero);
 
-        var (start, end, _) = RecipeDay.Window(noonUtc, Paris);
+        var (start, end, _) = QuotaDay.Window(noonUtc, Paris);
 
         Assert.Equal(TimeSpan.FromHours(expectedHours), end - start);
     }

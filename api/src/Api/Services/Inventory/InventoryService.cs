@@ -20,6 +20,13 @@ public interface IInventoryService
 
     Task<Result<InventoryItemDto>> CreateAsync(Guid actorId, Guid householdId, SaveInventoryItemRequest request, CancellationToken ct);
 
+    /// <summary>
+    /// Ajout groupé (lignes validées d'un ticket de caisse) : tout ou rien, dans une seule
+    /// transaction. Une erreur de validation désigne la ligne fautive (« Items[3].CategoryId »).
+    /// </summary>
+    Task<Result<IReadOnlyList<InventoryItemDto>>> CreateManyAsync(
+        Guid actorId, Guid householdId, IReadOnlyList<SaveInventoryItemRequest> requests, CancellationToken ct);
+
     Task<Result<InventoryItemDto>> UpdateAsync(
         Guid actorId, Guid householdId, Guid itemId, SaveInventoryItemRequest request, CancellationToken ct);
 
@@ -54,42 +61,30 @@ public sealed class InventoryService(AppDbContext db, TimeProvider time) : IInve
         return item is null ? InventoryErrors.ItemNotFound : item;
     }
 
-    public Task<Result<InventoryItemDto>> CreateAsync(
-        Guid actorId, Guid householdId, SaveInventoryItemRequest request, CancellationToken ct) =>
-        db.InTransactionAsync(async () =>
+    public async Task<Result<InventoryItemDto>> CreateAsync(
+        Guid actorId, Guid householdId, SaveInventoryItemRequest request, CancellationToken ct)
+    {
+        var created = await AddAsync(actorId, householdId, [request], indexErrors: false, ct);
+        return created.IsSuccess ? await GetAsync(householdId, created.Value[0], ct) : created.Error;
+    }
+
+    public async Task<Result<IReadOnlyList<InventoryItemDto>>> CreateManyAsync(
+        Guid actorId, Guid householdId, IReadOnlyList<SaveInventoryItemRequest> requests, CancellationToken ct)
+    {
+        var created = await AddAsync(actorId, householdId, requests, indexErrors: true, ct);
+        if (!created.IsSuccess)
         {
-            // Verrou : deux ajouts simultanés ne peuvent pas dépasser le plafond ensemble.
-            if (!await db.LockHouseholdAsync(householdId, ct))
-            {
-                return (Result<InventoryItemDto>)HouseholdErrors.NotFound;
-            }
+            return created.Error;
+        }
 
-            var activeCount = await db.InventoryItems
-                .CountAsync(i => i.HouseholdId == householdId && i.Status == InventoryItemStatus.Active, ct);
-            if (activeCount >= MaxActiveItemsPerHousehold)
-            {
-                return InventoryErrors.LimitReached;
-            }
-
-            var now = time.GetUtcNow();
-            var item = new InventoryItem
-            {
-                HouseholdId = householdId,
-                Name = request.Name,
-                CreatedByUserId = actorId,
-                CreatedAt = now,
-            };
-
-            var applied = await ApplyAsync(item, request, actorId, ct);
-            if (applied is not null)
-            {
-                return applied;
-            }
-
-            db.InventoryItems.Add(item);
-            await db.SaveChangesAsync(ct);
-            return await GetAsync(householdId, item.Id, ct);
-        }, ct);
+        var ids = created.Value;
+        return await ItemsOf(householdId)
+            .Where(i => ids.Contains(i.Id))
+            .OrderBy(i => i.ExpiresOn)
+            .ThenBy(i => i.Name)
+            .Select(ToDtoExpression)
+            .ToListAsync(ct);
+    }
 
     public async Task<Result<InventoryItemDto>> UpdateAsync(
         Guid actorId, Guid householdId, Guid itemId, SaveInventoryItemRequest request, CancellationToken ct)
@@ -154,6 +149,62 @@ public sealed class InventoryService(AppDbContext db, TimeProvider time) : IInve
         await db.SaveChangesAsync(ct);
         return Result.Success();
     }
+
+    /// <summary>
+    /// Ajoute un ou plusieurs produits : tous sont enregistrés, ou aucun.
+    /// </summary>
+    private Task<Result<List<Guid>>> AddAsync(
+        Guid actorId, Guid householdId, IReadOnlyList<SaveInventoryItemRequest> requests, bool indexErrors, CancellationToken ct) =>
+        db.InTransactionAsync(async () =>
+        {
+            // Verrou : deux ajouts simultanés ne peuvent pas dépasser le plafond ensemble.
+            if (!await db.LockHouseholdAsync(householdId, ct))
+            {
+                return (Result<List<Guid>>)HouseholdErrors.NotFound;
+            }
+
+            var activeCount = await db.InventoryItems
+                .CountAsync(i => i.HouseholdId == householdId && i.Status == InventoryItemStatus.Active, ct);
+            if (activeCount + requests.Count > MaxActiveItemsPerHousehold)
+            {
+                return InventoryErrors.LimitReached;
+            }
+
+            var now = time.GetUtcNow();
+            var items = new List<InventoryItem>();
+            for (var index = 0; index < requests.Count; index++)
+            {
+                var request = requests[index];
+                var item = new InventoryItem
+                {
+                    HouseholdId = householdId,
+                    Name = request.Name,
+                    CreatedByUserId = actorId,
+                    CreatedAt = now,
+                };
+
+                var applied = await ApplyAsync(item, request, actorId, ct);
+                if (applied is not null)
+                {
+                    // Rien n'a encore été enregistré : la transaction est simplement abandonnée.
+                    return indexErrors ? ForLine(applied, index) : applied;
+                }
+                items.Add(item);
+            }
+
+            db.InventoryItems.AddRange(items);
+            await db.SaveChangesAsync(ct);
+            return items.Select(i => i.Id).ToList();
+        }, ct);
+
+    // Erreur de validation d'une ligne d'un ajout groupé : le champ fautif est préfixé par sa ligne.
+    private static Error ForLine(Error error, int index) => error.ValidationErrors is null
+        ? error
+        : error with
+        {
+            ValidationErrors = error.ValidationErrors.ToDictionary(
+                e => $"{nameof(CreateInventoryItemsRequest.Items)}[{index}].{e.Key}", e => e.Value),
+        };
 
     /// <summary>
     /// Un produit commun est modifiable par tout membre ; un produit perso, par son seul propriétaire.

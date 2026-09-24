@@ -167,7 +167,7 @@ public sealed class RecipeService(
 
     public async Task<RecipeQuotaDto> GetQuotaAsync(Guid userId, CancellationToken ct)
     {
-        var (start, end, _) = RecipeDay.Window(time.GetUtcNow(), Zone());
+        var (start, end, _) = QuotaDay.Window(time.GetUtcNow(), Zone());
         var used = await db.RecipeGenerations.CountAsync(r => r.RequestedByUserId == userId && r.CreatedAt >= start, ct);
         var limit = Settings.DailyLimitPerUser;
         return new RecipeQuotaDto(used, limit, Math.Max(0, limit - used), end);
@@ -339,7 +339,7 @@ public sealed class RecipeService(
             .Select(i => new PromptItem(i.Id, i.Name, i.Category.Code, i.Quantity, i.Unit, i.ExpiresOn, i.Category.ExpiryKind))
             .ToListAsync(ct);
 
-        var today = RecipeDay.Window(time.GetUtcNow(), Zone()).LocalDate;
+        var today = QuotaDay.Window(time.GetUtcNow(), Zone()).LocalDate;
         return RecipePromptBuilder.Build(constraints, inventory, today);
     }
 
@@ -353,7 +353,7 @@ public sealed class RecipeService(
             await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock({QuotaLockKey})", ct);
 
             var now = time.GetUtcNow();
-            var (start, _, _) = RecipeDay.Window(now, Zone());
+            var (start, _, _) = QuotaDay.Window(now, Zone());
 
             // Les réservations en cours comptent : une génération lancée occupe sa place.
             var usedByUser = await db.RecipeGenerations.CountAsync(r => r.RequestedByUserId == userId && r.CreatedAt >= start, ct);

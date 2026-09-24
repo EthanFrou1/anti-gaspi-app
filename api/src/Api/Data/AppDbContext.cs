@@ -22,6 +22,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<RecipeGeneration> RecipeGenerations => Set<RecipeGeneration>();
     public DbSet<RecipeFavorite> RecipeFavorites => Set<RecipeFavorite>();
+    public DbSet<ReceiptScan> ReceiptScans => Set<ReceiptScan>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

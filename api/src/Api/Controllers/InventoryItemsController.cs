@@ -45,6 +45,20 @@ public sealed class InventoryItemsController(IInventoryService inventoryService)
             : ToProblem(result.Error);
     }
 
+    /// <summary>
+    /// Ajout groupé (validation d'un ticket de caisse) : tous les produits, ou aucun.
+    /// </summary>
+    [HttpPost("batch")]
+    [ProducesResponseType<IReadOnlyList<InventoryItemDto>>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<IReadOnlyList<InventoryItemDto>>> CreateMany(
+        Guid householdId, CreateInventoryItemsRequest request, CancellationToken ct)
+    {
+        var result = await inventoryService.CreateManyAsync(User.GetUserId(), householdId, request.Items, ct);
+        return result.IsSuccess ? StatusCode(StatusCodes.Status201Created, result.Value) : ToProblem(result.Error);
+    }
+
     [HttpPut("{itemId:guid}")]
     [ProducesResponseType<InventoryItemDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

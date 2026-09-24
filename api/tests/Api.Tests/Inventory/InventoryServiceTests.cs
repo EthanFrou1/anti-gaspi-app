@@ -126,6 +126,62 @@ public class InventoryServiceTests(DatabaseFixture database) : HouseholdTestBase
         Assert.Equal(InventoryErrors.LimitReached, result.Error);
     }
 
+    // ---------- Ajout groupé (ticket de caisse) ----------
+
+    [Fact]
+    public async Task CreateMany_AddsAllItems_SortedByExpiry()
+    {
+        var (alice, householdId) = await CreateHouseholdAsync();
+
+        var result = await CreateManyAsync(alice, householdId,
+            Request("Pâtes", "dry-goods"), Request("Steak haché", "ground-meat", isPersonal: true), Request("Yaourt", "yogurts"));
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(["Steak haché", "Yaourt", "Pâtes"], result.Value.Select(i => i.Name));
+        Assert.Equal(alice, result.Value[0].OwnerUserId);
+        Assert.All(result.Value, i => Assert.True(i.ExpiryIsEstimated));
+        Assert.Equal(3, (await ListAsync(householdId)).Count);
+    }
+
+    [Fact]
+    public async Task CreateMany_WithOneInvalidLine_AddsNothing_AndNamesTheLine()
+    {
+        var (alice, householdId) = await CreateHouseholdAsync();
+        var invalid = Request("Mystère") with { CategoryId = 999 };
+
+        var result = await CreateManyAsync(alice, householdId, Request("Pâtes", "dry-goods"), invalid);
+
+        Assert.Equal(ErrorType.Validation, result.Error!.Type);
+        Assert.Equal(["Items[1].CategoryId"], result.Error.ValidationErrors!.Keys);
+        // Tout ou rien : les pâtes, pourtant valides, n'ont pas été ajoutées.
+        Assert.Empty(await ListAsync(householdId));
+    }
+
+    [Fact]
+    public async Task CreateMany_BeyondTheHouseholdLimit_AddsNothing()
+    {
+        var (alice, householdId) = await CreateHouseholdAsync();
+        await using (var db = CreateDbContext())
+        {
+            db.InventoryItems.AddRange(Enumerable.Range(0, InventoryService.MaxActiveItemsPerHousehold - 1).Select(i => new InventoryItem
+            {
+                HouseholdId = householdId,
+                Name = $"Produit {i}",
+                CategoryId = CategoryId("other"),
+                Quantity = 1,
+                PurchasedOn = Today,
+                ExpiresOn = Today.AddDays(7),
+            }));
+            await db.SaveChangesAsync();
+        }
+
+        // Une place restante, deux produits : refusé en bloc.
+        var result = await CreateManyAsync(alice, householdId, Request("A"), Request("B"));
+
+        Assert.Equal(InventoryErrors.LimitReached, result.Error);
+        Assert.Equal(InventoryService.MaxActiveItemsPerHousehold - 1, (await ListAsync(householdId)).Count);
+    }
+
     // ---------- Consultation ----------
 
     [Fact]
@@ -330,6 +386,11 @@ public class InventoryServiceTests(DatabaseFixture database) : HouseholdTestBase
     private Task<Result<InventoryItemDto>> CreateAsync(Guid actorId, Guid householdId, SaveInventoryItemRequest request) =>
         WithServiceAsync<IInventoryService, Result<InventoryItemDto>>(s =>
             s.CreateAsync(actorId, householdId, request, CancellationToken.None));
+
+    private Task<Result<IReadOnlyList<InventoryItemDto>>> CreateManyAsync(
+        Guid actorId, Guid householdId, params SaveInventoryItemRequest[] requests) =>
+        WithServiceAsync<IInventoryService, Result<IReadOnlyList<InventoryItemDto>>>(s =>
+            s.CreateManyAsync(actorId, householdId, requests, CancellationToken.None));
 
     private Task<Result<InventoryItemDto>> UpdateAsync(
         Guid actorId, Guid householdId, Guid itemId, SaveInventoryItemRequest request) =>

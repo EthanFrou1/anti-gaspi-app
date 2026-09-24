@@ -103,6 +103,7 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - **Nettoyage des refresh tokens** : tâche périodique qui supprime les jetons expirés ou révoqués.
 - **Données de profil et IA** : indiquer dans la politique de confidentialité que les contraintes alimentaires (dont les allergies, avec consentement) sont transmises au fournisseur d'IA pour générer les recettes, sans identité ; prévoir l'export des données personnelles (droit d'accès).
 - **Modèle d'IA** : Claude Haiku 4.5 (`claude-haiku-4-5-20251001`), retrait « pas avant le 15 octobre 2026 » (date minimale, pas un retrait programmé ; Anthropic prévient à l'avance). Avant publication, vérifier son statut sur la page Model deprecations d'Anthropic ; en cas d'annonce de retrait, changer `Ai:Model`.
+- **Politique de confidentialité, tickets de caisse** : indiquer que la photo du ticket est transmise au fournisseur d'IA pour être lue, sans être conservée par l'app (ni sur le serveur, ni dans les journaux).
 - **Politique de confidentialité** : mentionner que les images de produits sont chargées directement depuis les serveurs d'Open Food Facts (qui voient donc l'adresse IP du téléphone), et que les données produit proviennent d'Open Food Facts (licence ODbL).
 - **Politique de confidentialité, rappels de péremption** : indiquer que les notifications affichent des noms de produits, visibles sur l'écran verrouillé selon les réglages d'aperçu du téléphone (masquables dans les réglages de notification).
 
@@ -217,7 +218,7 @@ Règles :
 - **Ne jamais stocker l'image** après traitement (RGPD), ni la journaliser.
 - **Minimisation** : seuls les articles et la date d'achat sont extraits (ni magasin, ni adresse, ni carte bancaire ou de fidélité).
 - Validation côté API : lignes non alimentaires écartées, 60 lignes au plus, noms nettoyés, catégorie inconnue remplacée par « Autre », unité ou quantité invalide remplacée par 1 pièce, date d'achat future ou de plus de 30 jours remplacée par aujourd'hui. Une réponse inexploitable dans son ensemble (refus, coupée, illisible) donne une erreur 503, non décomptée du quota.
-- Quotas : 3 lectures par jour et par utilisateur, 50 par jour pour toute l'API, séparés de ceux des recettes. Modèle réglable à part (`Ai:ReceiptModel`, Haiku 4.5 par défaut) : si la lecture de vrais tickets déçoit, on passe à un modèle plus précis sans toucher aux recettes.
+- Quotas : 3 lectures par jour et par utilisateur, 50 par jour pour toute l'API, séparés de ceux des recettes (table `ReceiptScans` : utilisateur et heure seulement, supprimés au bout de 48 h). Une photo refusée (format, taille) n'est pas décomptée ; une lecture sans produit reconnu l'est (l'appel a été payé). Modèle réglable à part (`Ai:ReceiptModel`, Haiku 4.5 par défaut) : si la lecture de vrais tickets déçoit, on passe à un modèle plus précis sans toucher aux recettes.
 - Tickets longs : les photographier en plusieurs fois (un scan par partie).
 
 ## Règles de sécurité (non négociables)
