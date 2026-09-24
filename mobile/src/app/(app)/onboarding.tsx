@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
 import type { Profile } from '@/api/types';
@@ -15,7 +15,7 @@ import {
   GoalSection,
 } from '@/features/profile/ProfileSections';
 import { DEFAULT_PROFILE, ONBOARDING_STEPS, skipStep, validateProfile, type OnboardingStepKey } from '@/features/profile/onboarding';
-import { colors, spacing } from '@/theme';
+import { makeStyles } from '@/theme';
 
 const SECTIONS: Record<OnboardingStepKey, typeof DietSection> = {
   diet: DietSection,
@@ -31,6 +31,7 @@ const SECTIONS: Record<OnboardingStepKey, typeof DietSection> = {
  * (valeurs par défaut pensées pour les étudiants).
  */
 export default function OnboardingScreen() {
+  const styles = useStyles();
   const { refreshUser, signOut } = useAuth();
   const [stepIndex, setStepIndex] = useState(0);
   const [draft, setDraft] = useState<Profile>(DEFAULT_PROFILE);
@@ -89,13 +90,13 @@ export default function OnboardingScreen() {
         <Button title={isLast ? 'Terminer' : 'Continuer'} onPress={() => void next(draft)} loading={saving} />
         <Button title="Passer cette question" variant="secondary" onPress={skip} disabled={saving} />
         {stepIndex > 0 ? (
-          <Text style={styles.link} onPress={() => setStepIndex(stepIndex - 1)} accessibilityRole="button">
-            ← Question précédente
-          </Text>
+          <Pressable onPress={() => setStepIndex(stepIndex - 1)} accessibilityRole="button" style={styles.linkButton}>
+            <Text style={styles.link}>← Question précédente</Text>
+          </Pressable>
         ) : (
-          <Text style={styles.link} onPress={() => void signOut()} accessibilityRole="button">
-            Se déconnecter
-          </Text>
+          <Pressable onPress={() => void signOut()} accessibilityRole="button" style={styles.linkButton}>
+            <Text style={styles.link}>Se déconnecter</Text>
+          </Pressable>
         )}
       </View>
       <Text style={styles.footnote}>Tu pourras tout modifier plus tard dans Profil → Mes préférences.</Text>
@@ -103,12 +104,13 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  progress: { fontSize: 13, color: colors.mutedText, marginTop: spacing.md },
-  progressBar: { height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },
-  progressFill: { height: 6, backgroundColor: colors.primary },
-  title: { fontSize: 24, fontWeight: '700', color: colors.text, marginTop: spacing.sm },
-  actions: { gap: spacing.sm, marginTop: spacing.md },
-  link: { color: colors.primary, textAlign: 'center', padding: spacing.sm, fontSize: 15 },
-  footnote: { fontSize: 12, color: colors.mutedText, textAlign: 'center' },
-});
+const useStyles = makeStyles((t) => ({
+  progress: { ...t.type.overline, color: t.colors.ink3, marginTop: t.space.md },
+  progressBar: { height: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.surface2, overflow: 'hidden' },
+  progressFill: { height: 8, borderRadius: t.radius.pill, backgroundColor: t.colors.primary },
+  title: { ...t.type.title1, color: t.colors.ink, marginTop: t.space.xs },
+  actions: { gap: t.space.sm, marginTop: t.space.md },
+  linkButton: { minHeight: t.layout.minTouch, alignItems: 'center', justifyContent: 'center' },
+  link: { ...t.type.bodyBold, color: t.colors.primaryText },
+  footnote: { ...t.type.caption, color: t.colors.ink3, textAlign: 'center' },
+}));

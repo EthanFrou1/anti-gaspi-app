@@ -229,6 +229,7 @@ L'app reste en mode clair jusqu'au dernier groupe d'écrans.
 - [ ] Sans foyer : « Créer un foyer » et « Rejoindre un foyer » séparés par « ou » entre deux traits.
 - [ ] Profil : grand avatar à l'initiale, nom et email ; « Supprimer définitivement » en bouton rouge (désactivé tant que le mot de passe est vide).
 - [ ] Préférences : titres de section en Fredoka, interrupteur de consentement aux allergies mandarine, boutons − / + des portions en cercles à bord encre.
+- [ ] Onboarding : « QUESTION 2 SUR 5 » en petites capitales, barre de progression mandarine arrondie, question en grand titre ; « Question précédente » et « Se déconnecter » faciles à toucher.
 
 ### Scan du ticket de caisse (V2)
 
