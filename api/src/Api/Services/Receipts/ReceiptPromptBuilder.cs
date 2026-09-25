@@ -29,19 +29,24 @@ public static class ReceiptPromptBuilder
            incompréhensible, reprends-le tel quel.
         5. category : la catégorie de l'application qui correspond le mieux (liste fournie) ;
            « other » si aucune ne convient ou si l'article n'est pas alimentaire.
-        6. copies, quantity et unit : copies est le nombre d'exemplaires achetés ; quantity et
-           unit décrivent le contenu d'UN SEUL exemplaire. Ne multiplie pas par copies :
-           l'application calcule le total.
-           - copies : le multiplicateur de l'article, écrit avec un « x » sur sa ligne ou sur
-             une ligne voisine (« 3 x 1,20 », « 1,20 x 3 »), ou dans une colonne titrée
-             quantité (« QTE ») ; sinon 1. Un chiffre seul après le prix est un code de TVA,
-             jamais une quantité.
-           - quantity et unit : poids ou volume d'un exemplaire écrit dans le libellé
-             (« 400G », « 75CL »), en Gram, Kilogram, Milliliter ou Liter ; sinon nombre de
-             pièces du lot (« X6 » donne 6 Piece) ; sinon 1 Piece.
+        6. Prix, exemplaires et contenu. L'application fait tous les calculs : recopie les
+           nombres tels qu'ils sont imprimés, sans rien multiplier ni convertir.
+           - linePrice : prix payé pour la ligne, en euros ; null s'il est illisible.
+           - copies : nombre d'exemplaires achetés, indiqué par un multiplicateur écrit avec
+             un « x » sur la ligne de l'article ou sur une ligne voisine (« 3 x 1,20 »,
+             « 1,20 x 3 »), ou dans une colonne titrée quantité (« QTE ») ; sinon 1. Un chiffre
+             seul après le prix est un code de TVA, jamais une quantité.
+           - unitPrice : prix d'un exemplaire, imprimé avec ce multiplicateur (1,20 dans les
+             exemples) ; null s'il n'y a pas de multiplicateur.
+           - packSize : nombre d'unités du lot écrit dans le libellé (« 4X125G » donne 4,
+             « X10 » donne 10) ; sinon 1.
+           - quantity et unit : contenu d'UNE unité, écrit dans le libellé, dans l'unité
+             imprimée : Gram, Kilogram, Milliliter, Centiliter ou Liter (« 4X125G » donne
+             125 Gram, « 33CL » donne 33 Centiliter) ; sans poids ni volume : 1 Piece
+             (« X10 » donne packSize 10, quantity 1, unit Piece).
            - Article pesé (poids en kg imprimé avec un prix au kg, sur sa ligne ou une ligne
-             voisine) : copies 1, quantity = ce poids, en Kilogram ou en Gram.
-           - Dans le doute : copies 1, quantity 1, unit Piece.
+             voisine) : copies 1, packSize 1, unitPrice null, quantity = ce poids, en Kilogram.
+           - Dans le doute : copies 1, packSize 1, quantity 1, unit Piece.
         7. purchaseDate : date d'achat imprimée sur le ticket, au format AAAA-MM-JJ (la date du jour
            est fournie pour les années à deux chiffres) ; null si elle est absente ou illisible.
         8. Au plus 60 articles. N'invente aucun article : seulement ce qui est lisible sur la photo.
@@ -80,6 +85,9 @@ public static class ReceiptPromptBuilder
     /// fermées (enum) : l'IA ne peut pas en inventer. Construit à partir de la base, car
     /// les catégories sont des données de référence.
     /// </summary>
+    // Prix illisible ou absent : null plutôt qu'un 0 inventé.
+    private static readonly object NullableNumber = new { anyOf = new object[] { new { type = "number" }, new { type = "null" } } };
+
     public static IReadOnlyDictionary<string, JsonElement> OutputSchema(IReadOnlyList<CategoryDto> categories)
     {
         var schema = new
@@ -97,18 +105,26 @@ public static class ReceiptPromptBuilder
                     {
                         type = "object",
                         additionalProperties = false,
-                        required = new[] { "receiptText", "isFood", "name", "category", "copies", "quantity", "unit" },
+                        required = new[]
+                        {
+                            "receiptText", "isFood", "name", "category",
+                            "linePrice", "copies", "unitPrice", "packSize", "quantity", "unit",
+                        },
                         // Ordre voulu : le modèle écrit les champs dans l'ordre du schéma, donc
-                        // le nombre d'exemplaires avant le contenu d'un exemplaire.
+                        // dans l'ordre de lecture du ticket (prix, multiplicateur, puis contenu).
                         properties = new
                         {
                             receiptText = new { type = "string" },
                             isFood = new { type = "boolean" },
                             name = new { type = "string" },
                             category = new { type = "string", @enum = categories.Select(c => c.Code).ToArray() },
+                            linePrice = NullableNumber,
                             copies = new { type = "integer" },
+                            unitPrice = NullableNumber,
+                            packSize = new { type = "integer" },
                             quantity = new { type = "number" },
-                            unit = new { type = "string", @enum = Enum.GetNames<QuantityUnit>() },
+                            // Unités de l'app, plus « Centiliter » (converti par ReceiptValidator).
+                            unit = new { type = "string", @enum = ReceiptValidator.ReadableUnits },
                         },
                     },
                 },

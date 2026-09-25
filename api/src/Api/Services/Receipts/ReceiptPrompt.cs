@@ -22,12 +22,17 @@ public sealed record ReceiptPrompt(
 /// </summary>
 public sealed record ReceiptDraft(string? PurchaseDate, IReadOnlyList<ReceiptDraftLine>? Lines);
 
-/// <param name="Quantity">Contenu d'UN exemplaire (« 1 » pour « LAIT 1L »), dans l'unité Unit.</param>
-/// <param name="Copies">
-/// Nombre d'exemplaires achetés : le modèle le lit, l'API calcule le total (ReceiptValidator).
-/// Décimal et facultatif, pour qu'une valeur inattendue (« 2.5 », absente) ne fasse pas
-/// échouer toute la lecture : le validateur la ramène à 1.
-/// </param>
+/// <summary>
+/// Ligne lue par le modèle. Il recopie les nombres imprimés ; l'API fait tous les calculs
+/// (ReceiptValidator). Nombres décimaux et facultatifs, pour qu'une valeur inattendue
+/// (« 2.5 », absente) ne fasse pas échouer toute la lecture : le validateur la corrige.
+/// </summary>
+/// <param name="Quantity">Contenu d'UNE unité du lot (« 125 » pour « 4X125G »), dans l'unité Unit.</param>
+/// <param name="Unit">Une unité de l'app, ou « Centiliter » (lecture seulement, convertie en millilitres).</param>
+/// <param name="Copies">Nombre d'exemplaires lu (multiplicateur « 6 x 0,99 »).</param>
+/// <param name="LinePrice">Prix de la ligne. Sert seulement à vérifier Copies : jamais renvoyé ni enregistré.</param>
+/// <param name="UnitPrice">Prix d'un exemplaire imprimé avec le multiplicateur. Même usage que LinePrice.</param>
+/// <param name="PackSize">Lot écrit dans le libellé (6 pour « 6X1,5L »).</param>
 public sealed record ReceiptDraftLine(
     string? ReceiptText,
     string? Name,
@@ -35,7 +40,10 @@ public sealed record ReceiptDraftLine(
     decimal Quantity,
     string? Unit,
     bool IsFood,
-    decimal? Copies = null);
+    decimal? Copies = null,
+    decimal? LinePrice = null,
+    decimal? UnitPrice = null,
+    decimal? PackSize = null);
 
 /// <summary>
 /// Point d'entrée unique vers l'IA pour les tickets : changer de fournisseur = écrire une

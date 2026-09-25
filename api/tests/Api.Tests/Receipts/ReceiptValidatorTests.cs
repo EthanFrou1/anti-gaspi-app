@@ -19,8 +19,12 @@ public class ReceiptValidatorTests
 
     private static ReceiptDraftLine Line(
         string name = "Courgette", string? category = "vegetables", decimal quantity = 1, string? unit = "Piece", bool isFood = true,
-        decimal? copies = 1) =>
-        new("LIBELLE", name, category, quantity, unit, isFood, copies);
+        decimal? copies = 1, decimal? linePrice = null, decimal? unitPrice = null, decimal? packSize = 1) =>
+        new("LIBELLE", name, category, quantity, unit, isFood, copies, linePrice, unitPrice, packSize);
+
+    /// <summary>Ligne achetée en plusieurs exemplaires, avec des prix cohérents (« 6 x 1,20 »).</summary>
+    private static ReceiptDraftLine Bought(int copies, decimal quantity, string unit, int packSize = 1) =>
+        Line(quantity: quantity, unit: unit, copies: copies, unitPrice: 1.20m, linePrice: copies * 1.20m, packSize: packSize);
 
     private static ValidatedReceipt Validate(string? purchaseDate, params ReceiptDraftLine[] lines) =>
         ReceiptValidator.Validate(new ReceiptDraft(purchaseDate, lines), Categories, Today);
@@ -79,35 +83,67 @@ public class ReceiptValidatorTests
         Assert.Equal(expectedUnit, line.Unit);
     }
 
-    // ---------- Exemplaires : le modèle lit, l'API multiplie ----------
+    // ---------- Exemplaires, lot et unité : le modèle recopie, l'API calcule ----------
 
     [Theory]
-    [InlineData(6, 1, "Liter", 6, QuantityUnit.Liter)]          // « LAIT 1L » puis « 6 x 0,99 »
-    [InlineData(3, 4, "Piece", 12, QuantityUnit.Piece)]         // lot « X4 » acheté 3 fois
-    [InlineData(2, 500, "Gram", 1000, QuantityUnit.Gram)]       // l'unité du contenu est gardée
-    [InlineData(1, 0.845, "Kilogram", 0.845, QuantityUnit.Kilogram)] // article pesé
-    [InlineData(3, 0.3333, "Kilogram", 0.999, QuantityUnit.Kilogram)] // contenu arrondi (0,333) avant le total
-    public void Copies_MultiplyTheContentOfOneCopy(
-        decimal copies, decimal perCopy, string unit, decimal expectedTotal, QuantityUnit expectedUnit)
+    [InlineData(6, 1, 1, "Liter", 6, QuantityUnit.Liter, 1)]                  // « LAIT 1L » puis « 6 x 0,99 »
+    [InlineData(2, 1, 500, "Gram", 1000, QuantityUnit.Gram, 500)]             // l'unité du contenu est gardée
+    [InlineData(1, 6, 1.5, "Liter", 9, QuantityUnit.Liter, 9)]                // « EAU 6X1,5L »
+    [InlineData(2, 6, 25, "Centiliter", 3000, QuantityUnit.Milliliter, 1500)] // « BIERE 6X25CL » acheté 2 fois
+    [InlineData(1, 1, 20, "Centiliter", 200, QuantityUnit.Milliliter, 200)]   // « CREME 20CL » : cl convertis en ml
+    [InlineData(1, 1, 0.845, "Kilogram", 0.845, QuantityUnit.Kilogram, 0.845)] // article pesé
+    [InlineData(3, 1, 0.3333, "Kilogram", 0.999, QuantityUnit.Kilogram, 0.333)] // contenu arrondi avant le total
+    public void Total_IsCopies_TimesPack_TimesContent(
+        int copies, int pack, decimal content, string unit, decimal expectedTotal, QuantityUnit expectedUnit, decimal expectedPerCopy)
     {
-        var line = Assert.Single(Validate(null, Line(quantity: perCopy, unit: unit, copies: copies)).Lines);
+        var line = Assert.Single(Validate(null, Bought(copies, content, unit, pack)).Lines);
 
-        Assert.Equal(expectedTotal, line.Quantity);
-        Assert.Equal(expectedUnit, line.Unit);
-        // Détail affiché par l'app (« 6 × 1 l »).
-        Assert.Equal((int)copies, line.Copies);
-        Assert.Equal(expectedTotal, line.Copies * line.QuantityPerCopy);
+        Assert.Equal((expectedTotal, expectedUnit), (line.Quantity, line.Unit));
+        // Détail affiché par l'app (« 2 × 1 500 ml »).
+        Assert.Equal((copies, expectedPerCopy), (line.Copies, line.QuantityPerCopy));
+    }
+
+    [Theory]
+    [InlineData(4, 1)]     // « YAOURT X4 » lu comme un lot de 4 × 1 pièce
+    [InlineData(1, 4)]     // ... ou comme 4 pièces
+    [InlineData(4, 4)]     // ... ou les deux : 4 pièces par exemplaire, pas 16
+    public void InPieces_PackAndQuantity_AreNotCountedTwice(int pack, decimal quantity)
+    {
+        var line = Assert.Single(Validate(null, Bought(3, quantity, "Piece", pack)).Lines);
+
+        Assert.Equal((3, 4m, 12m), (line.Copies, line.QuantityPerCopy, line.Quantity));
+    }
+
+    [Theory]
+    [InlineData(6.0, 0.99, 5.94, 6)]      // prix cohérents : le multiplicateur lu est retenu
+    [InlineData(3.0, 0.33, 1.00, 3)]      // arrondi du ticket toléré
+    [InlineData(2.0, null, 4.50, 1)]      // code TVA pris pour un multiplicateur : pas de prix unitaire
+    [InlineData(2.0, 4.50, 4.50, 1)]      // ... ou prix unitaire égal au prix de la ligne
+    [InlineData(1.0, 0.99, 5.94, 6)]      // multiplicateur manqué, prix bien lus : rapport des prix
+    [InlineData(4.0, 0.99, 5.94, 6)]      // multiplicateur mal lu : rapport des prix
+    [InlineData(1.0, 1.79, 2.03, 1)]      // prix au kg pris pour un prix unitaire : rapport non entier
+    [InlineData(6.0, 0.99, null, 1)]      // prix de la ligne illisible
+    [InlineData(6.0, 0.0, 0.0, 1)]
+    [InlineData(1.0, 0.01, 1.50, 1)]      // rapport de 150 : au-delà de 99
+    public void Prices_CheckTheNumberOfCopies(double? copies, double? unitPrice, double? linePrice, int expected)
+    {
+        var line = Assert.Single(Validate(null, Line(quantity: 1, unit: "Liter",
+            copies: (decimal?)copies, unitPrice: (decimal?)unitPrice, linePrice: (decimal?)linePrice)).Lines);
+
+        Assert.Equal(expected, line.Copies);
+        Assert.Equal(expected, line.Quantity);
     }
 
     [Theory]
     [InlineData(null)]     // champ absent
     [InlineData(0.0)]      // double : xUnit ne convertit pas un int vers double?
     [InlineData(-2.0)]
-    [InlineData(2.5)]      // pas un nombre d'exemplaires
+    [InlineData(2.5)]      // pas un nombre entier
     [InlineData(100.0)]    // au-delà de 99 : sans doute un prix ou un code mal lu
-    public void InvalidCopies_CountTheArticleOnce(double? copies)
+    public void InvalidCopiesOrPack_CountOnce(double? value)
     {
-        var line = Assert.Single(Validate(null, Line(quantity: 500, unit: "Gram", copies: (decimal?)copies)).Lines);
+        var line = Assert.Single(Validate(null, Line(quantity: 500, unit: "Gram",
+            copies: (decimal?)value, packSize: (decimal?)value, unitPrice: 1.20m, linePrice: 1.20m)).Lines);
 
         Assert.Equal((1, 500m, 500m), (line.Copies, line.QuantityPerCopy, line.Quantity));
     }
@@ -116,17 +152,19 @@ public class ReceiptValidatorTests
     public void InvalidContent_KeepsTheNumberOfCopies()
     {
         // 6 exemplaires d'un contenu illisible : 6 pièces, plus proches de l'achat qu'une seule.
-        var line = Assert.Single(Validate(null, Line(quantity: 2, unit: "Boite", copies: 6)).Lines);
+        var line = Assert.Single(Validate(null, Bought(6, 2, "Boite")).Lines);
 
         Assert.Equal((6, 1m, 6m, QuantityUnit.Piece), (line.Copies, line.QuantityPerCopy, line.Quantity, line.Unit));
     }
 
     [Fact]
-    public void TotalAboveTheLimit_KeepsASingleCopy()
+    public void TotalAboveTheLimit_KeepsASingleCopy_AndASingleUnitOfThePack()
     {
-        var line = Assert.Single(Validate(null, Line(quantity: 50_000, unit: "Gram", copies: 3)).Lines);
+        var copies = Assert.Single(Validate(null, Bought(3, 50_000, "Gram")).Lines);
+        var pack = Assert.Single(Validate(null, Bought(1, 50_000, "Gram", packSize: 3)).Lines);
 
-        Assert.Equal((1, 50_000m, 50_000m), (line.Copies, line.QuantityPerCopy, line.Quantity));
+        Assert.Equal((1, 50_000m, 50_000m), (copies.Copies, copies.QuantityPerCopy, copies.Quantity));
+        Assert.Equal((1, 50_000m, 50_000m), (pack.Copies, pack.QuantityPerCopy, pack.Quantity));
     }
 
     [Theory]

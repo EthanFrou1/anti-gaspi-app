@@ -207,20 +207,27 @@ Format de sortie imposé (catégories et unités en listes fermées, construites
       "isFood": true,
       "name": "string (nom lisible)",
       "category": "code d'une catégorie de l'app (ex. ground-meat)",
+      "linePrice": "0.00 ou null (prix de la ligne)",
       "copies": 1,
+      "unitPrice": "0.00 ou null (prix imprimé avec le multiplicateur « 6 x 0,99 »)",
+      "packSize": 1,
       "quantity": 0,
-      "unit": "Piece | Gram | Kilogram | Milliliter | Liter"
+      "unit": "Piece | Gram | Kilogram | Milliliter | Centiliter | Liter"
     }
   ]
 }
 ```
 
-`copies` est le nombre d'exemplaires achetés ; `quantity` et `unit`, le contenu d'**un** exemplaire. **Le modèle lit, l'API calcule** : le total (`copies × quantity`) est calculé par `ReceiptValidator`, car le modèle lit bien « 6 x » et « 1L » mais ne les multiplie pas de façon fiable (mesuré avec `design/test-tickets/evaluate.py`). Nombre d'exemplaires invalide (absent, décimal, hors 1 à 99) : 1. Le prompt précise qu'un chiffre seul après le prix est un code TVA, jamais une quantité. L'écran de validation affiche le détail (« 6 l (6 × 1 l) »), qui disparaît si l'utilisateur corrige la quantité ou l'unité.
+**Le modèle recopie les nombres imprimés, l'API calcule** (`ReceiptValidator`), car le modèle lit bien « 6 x » et « 1L » mais ne les multiplie ni ne les convertit de façon fiable (mesuré avec `design/test-tickets/evaluate.py`) :
+- `copies` : exemplaires achetés, **vérifiés par les prix** : retenus si `copies × unitPrice ≈ linePrice` (écart de 0,02 € ou 1 %) ; sinon, un rapport entier entre les deux prix (2 à 99) les remplace ; sans prix unitaire lisible : 1. Un code TVA pris pour un multiplicateur est ainsi écarté.
+- `packSize` : lot écrit dans le libellé (6 pour « 6X1,5L ») ; `quantity` et `unit` : contenu d'une unité du lot. En pièces, lot et quantité décrivent la même chose (« X4 ») : pas de double comptage.
+- `Centiliter` est accepté en lecture seulement et converti en millilitres (l'app et la base ne connaissent pas les centilitres).
+- Total = exemplaires × lot × contenu. Valeur invalide (absente, décimale, hors 1 à 99) : 1. L'écran de validation affiche le détail (« 6 l (6 × 1 l) »), qui disparaît si l'utilisateur corrige la quantité ou l'unité.
 
 Règles :
 - **Ne jamais stocker l'image** après traitement (RGPD), ni la journaliser. Elle reste en mémoire pendant la requête : le contrôleur empêche ASP.NET Core de l'écrire dans un fichier temporaire (`MemoryBufferThreshold`), ce que vérifie un test qui surveille le dossier temporaire (`ReceiptPrivacyTests`).
 - **Métadonnées retirées deux fois** : l'app réencode la photo en JPEG (1568 px, qualité 0,7), ce qui ne recopie ni EXIF ni position GPS ; l'API retire ensuite les segments de métadonnées du JPEG (EXIF, XMP, commentaires, données après la fin de l'image) avant l'envoi à l'IA (`JpegMetadataStripper`, testé sur une vraie photo). JPEG uniquement, 2 Mo au plus.
-- **Minimisation** : seuls les articles et la date d'achat sont extraits (ni magasin, ni adresse, ni carte bancaire ou de fidélité).
+- **Minimisation** : seuls les articles et la date d'achat sont extraits (ni magasin, ni adresse, ni carte bancaire ou de fidélité). Les prix lus servent uniquement à vérifier le nombre d'exemplaires : ni renvoyés à l'app (vérifié par un test de bout en bout), ni enregistrés, ni journalisés.
 - Validation côté API : lignes non alimentaires écartées, 60 lignes au plus, noms nettoyés, catégorie inconnue remplacée par « Autre », unité ou quantité invalide remplacée par 1 pièce, date d'achat future ou de plus de 30 jours remplacée par aujourd'hui. Une réponse inexploitable dans son ensemble (refus, coupée, illisible) donne une erreur 503, non décomptée du quota.
 - Quotas : 3 lectures par jour et par utilisateur, 50 par jour pour toute l'API, séparés de ceux des recettes (table `ReceiptScans` : utilisateur et heure seulement, supprimés au bout de 48 h). Une photo refusée (format, taille) n'est pas décomptée ; une lecture sans produit reconnu l'est (l'appel a été payé). Modèle réglable à part (`Ai:ReceiptModel`, Haiku 4.5 par défaut) : si la lecture de vrais tickets déçoit, on passe à un modèle plus précis sans toucher aux recettes.
 - Tickets longs : les photographier en plusieurs fois (un scan par partie).

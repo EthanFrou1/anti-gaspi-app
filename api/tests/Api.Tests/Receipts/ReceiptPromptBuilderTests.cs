@@ -14,7 +14,8 @@ public class ReceiptPromptBuilderTests
 
         var line = schema["properties"].GetProperty("lines").GetProperty("items").GetProperty("properties");
         Assert.Equal(Categories.Select(c => c.Code), Strings(line.GetProperty("category").GetProperty("enum")));
-        Assert.Equal(Enum.GetNames<QuantityUnit>(), Strings(line.GetProperty("unit").GetProperty("enum")));
+        // Unités de l'app, plus les centilitres, acceptés en lecture seulement (convertis par le validateur).
+        Assert.Equal([.. Enum.GetNames<QuantityUnit>(), "Centiliter"], Strings(line.GetProperty("unit").GetProperty("enum")));
     }
 
     [Fact]
@@ -47,31 +48,41 @@ public class ReceiptPromptBuilderTests
     // disparaît pas du prompt lors d'une réécriture.
 
     [Fact]
-    public void QuantityRule_AsksForTheCopies_AndTheContentOfOneCopy_WithoutMultiplying()
+    public void QuantityRule_AsksToCopyThePrintedNumbers_WithoutCalculating()
     {
-        var rule = Rule("6. copies, quantity et unit", "7. purchaseDate");
+        var rule = Rule("6. Prix, exemplaires et contenu", "7. purchaseDate");
 
-        // Le modèle lit les deux nombres, l'API calcule le total (ReceiptValidator).
-        Assert.Contains("quantity et unit décrivent le contenu d'UN SEUL exemplaire", rule);
-        Assert.Contains("Ne multiplie pas par copies", rule);
+        // Le modèle recopie, l'API calcule le total (ReceiptValidator).
+        Assert.Contains("recopie les nombres tels qu'ils sont imprimés, sans rien multiplier ni convertir", rule);
         // Multiplicateur sur la ligne de l'article ou sur une ligne voisine, dans les deux ordres.
-        Assert.Contains("sur sa ligne ou sur une ligne voisine", rule);
+        Assert.Contains("sur la ligne de l'article ou sur une ligne voisine", rule);
         Assert.Contains("« 3 x 1,20 »", rule);
         Assert.Contains("« 1,20 x 3 »", rule);
         // Le code TVA imprimé après le prix avait été lu comme une quantité.
         Assert.Contains("Un chiffre seul après le prix est un code de TVA, jamais une quantité", rule);
+        // Prix unitaire : sert à vérifier le multiplicateur ; lot et centilitres lus tels quels.
+        Assert.Contains("unitPrice : prix d'un exemplaire", rule);
+        Assert.Contains("packSize : nombre d'unités du lot", rule);
+        Assert.Contains("« 33CL » donne 33 Centiliter", rule);
+        // L'exemple « 75CL » donné sans unité avait fait écrire « 75 Milliliter ».
+        Assert.DoesNotContain("75CL", rule);
     }
 
     [Fact]
-    public void Schema_AsksForTheCopies_BeforeTheContent()
+    public void Schema_FollowsTheReadingOrderOfTheReceipt()
     {
         var items = ReceiptPromptBuilder.OutputSchema(Categories)["properties"].GetProperty("lines").GetProperty("items");
-        var order = items.GetProperty("properties").EnumerateObject().Select(p => p.Name).ToList();
+        var properties = items.GetProperty("properties");
 
-        Assert.Equal("integer", items.GetProperty("properties").GetProperty("copies").GetProperty("type").GetString());
-        Assert.Contains("copies", Strings(items.GetProperty("required")));
-        // Le modèle écrit les champs dans l'ordre du schéma.
-        Assert.True(order.IndexOf("copies") < order.IndexOf("quantity"));
+        // Le modèle écrit les champs dans l'ordre du schéma : prix, multiplicateur, puis contenu.
+        Assert.Equal(
+            ["receiptText", "isFood", "name", "category", "linePrice", "copies", "unitPrice", "packSize", "quantity", "unit"],
+            properties.EnumerateObject().Select(p => p.Name));
+        Assert.Equal("integer", properties.GetProperty("copies").GetProperty("type").GetString());
+        Assert.Equal("integer", properties.GetProperty("packSize").GetProperty("type").GetString());
+        // Prix illisible : null plutôt qu'un 0 inventé.
+        Assert.Equal(["number", "null"], properties.GetProperty("unitPrice").GetProperty("anyOf").EnumerateArray()
+            .Select(t => t.GetProperty("type").GetString()));
     }
 
     [Fact]
@@ -81,7 +92,6 @@ public class ReceiptPromptBuilderTests
 
         Assert.Contains("sans le prix et sans la ligne de quantité ou de poids", rule);
     }
-
     /// <summary>Texte d'une règle du prompt système, espaces et retours à la ligne ramenés à un espace.</summary>
     private static string Rule(string start, string next)
     {

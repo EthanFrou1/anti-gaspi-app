@@ -41,10 +41,13 @@ public class ReceiptsEndpointsTests(DatabaseFixture database) : IAsyncLifetime
 
         var response = await client.PostAsync(ScanUrl(householdId), ImageForm(Jpeg));
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var scan = await response.Content.ReadFromJsonAsync<ReceiptScanDto>(Json);
+        var body = await response.Content.ReadAsStringAsync();
+        var scan = JsonSerializer.Deserialize<ReceiptScanDto>(body, Json);
         // Pack de lait du lecteur Fake : le total et son détail (« 6 × 1 l ») arrivent à l'app.
         var milk = scan!.Lines.Single(l => l.Name == "Lait demi-écrémé");
         Assert.Equal((6m, QuantityUnit.Liter, 6, 1m), (milk.Quantity, milk.Unit, milk.Copies, milk.QuantityPerCopy));
+        // Minimisation : les prix lus servent seulement à vérifier les exemplaires, jamais renvoyés.
+        Assert.DoesNotContain("price", body, StringComparison.OrdinalIgnoreCase);
 
         // L'utilisateur garde deux lignes et corrige un nom, comme sur l'écran de validation.
         var kept = scan!.Lines.Take(2)

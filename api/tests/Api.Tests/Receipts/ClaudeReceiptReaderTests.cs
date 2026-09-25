@@ -22,7 +22,7 @@ public class ClaudeReceiptReaderTests
     private static readonly ReceiptImage Image = new([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3], "image/jpeg");
 
     private const string ReceiptJson =
-        """{"purchaseDate":"2026-09-23","lines":[{"receiptText":"COURGETTE","isFood":true,"name":"Courgette","category":"vegetables","copies":2,"quantity":0.5,"unit":"Kilogram"}]}""";
+        """{"purchaseDate":"2026-09-23","lines":[{"receiptText":"COURGETTE","isFood":true,"name":"Courgette","category":"vegetables","linePrice":1.98,"copies":2,"unitPrice":0.99,"packSize":1,"quantity":0.5,"unit":"Kilogram"}]}""";
 
     [Fact]
     public async Task SendsTheImage_TheReceiptModel_AndTheImposedJsonFormat()
@@ -70,7 +70,7 @@ public class ClaudeReceiptReaderTests
         Assert.Equal("Courgette", line.Name);
         Assert.Equal(0.5m, line.Quantity);
         Assert.Equal("Kilogram", line.Unit);
-        Assert.Equal(2m, line.Copies);
+        Assert.Equal((2m, 0.99m, 1.98m, 1m), (line.Copies, line.UnitPrice, line.LinePrice, line.PackSize));
         Assert.True(line.IsFood);
     }
 
