@@ -29,7 +29,15 @@ public sealed record RecipeDto(
     bool IsFavorite,
     int FavoriteCount,
     // Produits du frigo non utilisés à cause des goûts d'un convive (sans dire lequel).
-    IReadOnlyList<string> ExcludedByPreferences);
+    IReadOnlyList<string> ExcludedByPreferences)
+{
+    /// <summary>
+    /// Réponse de génération seulement : des produits du frigo ont été écartés pour respecter
+    /// les contraintes des convives (allergène, exclusion…), sans dire lesquels ni pourquoi.
+    /// Jamais enregistré : toujours false quand la recette est relue (historique, favoris).
+    /// </summary>
+    public bool ProductsExcludedByConstraints { get; init; }
+}
 
 public sealed record RecipeQuotaDto(int Used, int Limit, int Remaining, DateTimeOffset ResetsAt);
 

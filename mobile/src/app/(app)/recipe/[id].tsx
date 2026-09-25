@@ -11,7 +11,7 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { Clock, Refrigerator, Share2, Star } from '@/components/icons/lucide';
 import { Screen } from '@/components/Screen';
 import { WarningNote } from '@/components/WarningNote';
-import { allergyWarning, decodeRestrictions } from '@/features/recipes/meal';
+import { allergyWarning, CONSTRAINT_EXCLUSION_NOTE, decodeRestrictions } from '@/features/recipes/meal';
 import { APP_NAME } from '@/config';
 import { canModifyItem } from '@/features/inventory/rules';
 import { refreshExpiryReminders } from '@/features/notifications/reminders';
@@ -29,7 +29,11 @@ export default function RecipeScreen() {
   const styles = useStyles();
   // restrictions : contraintes d'allergène du repas, passées par la navigation juste après la
   // génération (jamais enregistrées : la recette rouverte plus tard n'en a pas).
-  const { id, restrictions } = useLocalSearchParams<{ id: string; restrictions?: string }>();
+  const { id, restrictions, constraintsNote } = useLocalSearchParams<{
+    id: string;
+    restrictions?: string;
+    constraintsNote?: string;
+  }>();
   const reinforcedWarning = allergyWarning(decodeRestrictions(restrictions));
   const { state } = useAuth();
   const user = state.status === 'signedIn' ? state.user : null;
@@ -172,6 +176,7 @@ export default function RecipeScreen() {
       {excludedProductsLabel(recipe.excludedByPreferences) ? (
         <Text style={styles.hint}>{excludedProductsLabel(recipe.excludedByPreferences)}</Text>
       ) : null}
+      {constraintsNote === '1' ? <Text style={styles.hint}>{CONSTRAINT_EXCLUSION_NOTE}</Text> : null}
 
       <Text style={styles.heading}>Préparation</Text>
       {recipe.steps.map((step, index) => (

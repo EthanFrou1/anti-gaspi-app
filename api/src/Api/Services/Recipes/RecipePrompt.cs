@@ -38,6 +38,13 @@ public sealed record RecipePrompt(
     /// affichés avec la recette : « Non utilisés : champignons (préférences d'un convive) ».
     /// </summary>
     public IReadOnlyList<string> ExcludedByPreferences { get; init; } = [];
+
+    /// <summary>
+    /// Des produits du frigo ont été écartés pour une contrainte (allergène, exclusion, « Pas
+    /// épicé » des seuls invités). Ni leurs noms ni la contrainte : seulement une mention
+    /// générique au moment de la génération, jamais enregistrée avec la recette.
+    /// </summary>
+    public bool HasConstraintExclusions { get; init; }
 }
 
 /// <summary>

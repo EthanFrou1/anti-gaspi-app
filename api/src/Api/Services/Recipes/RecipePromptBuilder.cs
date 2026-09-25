@@ -84,6 +84,7 @@ public static class RecipePromptBuilder
         return new RecipePrompt(SystemPrompt, userContent, RecipeOutputSchema.Schema, items, constraints)
         {
             ExcludedByPreferences = disliked.Select(i => Sanitize(i.Name)).Distinct().Take(MaxExcludedNames).ToList(),
+            HasConstraintExclusions = hits.Any(x => x.Hit!.Kind == PreferenceKind.Constraint),
         };
     }
 

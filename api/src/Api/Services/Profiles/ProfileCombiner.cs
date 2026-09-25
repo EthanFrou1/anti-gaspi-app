@@ -20,6 +20,10 @@ public sealed record MealConstraints(
     public IReadOnlyList<DislikedFood> Dislikes { get; init; } = [];
 
     public bool AvoidSpicy { get; init; }
+
+    // « Pas épicé » demandé seulement pour les invités de ce repas (aucun profil ne le demande) :
+    // traité comme une contrainte, qui ne laisse aucune trace (ni dans la recette, ni dans les journaux).
+    public bool AvoidSpicyForThisMealOnly { get; init; }
 }
 
 /// <summary>
@@ -107,6 +111,7 @@ public static class ProfileCombiner
                 : constraints.Exclusions,
             Allergens = constraints.Allergens.Concat(extraAllergens).Distinct().Order().ToList(),
             AvoidSpicy = constraints.AvoidSpicy || restrictions.Contains(MealRestriction.NotSpicy),
+            AvoidSpicyForThisMealOnly = !constraints.AvoidSpicy && restrictions.Contains(MealRestriction.NotSpicy),
         };
     }
 

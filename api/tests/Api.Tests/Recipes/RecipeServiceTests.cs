@@ -212,12 +212,35 @@ public class RecipeServiceTests(DatabaseFixture database) : HouseholdTestBase(da
         Assert.Contains(Allergen.Gluten, prompt.Constraints.Allergens);
         // Le steak (viande) et les pâtes (gluten) ne partent pas vers l'IA…
         Assert.DoesNotContain(prompt.Items, i => i.Item.Name is "Steak haché" or "Pâtes");
-        // …et, écartés pour une contrainte, ils ne sont pas cités avec la recette.
+        // …et, écartés pour une contrainte, ils ne sont pas cités avec la recette : seulement une
+        // mention générique dans la réponse de génération.
         Assert.Empty(result.Value.ExcludedByPreferences);
+        Assert.True(result.Value.ProductsExcludedByConstraints);
         await using var db = CreateDbContext();
         var stored = (await db.RecipeGenerations.SingleAsync()).RecipeJson!;
         Assert.DoesNotContain("gluten", stored, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("arachide", stored, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task NotSpicyForGuestsOnly_LeavesNoTraceInTheStoredRecipe()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        await AddItemAsync(alice, householdId, "Harissa", "condiments", daysLeft: 2);
+
+        var result = await GenerateAsync(alice, householdId,
+            new GenerateRecipeRequest(null, null, Guests: 1, MealRestrictions: [MealRestriction.NotSpicy]));
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.DoesNotContain(Generator.LastPrompt!.Items, i => i.Item.Name == "Harissa");
+        Assert.Empty(result.Value.ExcludedByPreferences);
+        Assert.True(result.Value.ProductsExcludedByConstraints);
+        // Rien dans la recette enregistrée, et la mention générique disparaît à la relecture.
+        await using var db = CreateDbContext();
+        Assert.DoesNotContain("Harissa", (await db.RecipeGenerations.SingleAsync()).RecipeJson!);
+        var reread = await WithServiceAsync<IRecipeService, Result<RecipeDto>>(s =>
+            s.GetAsync(alice, householdId, result.Value.Id, CancellationToken.None));
+        Assert.False(reread.Value!.ProductsExcludedByConstraints);
     }
 
     [Fact]

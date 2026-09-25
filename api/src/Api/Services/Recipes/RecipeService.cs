@@ -189,7 +189,11 @@ public sealed class RecipeService(
             .Where(r => r.Id == reservation.Value)
             .ExecuteUpdateAsync(s => s.SetProperty(r => r.RecipeJson, json), ct);
 
-        return (await GetAsync(actorId, householdId, reservation.Value, ct)).Value!;
+        // Mention générique ajoutée à la réponse seulement (la recette enregistrée n'en garde rien).
+        return (await GetAsync(actorId, householdId, reservation.Value, ct)).Value! with
+        {
+            ProductsExcludedByConstraints = prompt.Value.HasConstraintExclusions,
+        };
     }
 
     public async Task<RecipeQuotaDto> GetQuotaAsync(Guid userId, CancellationToken ct)

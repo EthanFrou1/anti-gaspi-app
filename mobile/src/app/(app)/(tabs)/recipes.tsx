@@ -23,7 +23,7 @@ import { TastesSheet } from '@/features/profile/TastesSheet';
 import { loadTastesPromptSeen, markTastesPromptSeen, shouldAskTastes } from '@/features/profile/tastesPrompt';
 import {
   allergyWarning,
-  encodeRestrictions,
+  generatedRecipeParams,
   guestsLabel,
   loadLastDiners,
   maxGuests,
@@ -141,11 +141,11 @@ export default function RecipesScreen() {
     setError(null);
     try {
       const recipe = await api.recipes.generate(householdId!, request);
-      // Contraintes d'allergène : transmises à l'écran de la recette pour l'avertissement renforcé,
-      // par la navigation seulement (jamais enregistrées).
+      // Avertissement renforcé et mention des produits écartés : transmis à l'écran de la recette
+      // par la navigation seulement (jamais enregistrés).
       router.push({
         pathname: '/recipe/[id]',
-        params: warning ? { id: recipe.id, restrictions: encodeRestrictions(restrictions) } : { id: recipe.id },
+        params: generatedRecipeParams(recipe.id, restrictions, recipe.productsExcludedByConstraints === true),
       });
       // Repas suivant : de nouveau sans invités ni contraintes.
       setGuests(0);

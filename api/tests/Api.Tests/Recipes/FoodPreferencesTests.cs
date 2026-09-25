@@ -159,6 +159,17 @@ public class FoodPreferencesTests
     }
 
     [Fact]
+    public void NotSpicyForGuestsOnly_IsAConstraint_NotATaste()
+    {
+        var profileSpicy = new Api.Services.Profiles.MealConstraints(
+            Diet.Omnivore, [], [], CookingTime.NoLimit, MealBudget.NoLimit, NutritionGoal.Balanced, 1, []) { AvoidSpicy = true };
+        var guestsSpicy = profileSpicy with { AvoidSpicyForThisMealOnly = true };
+
+        Assert.Equal(PreferenceKind.Taste, FoodPreferences.FindIn("Harissa", profileSpicy)?.Kind);
+        Assert.Equal(PreferenceKind.Constraint, FoodPreferences.FindIn("Harissa", guestsSpicy)?.Kind);
+    }
+
+    [Fact]
     public void AllergensWithoutKeywords_AreLeftToTheAi()
     {
         // Seuls 4 allergènes sont vérifiés par mots-clés ; les autres restent dans la consigne à l'IA.

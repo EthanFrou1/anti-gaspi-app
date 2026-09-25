@@ -160,6 +160,39 @@ public class RecipePromptBuilderTests
     }
 
     [Fact]
+    public void NotSpicyFromAProfile_IsReportedAsATaste()
+    {
+        var prompt = RecipePromptBuilder.Build(Constraints() with { AvoidSpicy = true },
+            [Item("Riz", "dry-goods", 200), Item("Harissa", "condiments", 30)], Today);
+
+        Assert.Equal(["Harissa"], prompt.ExcludedByPreferences);
+        Assert.False(prompt.HasConstraintExclusions);
+    }
+
+    [Fact]
+    public void NotSpicyForGuestsOnly_LeavesNoTrace_OnlyTheGenericMention()
+    {
+        var constraints = ProfileCombiner.WithMealRestrictions(Constraints(), [MealRestriction.NotSpicy]);
+
+        var prompt = RecipePromptBuilder.Build(constraints, [Item("Riz", "dry-goods", 200), Item("Harissa", "condiments", 30)], Today);
+
+        Assert.Equal(["Riz"], prompt.Items.Select(i => i.Item.Name));
+        Assert.Empty(prompt.ExcludedByPreferences);
+        Assert.True(prompt.HasConstraintExclusions);
+    }
+
+    [Fact]
+    public void ProductsExcludedForAnAllergen_AreNeverNamed()
+    {
+        var prompt = RecipePromptBuilder.Build(Constraints(allergens: [Allergen.Gluten]),
+            [Item("Riz", "dry-goods", 200), Item("Pain de mie", "bread", 3)], Today);
+
+        Assert.Equal(["Riz"], prompt.Items.Select(i => i.Item.Name));
+        Assert.Empty(prompt.ExcludedByPreferences);
+        Assert.True(prompt.HasConstraintExclusions);
+    }
+
+    [Fact]
     public void UserContent_GivesTheTastesAsClosedLabels()
     {
         var constraints = Constraints() with { Dislikes = [DislikedFood.Fish, DislikedFood.Peas], AvoidSpicy = true };

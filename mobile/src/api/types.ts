@@ -252,6 +252,9 @@ export type Recipe = {
   favoriteCount: number;
   // Produits du frigo non utilisés à cause des goûts d'un convive (sans dire lequel).
   excludedByPreferences: string[];
+  // Réponse de génération seulement : produits écartés pour une contrainte (allergène…),
+  // sans dire lesquels. Absent ou false quand la recette est relue.
+  productsExcludedByConstraints?: boolean;
 };
 
 export type RecipeQuota = {

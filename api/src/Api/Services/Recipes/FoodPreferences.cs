@@ -178,25 +178,28 @@ public static class FoodPreferences
 
     /// <summary>Première règle des convives que le texte enfreint, ou null.</summary>
     public static PreferenceHit? FindIn(string? text, MealConstraints constraints) =>
-        FindIn(text, constraints.Dislikes, constraints.AvoidSpicy, constraints.Allergens, constraints.Exclusions);
+        FindIn(text, constraints.Dislikes, constraints.AvoidSpicy, constraints.Allergens, constraints.Exclusions,
+            // « Pas épicé » des seuls invités : une contrainte du repas, pas un goût d'un convive.
+            spicyKind: constraints.AvoidSpicyForThisMealOnly ? PreferenceKind.Constraint : PreferenceKind.Taste);
 
     public static PreferenceHit? FindIn(
         string? text,
         IReadOnlyCollection<DislikedFood> dislikes,
         bool avoidSpicy,
         IReadOnlyCollection<Allergen>? allergens = null,
-        IReadOnlyCollection<IngredientExclusion>? exclusions = null)
+        IReadOnlyCollection<IngredientExclusion>? exclusions = null,
+        PreferenceKind spicyKind = PreferenceKind.Taste)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
             return null;
         }
 
-        var tastes = dislikes.Select(d => Dislikes[d]).Concat(avoidSpicy ? [Spicy] : Array.Empty<Rule>());
         var constraints = (allergens ?? []).Where(Allergens.ContainsKey).Select(a => Allergens[a])
             .Concat((exclusions ?? []).Where(Exclusions.ContainsKey).Select(e => Exclusions[e]));
 
-        var rules = tastes.Select(rule => (rule, PreferenceKind.Taste))
+        var rules = dislikes.Select(d => (rule: Dislikes[d], kind: PreferenceKind.Taste))
+            .Concat(avoidSpicy ? [(Spicy, spicyKind)] : Array.Empty<(Rule, PreferenceKind)>())
             .Concat(constraints.Select(rule => (rule, PreferenceKind.Constraint)))
             .ToList();
         if (rules.Count == 0)

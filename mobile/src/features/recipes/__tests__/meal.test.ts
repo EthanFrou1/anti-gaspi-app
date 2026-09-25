@@ -5,8 +5,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   allergyWarning,
+  CONSTRAINT_EXCLUSION_NOTE,
   decodeRestrictions,
   encodeRestrictions,
+  generatedRecipeParams,
   guestsLabel,
   loadLastDiners,
   maxGuests,
@@ -46,6 +48,23 @@ describe('contraintes pour ce repas', () => {
     expect(allergyWarning(['Vegetarian', 'NoPork', 'NotSpicy'])).toBeNull();
     expect(allergyWarning(['NoPeanuts'])).toMatch(/^« Sans arachides » demandé : .*ne te fie pas à cette recette\.$/);
     expect(allergyWarning(['NoGluten', 'Vegetarian', 'NoPeanuts'])).toMatch(/^« Sans arachides », « Sans gluten » demandés/);
+  });
+
+  it('ne passent à l\'écran de la recette que ce qui sert, par la navigation', () => {
+    expect(generatedRecipeParams('r1', [], false)).toEqual({ id: 'r1' });
+    // « Végétarien » seul : pas d'avertissement renforcé, donc rien à transmettre.
+    expect(generatedRecipeParams('r1', ['Vegetarian'], false)).toEqual({ id: 'r1' });
+    expect(generatedRecipeParams('r1', ['NoGluten', 'Vegetarian'], true)).toEqual({
+      id: 'r1',
+      restrictions: 'NoGluten,Vegetarian',
+      constraintsNote: '1',
+    });
+  });
+
+  it('la mention des produits écartés ne nomme ni produit ni contrainte', () => {
+    expect(CONSTRAINT_EXCLUSION_NOTE).toBe(
+      'Certains produits du frigo ont été écartés pour respecter les contraintes des convives.',
+    );
   });
 
   it('passent par la navigation sans valeur inconnue', () => {

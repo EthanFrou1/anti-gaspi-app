@@ -51,6 +51,26 @@ export function allergyWarning(restrictions: readonly MealRestriction[]): string
   );
 }
 
+/** Mention générique : ni les produits, ni la contrainte (allergène, exclusion…). */
+export const CONSTRAINT_EXCLUSION_NOTE =
+  'Certains produits du frigo ont été écartés pour respecter les contraintes des convives.';
+
+/**
+ * Paramètres de l'écran de la recette juste après sa génération : ce qui n'est jamais enregistré
+ * (contraintes d'allergène du repas, mention des produits écartés) passe par la navigation.
+ */
+export function generatedRecipeParams(
+  recipeId: string,
+  restrictions: readonly MealRestriction[],
+  productsExcludedByConstraints: boolean,
+): { id: string; restrictions?: string; constraintsNote?: string } {
+  return {
+    id: recipeId,
+    ...(allergyWarning(restrictions) ? { restrictions: encodeRestrictions(restrictions) } : {}),
+    ...(productsExcludedByConstraints ? { constraintsNote: '1' } : {}),
+  };
+}
+
 /** Passage par l'URL de l'écran de la recette (jamais enregistré) : « NoGluten,NoPeanuts ». */
 export function encodeRestrictions(restrictions: readonly MealRestriction[]): string {
   return restrictions.join(',');
