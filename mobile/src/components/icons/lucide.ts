@@ -24,6 +24,7 @@ export { default as Smartphone } from 'lucide-react-native/icons/smartphone';
 export { default as Star } from 'lucide-react-native/icons/star';
 export { default as Sun } from 'lucide-react-native/icons/sun';
 export { default as SunMoon } from 'lucide-react-native/icons/sun-moon';
+export { default as ThumbsDown } from 'lucide-react-native/icons/thumbs-down';
 export { default as Trash } from 'lucide-react-native/icons/trash';
 export { default as TriangleAlert } from 'lucide-react-native/icons/triangle-alert';
 export { default as User } from 'lucide-react-native/icons/user';

@@ -171,6 +171,14 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Avec la vraie clé, les 5 tickets fictifs de `design/test-tickets/` (régénérés à la date du jour) : résultat comparé aux articles attendus de leur README (automatiquement, côté API, par `evaluate.py` : voir ce README) ; dans l'app, le ticket long entier déclenche « Image très longue », ses deux parties se lisent en deux scans.
 - [ ] Charte : écran d'attente en carte sur fond assombri ; validation avec cartes, cases à cocher encre (cochée : fond mandarine et coche), ligne décochée atténuée, ligne en erreur bordée de rouge.
 
+### Goûts : « Pas pour moi » et « Pas épicé »
+
+- [ ] Profil → « Ce que je n'aime pas » : grille de 32 cartes (emoji et nom), mandarine en haut, interrupteur « Pas épicé », compteur.
+- [ ] Toucher une carte : petite secousse, carte inclinée et grisée, tampon « Pas pour moi », légère vibration ; la mandarine se balance et sa bulle change (0, 1-2, 3 et plus). Second toucher : retour avec un rebond.
+- [ ] « Enregistrer » puis rouvrir l'écran : les choix sont conservés.
+- [ ] Réduire les animations : ni secousse, ni rebond, ni balancement ; le tampon et le grisé s'affichent quand même.
+- [ ] VoiceOver : « Champignons : pas pour moi, case à cocher », avec l'état coché.
+
 ### Invitation au foyer : un seul code actif
 
 - [ ] Sans code actif : « Créer et partager un code » crée le code et ouvre la feuille de partage ; le bouton disparaît ensuite, remplacé par « Code actif » et l'explication.

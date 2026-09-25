@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Linking, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { Avatar } from '@/components/Avatar';
-import { Bell, Database, House, Info, LogOut, SunMoon, Trash, UtensilsCrossed } from '@/components/icons/lucide';
+import { Bell, Database, House, Info, LogOut, SunMoon, ThumbsDown, Trash, UtensilsCrossed } from '@/components/icons/lucide';
 import { Screen } from '@/components/Screen';
 import { SettingsRow, SettingsSection } from '@/components/SettingsList';
 import { APP_NAME, APP_VERSION } from '@/config';
@@ -56,6 +56,12 @@ export default function ProfileScreen() {
           label="Préférences alimentaires"
           onPress={() => router.push('/preferences')}
           accessibilityHint="Régime, allergies, temps de cuisine, budget et objectif"
+        />
+        <SettingsRow
+          icon={ThumbsDown}
+          label="Ce que je n'aime pas"
+          onPress={() => router.push('/tastes')}
+          accessibilityHint="Aliments à ne jamais mettre dans tes recettes, et plats épicés"
         />
         <SettingsRow icon={House} label="Mon foyer" onPress={() => router.navigate('/household')} last />
       </SettingsSection>
