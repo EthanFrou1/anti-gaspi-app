@@ -19,7 +19,9 @@ public static class ReceiptPromptBuilder
         Règles :
         1. Une ligne par article acheté. Ignore les totaux, remises, bons de réduction, consignes,
            sacs, moyens de paiement, points de fidélité, TVA, l'en-tête et le pied du ticket.
-        2. receiptText : le libellé tel qu'il est imprimé, sans le prix.
+        2. receiptText : le libellé de l'article tel qu'il est imprimé, sans le prix et sans la
+           ligne de quantité ou de poids qui l'accompagne parfois (nombre d'exemplaires, poids
+           pesé, prix unitaire ou au kg).
         3. isFood : true pour un aliment ou une boisson ; false pour tout le reste (hygiène,
            entretien, animaux, maison…).
         4. name : nom court et lisible en français, avec une majuscule initiale, sans prix ni code
@@ -27,11 +29,19 @@ public static class ReceiptPromptBuilder
            incompréhensible, reprends-le tel quel.
         5. category : la catégorie de l'application qui correspond le mieux (liste fournie) ;
            « other » si aucune ne convient ou si l'article n'est pas alimentaire.
-        6. quantity et unit :
-           - poids ou volume connu (prix au kg, ou « 500G », « 1L » dans le libellé) : quantité
-             totale en Gram, Kilogram, Milliliter ou Liter (2 paquets de 500 g donnent 1000 Gram) ;
-           - sinon, nombre d'articles en Piece (« X4 » ou « 2 x » donnent 4 ou 2) ;
-           - dans le doute : 1 Piece.
+        6. quantity et unit : la quantité TOTALE achetée pour l'article.
+           - Nombre d'exemplaires : 1, sauf si le ticket indique un multiplicateur pour cet
+             article, sur sa ligne ou sur une ligne voisine (colonne de quantité, « 3 x 1,20 »,
+             « 1,20 x 3 ») ; ne le confonds ni avec un prix ni avec un poids.
+           - Contenu d'un exemplaire : poids ou volume écrit dans le libellé (« 400G »,
+             « 75CL », « 4X125G »), en Gram, Kilogram, Milliliter ou Liter ; sinon nombre de
+             pièces du lot (« X6 » donne 6 Piece) ; sinon 1 Piece.
+           - quantity = nombre d'exemplaires × contenu d'un exemplaire (3 exemplaires de « 400G »
+             donnent 1200 Gram ; 2 lots « X6 » donnent 12 Piece). Un multiplicateur s'applique
+             toujours, même si le libellé indique déjà un lot.
+           - Article pesé (poids en kg imprimé avec un prix au kg, sur sa ligne ou une ligne
+             voisine) : ce poids, en Kilogram ou en Gram.
+           - Dans le doute : 1 Piece.
         7. purchaseDate : date d'achat imprimée sur le ticket, au format AAAA-MM-JJ (la date du jour
            est fournie pour les années à deux chiffres) ; null si elle est absente ou illisible.
         8. Au plus 60 articles. N'invente aucun article : seulement ce qui est lisible sur la photo.

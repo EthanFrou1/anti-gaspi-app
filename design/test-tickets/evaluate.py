@@ -194,8 +194,18 @@ def normalize(text: str) -> str:
     return " ".join("".join(c if c.isalnum() else " " for c in text).split())
 
 
-def similarity(a: str, b: str) -> float:
-    return difflib.SequenceMatcher(None, normalize(a), normalize(b)).ratio()
+def similarity(label: str, receipt_text: str) -> tuple[float, float]:
+    """Ressemblance entre un libellé attendu et le receiptText renvoyé.
+
+    Premier terme : le meilleur score entre le texte entier et son début (de la longueur du
+    libellé), pour qu'un receiptText qui déborde sur la ligne suivante (« POIREAUX 0,845 kg
+    x 2,99 €/kg ») soit encore reconnu. Second terme : le score sur le texte entier, qui
+    départage deux candidats à égalité (« BAGUETTE » face à « BAGUETTE TRADITION »).
+    """
+    expected, actual = normalize(label), normalize(receipt_text)
+    whole = difflib.SequenceMatcher(None, expected, actual).ratio()
+    start = difflib.SequenceMatcher(None, expected, actual[:len(expected)]).ratio()
+    return max(whole, start), whole
 
 
 def to_base(quantity: float, unit: str) -> tuple[str, float]:
@@ -237,7 +247,7 @@ def evaluate(case: Case, categories: dict[int, str]) -> Evaluation:
         reverse=True)
     matched_items: dict[int, int] = {}
     used_lines: set[int] = set()
-    for score, i, j in pairs:
+    for (score, _), i, j in pairs:
         if score < MATCH_THRESHOLD:
             break
         if i not in matched_items and j not in used_lines:
@@ -267,7 +277,7 @@ def evaluate(case: Case, categories: dict[int, str]) -> Evaluation:
         if j in used_lines:
             continue
         leaked = max(non_food, key=lambda n: similarity(n.label, line["receiptText"]), default=None)
-        if leaked and similarity(leaked.label, line["receiptText"]) >= MATCH_THRESHOLD:
+        if leaked and similarity(leaked.label, line["receiptText"])[0] >= MATCH_THRESHOLD:
             ev.problems.append(f"non écarté  {leaked.label} ({leaked.skipped_because}) lu comme « {line['name']} »")
         else:
             ev.problems.append(f"inventé     « {line['receiptText']} » → {line['name']}")
