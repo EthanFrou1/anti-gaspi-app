@@ -1,10 +1,10 @@
 import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
-import type { GenerateRecipeRequest, Recipe, RecipeQuota } from '@/api/types';
+import type { GenerateRecipeRequest, Profile, Recipe, RecipeQuota } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -16,6 +16,8 @@ import { MultiChoiceChips } from '@/components/MultiChoiceChips';
 import { Screen } from '@/components/Screen';
 import { WaitingOverlay } from '@/components/WaitingOverlay';
 import { useHousehold } from '@/features/household/useHousehold';
+import { TastesSheet } from '@/features/profile/TastesSheet';
+import { loadTastesPromptSeen, markTastesPromptSeen, shouldAskTastes } from '@/features/profile/tastesPrompt';
 import { formatPrepTime, quotaLabel, toggleDiner } from '@/features/recipes/rules';
 import { makeStyles, useTheme } from '@/theme';
 import { formatShortDate } from '@/utils/dates';
@@ -39,6 +41,13 @@ export default function RecipesScreen() {
   const [diners, setDiners] = useState<string[]>(user ? [user.id] : []);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Question sur les goûts, posée une fois avant la première recette.
+  const [tastesOpen, setTastesOpen] = useState(false);
+  const [tastesProfile, setTastesProfile] = useState<Profile | null>(null);
+  const [tastesSaving, setTastesSaving] = useState(false);
+  const [tastesError, setTastesError] = useState<string | null>(null);
+  // Recette à lancer une fois le panneau refermé (deux fenêtres à la fois posent problème sur iOS).
+  const generateWhenHidden = useRef(false);
 
   const load = useCallback(async () => {
     if (!householdId) return;
@@ -93,6 +102,55 @@ export default function RecipesScreen() {
     }
   }
 
+  /** Première recette : on demande d'abord les goûts (une seule fois). Sinon, on lance la recette. */
+  async function onGeneratePress() {
+    if (!(await loadTastesPromptSeen(user!.id))) {
+      try {
+        const profile = await api.profile.get();
+        if (profile && shouldAskTastes(profile, false)) {
+          setTastesProfile(profile);
+          setTastesError(null);
+          setTastesOpen(true);
+          return;
+        }
+        // Goûts déjà renseignés (dans Profil) : inutile de poser la question.
+        await markTastesPromptSeen(user!.id);
+      } catch {
+        // Profil illisible : on ne bloque pas la recette pour autant.
+      }
+    }
+    void generate();
+  }
+
+  async function saveTastesAndGenerate() {
+    if (!tastesProfile) return;
+    setTastesSaving(true);
+    setTastesError(null);
+    try {
+      await api.profile.save(tastesProfile);
+      await markTastesPromptSeen(user!.id);
+      generateWhenHidden.current = true;
+      setTastesOpen(false);
+    } catch (e) {
+      setTastesError(asApiError(e).message);
+    } finally {
+      setTastesSaving(false);
+    }
+  }
+
+  async function tastesLater() {
+    await markTastesPromptSeen(user!.id);
+    generateWhenHidden.current = true;
+    setTastesOpen(false);
+  }
+
+  function onTastesHidden() {
+    if (generateWhenHidden.current) {
+      generateWhenHidden.current = false;
+      void generate();
+    }
+  }
+
   // Outil de mise au point (build de développement uniquement) : copie le prompt exact.
   async function copyPrompt() {
     try {
@@ -131,7 +189,11 @@ export default function RecipesScreen() {
 
       <View style={styles.generateRow}>
         <View style={styles.generateButton}>
-          <Button title="Proposer une recette" onPress={() => void generate()} disabled={noQuotaLeft || generating} />
+          <Button
+            title="Proposer une recette"
+            onPress={() => void onGeneratePress()}
+            disabled={noQuotaLeft || generating || tastesOpen}
+          />
         </View>
         {__DEV__ ? (
           <Pressable
@@ -188,6 +250,18 @@ export default function RecipesScreen() {
           </Card>
         ))}
       </View>
+
+      <TastesSheet
+        visible={tastesOpen}
+        profile={tastesProfile}
+        onChange={setTastesProfile}
+        onSave={() => void saveTastesAndGenerate()}
+        onLater={() => void tastesLater()}
+        onClose={() => setTastesOpen(false)}
+        onHidden={onTastesHidden}
+        saving={tastesSaving}
+        error={tastesError}
+      />
 
       {/* Écran d'attente : la génération peut prendre jusqu'à une minute. */}
       <WaitingOverlay

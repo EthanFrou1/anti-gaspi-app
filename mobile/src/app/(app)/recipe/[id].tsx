@@ -13,7 +13,13 @@ import { Screen } from '@/components/Screen';
 import { APP_NAME } from '@/config';
 import { canModifyItem } from '@/features/inventory/rules';
 import { refreshExpiryReminders } from '@/features/notifications/reminders';
-import { favoriteLabel, formatPrepTime, formatRecipeForSharing, fridgeIngredients } from '@/features/recipes/rules';
+import {
+  excludedProductsLabel,
+  favoriteLabel,
+  formatPrepTime,
+  formatRecipeForSharing,
+  fridgeIngredients,
+} from '@/features/recipes/rules';
 import { makeStyles, useTheme } from '@/theme';
 
 export default function RecipeScreen() {
@@ -159,6 +165,9 @@ export default function RecipeScreen() {
         <Refrigerator size={14} strokeWidth={2} color={theme.colors.primaryText} />
         <Text style={styles.hint}>produit de ton frigo, à utiliser en priorité</Text>
       </View>
+      {excludedProductsLabel(recipe.excludedByPreferences) ? (
+        <Text style={styles.hint}>{excludedProductsLabel(recipe.excludedByPreferences)}</Text>
+      ) : null}
 
       <Text style={styles.heading}>Préparation</Text>
       {recipe.steps.map((step, index) => (

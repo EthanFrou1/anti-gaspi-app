@@ -4,6 +4,7 @@
 
 import type { Recipe } from '@/api/types';
 import {
+  excludedProductsLabel,
   favoriteLabel,
   formatPrepTime,
   formatRecipeForSharing,
@@ -11,6 +12,16 @@ import {
   quotaLabel,
   toggleDiner,
 } from '../rules';
+
+describe('excludedProductsLabel', () => {
+  it('cite les produits écartés par les goûts, sans dire de quel convive', () => {
+    expect(excludedProductsLabel([])).toBeNull();
+    expect(excludedProductsLabel(['Champignons'])).toBe('Non utilisé : Champignons (préférences d\'un convive)');
+    expect(excludedProductsLabel(['Champignons', 'Harissa'])).toBe(
+      'Non utilisés : Champignons, Harissa (préférences d\'un convive)',
+    );
+  });
+});
 
 describe('formatRecipeForSharing', () => {
   it('produit un texte lisible : titre, infos, ingrédients, étapes numérotées, source', () => {

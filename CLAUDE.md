@@ -178,6 +178,10 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] « Enregistrer » puis rouvrir l'écran : les choix sont conservés.
 - [ ] Réduire les animations : ni secousse, ni rebond, ni balancement ; le tampon et le grisé s'affichent quand même.
 - [ ] VoiceOver : « Champignons : pas pour moi, case à cocher », avec l'état coché.
+- [ ] Premier « Proposer une recette » (profil sans goûts) : panneau « Avant ta première recette… » avec la grille qui défile ; « Enregistrer et proposer » enregistre puis lance la recette ; « Plus tard » lance la recette sans rien enregistrer. Toucher le fond assombri referme sans lancer de recette.
+- [ ] Le panneau ne revient plus ensuite (ni après « Plus tard ») ; il ne s'affiche pas si des goûts sont déjà renseignés dans Profil.
+- [ ] Avec un colocataire qui n'aime pas un produit urgent du frigo (convive sélectionné) : la recette ne l'utilise pas, et son détail affiche « Non utilisé : … (préférences d'un convive) », aussi dans l'historique et les favoris.
+- [ ] Avec la vraie clé (`Ai__Provider=Claude`) : ail et « Pas épicé » cochés, plusieurs recettes sans ail ni piment ; en cas de rejet, message d'erreur et quota non décompté (événement `RecipeRejectedByPreferences` dans les journaux de l'API).
 
 ### Invitation au foyer : un seul code actif
 

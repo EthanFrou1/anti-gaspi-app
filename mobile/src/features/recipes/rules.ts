@@ -68,6 +68,18 @@ export function favoriteLabel(recipe: Pick<Recipe, 'isFavorite' | 'favoriteCount
   return `Favori de ${recipe.favoriteCount} membre${recipe.favoriteCount > 1 ? 's' : ''} : ajouter aussi`;
 }
 
+/**
+ * Produits du frigo écartés à cause des goûts : « Non utilisés : Champignons, Harissa
+ * (préférences d'un convive) ». Jamais le nom du convive. null s'il n'y en a pas.
+ */
+export function excludedProductsLabel(names: readonly string[]): string | null {
+  if (names.length === 0) {
+    return null;
+  }
+  const prefix = names.length === 1 ? 'Non utilisé' : 'Non utilisés';
+  return `${prefix} : ${names.join(', ')} (préférences d'un convive)`;
+}
+
 /** 15 → « 15 min » ; 70 → « 1 h 10 » ; 60 → « 1 h ». */
 export function formatPrepTime(minutes: number): string {
   if (minutes < 60) {
