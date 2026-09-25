@@ -103,6 +103,29 @@ public class ProfileCombinerTests
     }
 
     [Fact]
+    public void MealRestrictions_OnlyTighten_TheDinersConstraints()
+    {
+        var vegan = ProfileCombiner.Combine([Profile(Diet.Vegan)], Kitchen);
+        var omnivore = ProfileCombiner.Combine([Profile(allergens: [Allergen.Sesame])], Kitchen);
+
+        var veganMeal = ProfileCombiner.WithMealRestrictions(vegan, [MealRestriction.Vegetarian]);
+        var guestsMeal = ProfileCombiner.WithMealRestrictions(omnivore, [
+            MealRestriction.Vegetarian, MealRestriction.NoPork, MealRestriction.NotSpicy,
+            MealRestriction.NoTreeNuts, MealRestriction.NoPeanuts, MealRestriction.NoGluten, MealRestriction.NoDairy,
+        ]);
+
+        // « Végétarien » ne relâche pas un repas végan.
+        Assert.Equal(Diet.Vegan, veganMeal.Diet);
+        Assert.Equal(Diet.Vegetarian, guestsMeal.Diet);
+        Assert.Equal([IngredientExclusion.Pork], guestsMeal.Exclusions);
+        Assert.True(guestsMeal.AvoidSpicy);
+        // Les allergènes des profils sont gardés ; « Sans lactose » devient « lait » (aucun produit laitier).
+        Assert.Equal(
+            [Allergen.Gluten, Allergen.Peanuts, Allergen.Milk, Allergen.TreeNuts, Allergen.Sesame],
+            guestsMeal.Allergens);
+    }
+
+    [Fact]
     public void ShortestCookingTimeAndLowestBudget_Win()
     {
         var constraints = ProfileCombiner.Combine(

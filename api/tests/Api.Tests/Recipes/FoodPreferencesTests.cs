@@ -81,10 +81,98 @@ public class FoodPreferencesTests
     }
 
     [Fact]
-    public void FindIn_ReturnsTheLabel_OrNullWithoutPreferences()
+    public void FindIn_ReturnsTheRuleAndItsKind_OrNullWithoutPreferences()
     {
-        Assert.Equal("champignons", FoodPreferences.FindIn("Champignons de Paris", [DislikedFood.Mushrooms], false));
+        Assert.Equal(new PreferenceHit("champignons", PreferenceKind.Taste),
+            FoodPreferences.FindIn("Champignons de Paris", [DislikedFood.Mushrooms], false));
+        Assert.Equal(PreferenceKind.Constraint,
+            FoodPreferences.FindIn("Pâtes fraîches", [], false, [Allergen.Gluten])?.Kind);
         Assert.Null(FoodPreferences.FindIn("Champignons de Paris", [], false));
         Assert.Null(FoodPreferences.FindIn("", [DislikedFood.Mushrooms], true));
+    }
+
+    // ---------- Contraintes : allergènes (profils et invités) et porc ----------
+
+    private static bool FindsAllergen(Allergen allergen, string text) =>
+        FoodPreferences.FindIn(text, [], false, [allergen]) is not null;
+
+    [Theory]
+    // Fruits à coque : « noix de » ne désigne pas toujours un fruit à coque.
+    [InlineData(Allergen.TreeNuts, "Cerneaux de noix", true)]
+    [InlineData(Allergen.TreeNuts, "Pâtes au pesto", true)]
+    [InlineData(Allergen.TreeNuts, "Poudre d'amande", true)]
+    [InlineData(Allergen.TreeNuts, "Lait de noix de coco", false)]
+    [InlineData(Allergen.TreeNuts, "Une pincée de noix de muscade", false)]
+    [InlineData(Allergen.TreeNuts, "Noix de Saint-Jacques poêlées", false)]
+    [InlineData(Allergen.TreeNuts, "Noix de veau rôtie", false)]
+    [InlineData(Allergen.TreeNuts, "Une noix de beurre", false)]
+    [InlineData(Allergen.TreeNuts, "Pommes noisettes", false)]
+    // Arachides.
+    [InlineData(Allergen.Peanuts, "Beurre de cacahuète", true)]
+    [InlineData(Allergen.Peanuts, "Huile d'arachide", true)]
+    [InlineData(Allergen.Peanuts, "Sauce satay", true)]
+    // Gluten : « pâte » au singulier, pâtes nommées, sauce soja ; « sans gluten » placé après.
+    [InlineData(Allergen.Gluten, "Pâte brisée", true)]
+    [InlineData(Allergen.Gluten, "Pâte à pizza", true)]
+    [InlineData(Allergen.Gluten, "Spaghetti", true)]
+    [InlineData(Allergen.Gluten, "Sauce soja", true)]
+    [InlineData(Allergen.Gluten, "Chapelure", true)]
+    [InlineData(Allergen.Gluten, "Pâtes sans gluten", false)]
+    [InlineData(Allergen.Gluten, "Pain sans gluten", false)]
+    [InlineData(Allergen.Gluten, "Pâte d'amande", false)]
+    [InlineData(Allergen.Gluten, "Pâte de curry rouge", false)]
+    [InlineData(Allergen.Gluten, "Farine de riz", false)]
+    [InlineData(Allergen.Gluten, "Tamari", false)]
+    [InlineData(Allergen.Gluten, "Polenta", false)]
+    [InlineData(Allergen.Gluten, "Semoule de maïs", false)]
+    [InlineData(Allergen.Gluten, "Nouilles de riz", false)]
+    // Aucun produit laitier : « lait sans lactose » reste du lait.
+    [InlineData(Allergen.Milk, "Crème fraîche", true)]
+    [InlineData(Allergen.Milk, "Parmesan râpé", true)]
+    [InlineData(Allergen.Milk, "Une noix de beurre", true)]
+    [InlineData(Allergen.Milk, "Lait sans lactose", true)]
+    [InlineData(Allergen.Milk, "Lait de coco", false)]
+    [InlineData(Allergen.Milk, "Crème de coco", false)]
+    [InlineData(Allergen.Milk, "Beurre de cacahuète", false)]
+    [InlineData(Allergen.Milk, "Beurre d'amande", false)]
+    [InlineData(Allergen.Milk, "Laitue", false)]
+    public void Allergens_AreMatched_WithTheirExceptions(Allergen allergen, string text, bool expected)
+    {
+        Assert.Equal(expected, FindsAllergen(allergen, text));
+    }
+
+    [Theory]
+    [InlineData("Lardons fumés", true)]
+    [InlineData("Saindoux", true)]
+    [InlineData("Tranches de pancetta", true)]
+    [InlineData("Coppa", true)]
+    [InlineData("Feuilles de gélatine", true)]
+    [InlineData("Jambon de dinde", false)]
+    [InlineData("Lardons de volaille", false)]
+    [InlineData("Bacon de dinde", false)]
+    [InlineData("Bacon de poulet", false)]
+    [InlineData("Rillettes de thon", false)]
+    [InlineData("Service en porcelaine", false)]
+    public void NoPork_IsMatched_WithPoultryExceptions(string text, bool expected)
+    {
+        Assert.Equal(expected, FoodPreferences.FindIn(text, [], false, exclusions: [IngredientExclusion.Pork]) is not null);
+    }
+
+    [Fact]
+    public void AllergensWithoutKeywords_AreLeftToTheAi()
+    {
+        // Seuls 4 allergènes sont vérifiés par mots-clés ; les autres restent dans la consigne à l'IA.
+        Assert.Null(FoodPreferences.FindIn("Graines de sésame", [], false, [Allergen.Sesame]));
+    }
+
+    [Fact]
+    public void RejectionForAConstraint_NeverNamesIt()
+    {
+        var taste = new RecipeRejectedByPreferencesException(new PreferenceHit("ail", PreferenceKind.Taste));
+        var constraint = new RecipeRejectedByPreferencesException(new PreferenceHit("arachides", PreferenceKind.Constraint));
+
+        Assert.Equal("ail", taste.LoggableReason);
+        Assert.Equal("contrainte du repas", constraint.LoggableReason);
+        Assert.DoesNotContain("arachides", constraint.Message);
     }
 }

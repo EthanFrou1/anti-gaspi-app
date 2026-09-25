@@ -81,6 +81,20 @@ public enum DislikedFood
     Raisins,
 }
 
+// Contraintes pour UN repas (invités sans nom ni profil) : consignes de cuisine, jamais
+// enregistrées ni journalisées. Elles s'ajoutent aux profils des convives (ProfileCombiner).
+public enum MealRestriction
+{
+    Vegetarian,
+    NoPork,
+    NotSpicy,
+    NoTreeNuts,
+    NoPeanuts,
+    NoGluten,
+    // « Sans lactose (aucun produit laitier) » : plus strict que le lactose seul, plus sûr en cuisine.
+    NoDairy,
+}
+
 // Les 14 allergènes à déclaration obligatoire (règlement UE n° 1169/2011, annexe II).
 public enum Allergen
 {

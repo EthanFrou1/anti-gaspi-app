@@ -35,6 +35,18 @@ public static class RecipeErrors
             [nameof(GenerateRecipeRequest.DinerUserIds)] = ["Les convives doivent être des membres du foyer."],
         });
 
+    public static readonly Error TooManyServings = new(
+        ErrorType.Validation, "recipe.too_many_servings",
+        $"Au plus {RecipeService.MaxServings} personnes à table, invités compris.",
+        new Dictionary<string, string[]>
+        {
+            [nameof(GenerateRecipeRequest.Guests)] = [$"Au plus {RecipeService.MaxServings} personnes à table, invités compris."],
+        });
+
+    public static readonly Error UnknownMealRestriction = new(
+        ErrorType.Validation, "recipe.validation", "Une des contraintes du repas n'existe pas.",
+        new Dictionary<string, string[]> { [nameof(GenerateRecipeRequest.MealRestrictions)] = ["Valeur inconnue."] });
+
     public static readonly Error FavoriteLimitReached = new(
         ErrorType.Conflict, "recipe.favorite_limit",
         $"Tu as atteint la limite de {RecipeService.MaxFavoritesPerUser} recettes favorites. Retire une étoile pour en ajouter une.");
@@ -93,6 +105,9 @@ public sealed class RecipeService(
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    // Même borne que les portions d'un profil et d'une demande (1 à 12).
+    public const int MaxServings = 12;
+
     // Recettes rejetées pour les goûts des convives : à compter dans les journaux (fréquence).
     public static readonly EventId RejectedByPreferencesEvent = new(4201, "RecipeRejectedByPreferences");
 
@@ -148,10 +163,10 @@ public sealed class RecipeService(
         }
         catch (RecipeRejectedByPreferencesException ex)
         {
-            // Événement distinct, pour compter ces rejets dans les journaux : l'aliment seul,
-            // jamais le convive ni le foyer.
+            // Événement distinct, pour compter ces rejets dans les journaux : le goût seul, ou
+            // « contrainte du repas » (jamais quel allergène), jamais le convive ni le foyer.
             logger.LogWarning(RejectedByPreferencesEvent,
-                "Recette rejetée : aliment écarté par les préférences ({Preference})", ex.Preference);
+                "Recette rejetée : préférences des convives non respectées ({Preference})", ex.LoggableReason);
             await CancelReservationAsync(reservation.Value);
             return RecipeErrors.Unavailable;
         }
@@ -322,6 +337,16 @@ public sealed class RecipeService(
         Guid actorId, Guid householdId, GenerateRecipeRequest request, CancellationToken ct)
     {
         var diners = (request.DinerUserIds is { Count: > 0 } ids ? ids : [actorId]).Distinct().ToList();
+        var restrictions = (request.MealRestrictions ?? []).Distinct().ToList();
+
+        if (diners.Count + request.Guests > MaxServings)
+        {
+            return RecipeErrors.TooManyServings;
+        }
+        if (!restrictions.All(Enum.IsDefined))
+        {
+            return RecipeErrors.UnknownMealRestriction;
+        }
 
         // Tous les convives doivent appartenir à CE foyer.
         var memberCount = await db.HouseholdMembers
@@ -344,7 +369,11 @@ public sealed class RecipeService(
             .Select(h => h.Equipment)
             .SingleAsync(ct);
 
-        var constraints = ProfileCombiner.Combine(dinerProfiles, equipment, request.Servings);
+        // Invités : une portion chacun (sauf nombre de portions demandé), sans nom ni profil.
+        // Leurs contraintes s'ajoutent pour ce repas et ne sont conservées nulle part.
+        var servings = request.Servings ?? (request.Guests > 0 ? diners.Count + request.Guests : null);
+        var constraints = ProfileCombiner.WithMealRestrictions(
+            ProfileCombiner.Combine(dinerProfiles, equipment, servings), restrictions);
 
         var inventory = await db.InventoryItems.AsNoTracking()
             .Where(i => i.HouseholdId == householdId && i.Status == InventoryItemStatus.Active)

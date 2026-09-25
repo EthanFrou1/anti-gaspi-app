@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
+using Api.Entities;
 
 namespace Api.Dtos.Recipes;
 
@@ -7,7 +8,12 @@ public sealed record GenerateRecipeRequest(
     // Membres du foyer qui mangent ; par défaut, seulement l'auteur de la demande.
     IReadOnlyList<Guid>? DinerUserIds,
     [Range(1, 12, ErrorMessage = "Le nombre de portions doit être compris entre 1 et 12.")]
-    int? Servings);
+    int? Servings,
+    // Invités hors du foyer : sans nom ni profil, une portion chacun.
+    [Range(0, 10, ErrorMessage = "Le nombre d'invités doit être compris entre 0 et 10.")]
+    int Guests = 0,
+    // Contraintes pour ce repas seulement (invités) : jamais enregistrées ni journalisées.
+    IReadOnlyList<MealRestriction>? MealRestrictions = null);
 
 public sealed record RecipeIngredientDto(string Name, string Quantity, Guid? InventoryItemId);
 

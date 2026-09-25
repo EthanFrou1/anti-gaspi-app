@@ -195,6 +195,66 @@ public class RecipeServiceTests(DatabaseFixture database) : HouseholdTestBase(da
         Assert.Equal(0, (await QuotaAsync(alice)).Used);
     }
 
+    // ---------- Invités et contraintes du repas ----------
+
+    [Fact]
+    public async Task Guests_AddServings_AndTheirRestrictionsApply_WithoutBeingStored()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+
+        var result = await GenerateAsync(alice, householdId, new GenerateRecipeRequest(null, null, Guests: 2,
+            MealRestrictions: [MealRestriction.Vegetarian, MealRestriction.NoGluten, MealRestriction.NoPeanuts]));
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        var prompt = Generator.LastPrompt!;
+        Assert.Equal(3, prompt.Constraints.Servings);
+        Assert.Equal(Diet.Vegetarian, prompt.Constraints.Diet);
+        Assert.Contains(Allergen.Gluten, prompt.Constraints.Allergens);
+        // Le steak (viande) et les pâtes (gluten) ne partent pas vers l'IA…
+        Assert.DoesNotContain(prompt.Items, i => i.Item.Name is "Steak haché" or "Pâtes");
+        // …et, écartés pour une contrainte, ils ne sont pas cités avec la recette.
+        Assert.Empty(result.Value.ExcludedByPreferences);
+        await using var db = CreateDbContext();
+        var stored = (await db.RecipeGenerations.SingleAsync()).RecipeJson!;
+        Assert.DoesNotContain("gluten", stored, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("arachide", stored, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task RecipeBreakingAMealRestriction_IsRejected_AndTheLogsNeverNameTheRestriction()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        var logs = new CapturingLoggerProvider();
+        using var factory = new Microsoft.Extensions.Logging.LoggerFactory([logs]);
+        Generator.Override = _ => new RecipeDraft("Tartines", 10, 2, [new("Pain de campagne", "4 tranches", null)], ["Griller le pain."]);
+
+        await using var scope = CreateScope();
+        var service = new RecipeService(scope.ServiceProvider.GetRequiredService<AppDbContext>(), Generator,
+            Microsoft.Extensions.Options.Options.Create(new AiOptions()), Clock,
+            new Microsoft.Extensions.Logging.Logger<RecipeService>(factory));
+        var result = await service.GenerateAsync(alice, householdId,
+            new GenerateRecipeRequest(null, null, Guests: 1, MealRestrictions: [MealRestriction.NoGluten]), CancellationToken.None);
+
+        Assert.Equal(RecipeErrors.Unavailable, result.Error);
+        Assert.Equal(0, (await QuotaAsync(alice)).Used);
+        Assert.Contains("contrainte du repas", logs.AllText);
+        Assert.DoesNotContain("gluten", logs.AllText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task MoreThanTwelvePeople_OrAnUnknownRestriction_IsRejected_WithoutCallingTheAi()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+
+        var crowd = await GenerateAsync(alice, householdId, new GenerateRecipeRequest(null, null, Guests: 12));
+        var unknown = await GenerateAsync(alice, householdId,
+            new GenerateRecipeRequest(null, null, Guests: 1, MealRestrictions: [(MealRestriction)99]));
+
+        Assert.Equal(RecipeErrors.TooManyServings, crowd.Error);
+        Assert.Equal(RecipeErrors.UnknownMealRestriction, unknown.Error);
+        Assert.Equal(0, Generator.Calls);
+    }
+
     [Fact]
     public async Task SimultaneousRequests_NeverExceedTheDailyQuota()
     {

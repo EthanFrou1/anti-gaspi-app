@@ -64,11 +64,17 @@ public static class RecipePromptBuilder
             .ThenBy(i => i.Name, StringComparer.Ordinal)
             .ToList();
 
-        // Goûts des convives : le code écarte lui-même les produits concernés, l'IA ne les voit pas.
-        var disliked = candidates.Where(i => FoodPreferences.FindIn(i.Name, constraints) is not null).ToList();
+        // Goûts et contraintes des convives : le code écarte lui-même les produits concernés,
+        // l'IA ne les voit pas. Seuls les goûts sont cités avec la recette (enregistrée) : une
+        // contrainte (allergène d'un invité…) ne laisse aucune trace.
+        var hits = candidates.Select(i => (Item: i, Hit: FoodPreferences.FindIn(i.Name, constraints)))
+            .Where(x => x.Hit is not null)
+            .ToList();
+        var excludedIds = hits.Select(x => x.Item.Id).ToHashSet();
+        var disliked = hits.Where(x => x.Hit!.Kind == PreferenceKind.Taste).Select(x => x.Item).ToList();
 
         var items = candidates
-            .Except(disliked)
+            .Where(i => !excludedIds.Contains(i.Id))
             .Take(MaxItems)
             .Select((item, index) => new PromptItemRef(
                 $"p{index + 1}", item with { Name = Sanitize(item.Name) }, item.ExpiresOn.DayNumber - today.DayNumber))

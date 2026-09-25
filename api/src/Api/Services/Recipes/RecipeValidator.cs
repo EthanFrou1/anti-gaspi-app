@@ -73,17 +73,17 @@ public static class RecipeValidator
     }
 
     /// <summary>
-    /// Goûts des convives : consigne « ne jamais utiliser » donnée à l'IA, vérifiée ici par
-    /// mots-clés sur le titre, les ingrédients et les étapes. Un seul aliment trouvé suffit à
-    /// rejeter la recette (503, quota non décompté).
+    /// Goûts et contraintes des convives (allergènes, porc) : consigne donnée à l'IA, vérifiée
+    /// ici par mots-clés sur le titre, les ingrédients et les étapes. Un seul mot trouvé suffit
+    /// à rejeter la recette (503, quota non décompté).
     /// </summary>
     private static void RequireTastesRespected(IEnumerable<string> texts, RecipePrompt prompt)
     {
         foreach (var text in texts)
         {
-            if (FoodPreferences.FindIn(text, prompt.Constraints) is { } preference)
+            if (FoodPreferences.FindIn(text, prompt.Constraints) is { } hit)
             {
-                throw new RecipeRejectedByPreferencesException(preference);
+                throw new RecipeRejectedByPreferencesException(hit);
             }
         }
     }

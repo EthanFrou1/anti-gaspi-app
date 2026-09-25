@@ -77,6 +77,39 @@ public static class ProfileCombiner
         };
     }
 
+    /// <summary>
+    /// Ajoute les contraintes d'un repas (invités) à celles des convives : elles ne peuvent que
+    /// resserrer (« Végétarien » laisse végan un repas déjà végan). Rien n'est conservé.
+    /// </summary>
+    public static MealConstraints WithMealRestrictions(MealConstraints constraints, IReadOnlyCollection<MealRestriction> restrictions)
+    {
+        if (restrictions.Count == 0)
+        {
+            return constraints;
+        }
+
+        var extraAllergens = restrictions.Select(r => r switch
+        {
+            MealRestriction.NoTreeNuts => Allergen.TreeNuts,
+            MealRestriction.NoPeanuts => Allergen.Peanuts,
+            MealRestriction.NoGluten => Allergen.Gluten,
+            MealRestriction.NoDairy => Allergen.Milk,
+            _ => (Allergen?)null,
+        }).OfType<Allergen>();
+
+        return constraints with
+        {
+            Diet = restrictions.Contains(MealRestriction.Vegetarian)
+                ? MostRestrictive([constraints.Diet, Diet.Vegetarian], DietStrictness, strictestIsLast: true)
+                : constraints.Diet,
+            Exclusions = restrictions.Contains(MealRestriction.NoPork)
+                ? constraints.Exclusions.Append(IngredientExclusion.Pork).Distinct().Order().ToList()
+                : constraints.Exclusions,
+            Allergens = constraints.Allergens.Concat(extraAllergens).Distinct().Order().ToList(),
+            AvoidSpicy = constraints.AvoidSpicy || restrictions.Contains(MealRestriction.NotSpicy),
+        };
+    }
+
     // Objectifs incompatibles entre eux (prise de muscle vs repas légers) : si tout le monde
     // n'a pas le même, on retient « équilibré », qui convient à chacun.
     private static NutritionGoal CombineGoals(IReadOnlyList<NutritionGoal> goals) =>
