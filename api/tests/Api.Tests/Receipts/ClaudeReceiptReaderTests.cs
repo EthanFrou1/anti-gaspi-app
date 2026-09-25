@@ -92,7 +92,8 @@ public class ClaudeReceiptReaderTests
         using var factory = new LoggerFactory([logs]);
         var server = new FakeAnthropicServer(_ => Error(status, errorType));
         var reader = new ClaudeReceiptReader(
-            server.CreateClient(), Microsoft.Extensions.Options.Options.Create(new AiOptions()), new Logger<ClaudeReceiptReader>(factory));
+            server.CreateClient(), Microsoft.Extensions.Options.Options.Create(new AiOptions()), new AiUsageMeter(),
+            new Logger<ClaudeReceiptReader>(factory));
         var photo = TestJpeg.PhotoWithMetadata;
 
         await Assert.ThrowsAsync<AiUnavailableException>(() =>
@@ -107,13 +108,30 @@ public class ClaudeReceiptReaderTests
         Assert.DoesNotContain(Convert.ToBase64String(photo[100..160]), logs.AllText);
     }
 
+    [Fact]
+    public async Task EachAnsweredCall_IsCountedInTheUsageMeter_EvenARefusal()
+    {
+        var meter = new AiUsageMeter();
+        var (reader, _) = Create(_ => Message(ReceiptJson, "end_turn"), meter: meter);
+        var (refused, _) = Create(_ => Message(ReceiptJson, "refusal"), meter: meter);
+
+        await reader.ReadAsync(Image, Prompt, CancellationToken.None);
+        await Assert.ThrowsAsync<AiUnavailableException>(() => refused.ReadAsync(Image, Prompt, CancellationToken.None));
+
+        // Un refus est facturé comme une réponse normale : il compte aussi.
+        var usage = Assert.Single(meter.Snapshot());
+        Assert.Equal(("Lecture de ticket", "claude-haiku-4-5-20251001"), (usage.Operation, usage.Model));
+        Assert.Equal((2L, 1800L, 500L), (usage.Calls, usage.InputTokens, usage.OutputTokens));
+    }
+
     private static (ClaudeReceiptReader Reader, FakeAnthropicServer Server) Create(
-        Func<HttpRequestMessage, HttpResponseMessage> respond, AiOptions? options = null)
+        Func<HttpRequestMessage, HttpResponseMessage> respond, AiOptions? options = null, AiUsageMeter? meter = null)
     {
         var server = new FakeAnthropicServer(respond);
         var reader = new ClaudeReceiptReader(
             server.CreateClient(),
             Microsoft.Extensions.Options.Options.Create(options ?? new AiOptions()),
+            meter ?? new AiUsageMeter(),
             NullLogger<ClaudeReceiptReader>.Instance);
         return (reader, server);
     }

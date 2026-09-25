@@ -14,6 +14,7 @@ namespace Api.Services.Receipts;
 public sealed class ClaudeReceiptReader(
     AnthropicClient client,
     IOptions<AiOptions> options,
+    AiUsageMeter meter,
     ILogger<ClaudeReceiptReader> logger) : IReceiptReader
 {
     public Task<ReceiptDraft> ReadAsync(ReceiptImage image, ReceiptPrompt prompt, CancellationToken ct)
@@ -50,6 +51,6 @@ public sealed class ClaudeReceiptReader(
             },
         };
 
-        return ClaudeStructuredCall.SendAsync<ReceiptDraft>(client, parameters, logger, "Lecture de ticket", ct);
+        return ClaudeStructuredCall.SendAsync<ReceiptDraft>(client, parameters, meter, logger, "Lecture de ticket", ct);
     }
 }

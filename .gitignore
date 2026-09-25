@@ -37,6 +37,11 @@ desktop.ini
 # Réglages Claude Code propres à chaque poste
 .claude/settings.local.json
 
+# Scripts Python (design/test-tickets)
+__pycache__/
+# Réponses brutes de l'IA enregistrées par evaluate.py --save
+resultat.json
+
 # =====================================================================
 # Backend .NET (/api)
 # =====================================================================

@@ -15,6 +15,7 @@ namespace Api.Services.Recipes;
 public sealed class ClaudeRecipeGenerator(
     AnthropicClient client,
     IOptions<AiOptions> options,
+    AiUsageMeter meter,
     ILogger<ClaudeRecipeGenerator> logger) : IRecipeGenerator
 {
     public Task<RecipeDraft> GenerateAsync(RecipePrompt prompt, CancellationToken ct)
@@ -38,6 +39,6 @@ public sealed class ClaudeRecipeGenerator(
             },
         };
 
-        return ClaudeStructuredCall.SendAsync<RecipeDraft>(client, parameters, logger, "Génération de recette", ct);
+        return ClaudeStructuredCall.SendAsync<RecipeDraft>(client, parameters, meter, logger, "Génération de recette", ct);
     }
 }

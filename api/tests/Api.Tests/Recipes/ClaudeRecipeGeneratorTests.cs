@@ -88,7 +88,8 @@ public class ClaudeRecipeGeneratorTests
     {
         var server = new FakeAnthropicServer(respond);
         var generator = new ClaudeRecipeGenerator(
-            server.CreateClient(), Microsoft.Extensions.Options.Options.Create(new AiOptions()), NullLogger<ClaudeRecipeGenerator>.Instance);
+            server.CreateClient(), Microsoft.Extensions.Options.Options.Create(new AiOptions()), new AiUsageMeter(),
+            NullLogger<ClaudeRecipeGenerator>.Instance);
         return (generator, server);
     }
 }

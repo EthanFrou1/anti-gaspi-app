@@ -13,6 +13,8 @@ using Api.Services.Auth;
 using Api.Services.Households;
 using Api.Services.Receipts;
 using Api.Tests.Infrastructure;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using static Api.Tests.Receipts.ReceiptServiceTests;
 
@@ -110,6 +112,49 @@ public class ReceiptsEndpointsTests(DatabaseFixture database) : IAsyncLifetime
         Assert.Equal(0, quota!.Remaining);
     }
 
+    // ---------- Outils du script d'évaluation (design/test-tickets) ----------
+
+    [Theory]
+    [InlineData("Development", 10)]
+    [InlineData("Production", 3)]
+    [InlineData("Testing", 3)]
+    public async Task RaisedReceiptQuota_AppliesOnlyInDevelopment(string environment, int expectedLimit)
+    {
+        await using var api = database.Api.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment(environment);
+            builder.UseSetting("Ai:DevelopmentReceiptDailyLimitPerUser", "10");
+        });
+        var (client, householdId) = await SetupAsync(api);
+
+        var responses = new List<HttpStatusCode>();
+        for (var i = 0; i < 4; i++)
+        {
+            responses.Add((await client.PostAsync(ScanUrl(householdId), ImageForm(Jpeg))).StatusCode);
+        }
+        var quota = await client.GetFromJsonAsync<ReceiptQuotaDto>("/api/me/receipt-quota", Json);
+
+        Assert.Equal(expectedLimit, quota!.Limit);
+        // Hors Development, le réglage est ignoré : le 4e scan reste refusé.
+        Assert.Equal(expectedLimit > 3 ? HttpStatusCode.OK : HttpStatusCode.TooManyRequests, responses[3]);
+    }
+
+    [Fact]
+    public async Task AiUsage_ExistsOnlyInDevelopment()
+    {
+        await using var devApi = database.Api.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
+        var (devClient, _) = await SetupAsync(devApi);
+        var (client, _) = await SetupAsync(database.Api);
+
+        var inDevelopment = await devClient.GetAsync("/api/dev/ai-usage");
+        var elsewhere = await client.GetAsync("/api/dev/ai-usage");
+
+        Assert.Equal(HttpStatusCode.OK, inDevelopment.StatusCode);
+        // Faux lecteur en test : aucun appel à Claude, donc aucun compteur.
+        Assert.Equal(JsonValueKind.Array, (await inDevelopment.Content.ReadFromJsonAsync<JsonElement>()).ValueKind);
+        Assert.Equal(HttpStatusCode.NotFound, elsewhere.StatusCode);
+    }
+
     // ---------- Ajout groupé ----------
 
     [Fact]
@@ -165,9 +210,11 @@ public class ReceiptsEndpointsTests(DatabaseFixture database) : IAsyncLifetime
         return new MultipartFormDataContent { { file, "image", "ticket.jpg" } };
     }
 
-    private async Task<(HttpClient Client, Guid HouseholdId)> SetupAsync()
+    private Task<(HttpClient Client, Guid HouseholdId)> SetupAsync() => SetupAsync(database.Api);
+
+    private static async Task<(HttpClient Client, Guid HouseholdId)> SetupAsync(WebApplicationFactory<Program> api)
     {
-        using var scope = database.Api.Services.CreateScope();
+        using var scope = api.Services.CreateScope();
         var services = scope.ServiceProvider;
         var user = await services.GetRequiredService<IAuthService>().RegisterAsync(
             new RegisterRequest($"coloc-{Guid.NewGuid():N}@example.com", DatabaseTestBase.DefaultPassword, "Coloc"),
@@ -175,7 +222,7 @@ public class ReceiptsEndpointsTests(DatabaseFixture database) : IAsyncLifetime
         var household = await services.GetRequiredService<IHouseholdService>()
             .CreateAsync(user.Value!.User.Id, new CreateHouseholdRequest("Coloc"), CancellationToken.None);
 
-        var client = database.Api.CreateClient();
+        var client = api.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", user.Value.AccessToken);
         return (client, household.Value!.Id);
     }

@@ -65,6 +65,27 @@ public sealed class AiOptions
 
     [Range(1, 100_000)]
     public int ReceiptGlobalDailyLimit { get; init; } = 50;
+
+    // Quota de tickets relevé pour le script d'évaluation de la lecture (design/test-tickets),
+    // qui enchaîne plusieurs scans. Pris en compte UNIQUEMENT en environnement Development
+    // (voir ApplyEnvironment) : ailleurs, il est ignoré et la production garde ReceiptDailyLimitPerUser.
+    [Range(1, 1000)]
+    public int? DevelopmentReceiptDailyLimitPerUser { get; init; }
+
+    private int? _receiptDailyLimitInEffect;
+
+    /// <summary>
+    /// Quota de tickets par utilisateur réellement appliqué. Propriété en lecture seule : aucune
+    /// clé de configuration ne peut la fixer directement (on ne peut pas la relever en production).
+    /// </summary>
+    public int ReceiptDailyLimitInEffect => _receiptDailyLimitInEffect ?? ReceiptDailyLimitPerUser;
+
+    /// <summary>
+    /// Appliqué une fois au démarrage (AddAiFeatures) : en Development, le quota relevé remplace
+    /// le quota normal s'il est configuré ; dans tout autre environnement, il est ignoré.
+    /// </summary>
+    public void ApplyEnvironment(bool isDevelopment) =>
+        _receiptDailyLimitInEffect = isDevelopment ? DevelopmentReceiptDailyLimitPerUser : null;
 }
 
 /// <summary>

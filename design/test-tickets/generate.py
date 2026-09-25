@@ -50,6 +50,9 @@ class Expected:
     quantity: str
     unit: str  # Piece | Gram | Kilogram | Milliliter | Liter
     note: str = ""
+    # Autres réponses jugées correctes (libellé ambigu), comptées justes par evaluate.py.
+    also_category: str | None = None
+    also_quantity: tuple[str, str] | None = None  # (quantité, unité)
 
 
 @dataclass(frozen=True)
@@ -95,9 +98,10 @@ def d(value: str) -> Decimal:
 
 
 def food(label: str, price: str, name: str, category: str, quantity: str, unit: str, *,
-         count: int = 1, weight: str | None = None, vat: int = 1, note: str = "") -> Item:
+         count: int = 1, weight: str | None = None, vat: int = 1, note: str = "",
+         also_category: str | None = None, also_quantity: tuple[str, str] | None = None) -> Item:
     return Item(label, d(price), count, d(weight) if weight else None, vat,
-                Expected(name, category, quantity, unit, note))
+                Expected(name, category, quantity, unit, note, also_category, also_quantity))
 
 
 def other(label: str, price: str, reason: str, *, count: int = 1) -> Item:
@@ -114,7 +118,7 @@ TICKETS = (
         entries=(
             food("BAGUETTE TRADITION", "1.20", "Baguette tradition", "bread", "1", "Piece"),
             food("LAIT DEMI-ECREME 1L", "1.05", "Lait demi-écrémé", "uht-milk", "1", "Liter",
-                 note="fresh-milk acceptable (le libellé ne dit pas UHT)"),
+                 note="le libellé ne dit pas UHT", also_category="fresh-milk"),
             food("OEUFS PLEIN AIR X6", "2.35", "Œufs plein air", "eggs", "6", "Piece"),
             food("POMMES GOLDEN 1KG", "2.49", "Pommes Golden", "fruits", "1", "Kilogram"),
             food("JAMBON BLANC X4", "2.79", "Jambon blanc", "cold-cuts", "4", "Piece"),
@@ -154,7 +158,7 @@ TICKETS = (
             food("PENNE RIGATE 500G", "0.89", "Penne rigate", "dry-goods", "500", "Gram"),
             Discount("REMISE IMMEDIATE", d("0.20")),
             food("SAUCE TOMATE BASILIC 400G", "1.49", "Sauce tomate au basilic", "condiments", "400", "Gram",
-                 note="canned acceptable"),
+                 also_category="canned"),
             other("LESSIVE LIQ 2L", "7.95", "entretien"),
             Discount("BON DE REDUCTION", d("1.50"), vat=2),
             food("POULET FERMIER PAC", "7.90", "Poulet fermier prêt à cuire", "poultry", "1", "Piece"),
@@ -179,7 +183,8 @@ TICKETS = (
         days_ago=2, two_digit_year=False, time="17:48", till=7, number=55120,
         split_in_two=True,
         entries=(
-            food("LAIT DEMI ECR 1L", "0.99", "Lait demi-écrémé", "uht-milk", "6", "Liter", count=6),
+            food("LAIT DEMI ECR 1L", "0.99", "Lait demi-écrémé", "uht-milk", "6", "Liter", count=6,
+                 also_category="fresh-milk"),
             food("BAGUETTE", "1.10", "Baguette", "bread", "1", "Piece"),
             food("PAIN DE MIE 500G", "1.65", "Pain de mie", "bread", "500", "Gram"),
             food("CEREALES MUESLI 500G", "2.89", "Muesli", "dry-goods", "500", "Gram"),
@@ -187,15 +192,18 @@ TICKETS = (
             food("BEURRE DEMI SEL 250G", "2.25", "Beurre demi-sel", "butter", "250", "Gram"),
             food("OEUFS X12", "3.99", "Œufs", "eggs", "12", "Piece"),
             food("YAOURT FRUITS X8", "2.79", "Yaourts aux fruits", "yogurts", "8", "Piece"),
-            food("FROMAGE BLANC 1KG", "2.45", "Fromage blanc", "fresh-cheese", "1", "Kilogram"),
+            food("FROMAGE BLANC 1KG", "2.45", "Fromage blanc", "fresh-cheese", "1", "Kilogram",
+                 also_category="yogurts"),
             food("COMTE 200G", "3.95", "Comté", "hard-cheese", "200", "Gram"),
-            food("CHEVRE BUCHE 180G", "2.29", "Bûche de chèvre", "soft-cheese", "180", "Gram"),
+            food("CHEVRE BUCHE 180G", "2.29", "Bûche de chèvre", "soft-cheese", "180", "Gram",
+                 also_category="fresh-cheese"),
             food("JAMBON CRU X6 TR", "3.49", "Jambon cru", "cold-cuts", "6", "Piece", note="6 tranches"),
             food("LARDONS FUMES 2X100G", "1.99", "Lardons fumés", "cold-cuts", "200", "Gram"),
             food("ESCALOPE DINDE X2", "4.69", "Escalopes de dinde", "poultry", "2", "Piece"),
             food("CUISSE POULET X4", "4.29", "Cuisses de poulet", "poultry", "4", "Piece"),
             food("FILET CABILLAUD 400G", "7.49", "Filet de cabillaud", "fish-seafood", "400", "Gram"),
-            food("THON NATUREL 3X80G", "3.59", "Thon au naturel", "canned", "240", "Gram"),
+            food("THON NATUREL 3X80G", "3.59", "Thon au naturel", "canned", "240", "Gram",
+                 also_quantity=("3", "Piece")),
             other("DENTIFRICE 75ML", "1.99", "hygiène"),
             food("LENTILLES VERTES 500G", "1.79", "Lentilles vertes", "dry-goods", "500", "Gram"),
             food("RIZ BASMATI 1KG", "2.39", "Riz basmati", "dry-goods", "1", "Kilogram"),
@@ -226,17 +234,16 @@ TICKETS = (
             food("POMMES GALA", "2.79", "Pommes Gala", "fruits", "1.264", "Kilogram", weight="1.264"),
             food("RAISIN BLANC", "3.99", "Raisin blanc", "fruits", "0.512", "Kilogram", weight="0.512"),
             food("COMTE AOP 18 MOIS", "21.90", "Comté AOP 18 mois", "hard-cheese", "0.285", "Kilogram",
-                 weight="0.285", note="285 Gram acceptable"),
+                 weight="0.285"),
             food("ROTI PORC", "11.90", "Rôti de porc", "fresh-meat", "0.954", "Kilogram", weight="0.954"),
             food("SAUMON FUME 120G", "4.59", "Saumon fumé", "fish-seafood", "240", "Gram", count=2),
             food("YAOURT NAT X4", "1.45", "Yaourt nature", "yogurts", "12", "Piece", count=3,
-                 note="3 paquets de 4 ; 3 Piece acceptable"),
+                 note="3 paquets de 4", also_quantity=("3", "Piece")),
             food("PENNE RIGATE 500G", "0.89", "Penne rigate", "dry-goods", "1500", "Gram", count=3),
             food("STEAK HACHE 15% X2", "3.49", "Steak haché 15 % MG", "ground-meat", "4", "Piece", count=2),
             food("BEURRE DOUX 250G", "2.15", "Beurre doux", "butter", "500", "Gram", count=2),
             food("EAU MINERALE 6X1,5L", "2.10", "Eau minérale", "drinks", "9", "Liter"),
-            food("BIERE BLONDE 6X25CL", "4.29", "Bière blonde", "drinks", "1.5", "Liter", vat=2,
-                 note="1500 Milliliter acceptable"),
+            food("BIERE BLONDE 6X25CL", "4.29", "Bière blonde", "drinks", "1.5", "Liter", vat=2),
             food("BAGUETTE", "1.10", "Baguette", "bread", "3", "Piece", count=3),
         ),
     ),
@@ -358,6 +365,11 @@ def split(image: Image.Image, lines: list[tuple[str, str]], tops: list[int]) -> 
 QUANTITY_UNITS = {"Piece": "pièce(s)", "Gram": "g", "Kilogram": "kg", "Milliliter": "ml", "Liter": "l"}
 
 
+def format_quantity(quantity: str, unit: str) -> str:
+    """« 2.5 », « Kilogram » → « 2,5 kg (`Kilogram`) »."""
+    return f"{quantity.replace('.', ',')} {QUANTITY_UNITS[unit]} (`{unit}`)"
+
+
 def readme(generated: list[tuple[Ticket, dt.date, list[str], str | None]], base_day: dt.date) -> str:
     out = [
         "# Tickets de caisse de test",
@@ -378,6 +390,20 @@ def readme(generated: list[tuple[Ticket, dt.date, list[str], str | None]], base_
         "1. Envoyer les images sur le téléphone (AirDrop, e-mail…) et les enregistrer dans Photos.",
         "2. Frigo → Ticket → « Importer une image (photo ou capture d'écran) ».",
         "3. Comparer l'écran de validation avec les tableaux ci-dessous.",
+        "",
+        "## Évaluer automatiquement",
+        "",
+        "`evaluate.py` envoie les tickets à l'API locale avec le vrai modèle et compare le résultat aux tableaux "
+        "ci-dessous (produits trouvés, oubliés ou inventés, catégories, quantités, lignes non alimentaires, date "
+        "d'achat), puis affiche un score et le coût de l'exécution. Il **consomme du crédit Anthropic** "
+        "(7 lectures, de l'ordre du centime chacune) : le lancer après un changement du prompt ou du modèle.",
+        "",
+        "```",
+        ".\\dev.cmd -Claude -ReceiptQuota 20        # API en Development, vrai modèle, quota relevé",
+        "python design/test-tickets/evaluate.py    # dans un autre terminal (option --only, --save)",
+        "```",
+        "",
+        "Les réponses « aussi accepté » de la colonne Remarque sont comptées justes (libellé ambigu).",
         "",
         "Règles du prompt rappelées : poids ou volume écrit sur le libellé (ou prix au kg) → quantité totale en "
         "g, kg, ml ou l (« 2 x » un paquet de 500 g → 1000 g) ; sinon nombre d'articles en pièces ; lignes non "
@@ -402,8 +428,13 @@ def readme(generated: list[tuple[Ticket, dt.date, list[str], str | None]], base_
                 "| --- | --- | --- | --- | --- |"]
         for item in food_items:
             e = item.expected
-            quantity = f"{e.quantity.replace('.', ',')} {QUANTITY_UNITS[e.unit]} (`{e.unit}`)"
-            out.append(f"| `{item.label}` | {e.name} | `{e.category}` | {quantity} | {e.note} |")
+            quantity = format_quantity(e.quantity, e.unit)
+            remarks = [e.note] if e.note else []
+            if e.also_category:
+                remarks.append(f"aussi accepté : `{e.also_category}`")
+            if e.also_quantity:
+                remarks.append(f"aussi accepté : {format_quantity(*e.also_quantity)}")
+            out.append(f"| `{item.label}` | {e.name} | `{e.category}` | {quantity} | {' ; '.join(remarks)} |")
         if skipped:
             out += ["", "À écarter, absents de la validation : "
                     + " ; ".join(f"`{item.label}` ({item.skipped_because})" for item in skipped) + "."]

@@ -18,6 +18,16 @@
                         et l'URL de l'API est mise à jour avec l'IP actuelle du PC.
     emulator          : émulateur Android. L'API n'écoute que sur ce PC (plus sûr).
 
+.PARAMETER Claude
+    Lance l'API avec le vrai modèle (Ai:Provider = Claude) au lieu du générateur Fake.
+    Exige la clé dans les user-secrets (Anthropic:ApiKey). Chaque recette ou ticket
+    consomme du crédit Anthropic. Réglage limité à la fenêtre de l'API : le prochain
+    .\dev.cmd sans -Claude revient au mode Fake.
+
+.PARAMETER ReceiptQuota
+    Relève le quota de scans de ticket par jour (environnement Development seulement),
+    pour le script d'évaluation design/test-tickets/evaluate.py.
+
 .PARAMETER Test
     Lance tous les tests (API + mobile) au lieu de démarrer l'app.
 
@@ -27,6 +37,8 @@
 .EXAMPLE
     .\dev.cmd                    # tout démarrer pour un téléphone réel
     .\dev.cmd -Target emulator   # tout démarrer pour l'émulateur Android
+    .\dev.cmd -Claude            # tout démarrer, avec le vrai modèle (consomme du crédit)
+    .\dev.cmd -Claude -ReceiptQuota 20   # idem, pour le script d'évaluation des tickets
     .\dev.cmd -Test              # lancer tous les tests
     .\dev.cmd -Stop              # tout arrêter
 #>
@@ -34,6 +46,9 @@
 param(
     [ValidateSet('device', 'emulator')]
     [string]$Target = 'device',
+    [switch]$Claude,
+    [ValidateRange(1, 1000)]
+    [int]$ReceiptQuota,
     [switch]$Test,
     [switch]$Stop
 )
@@ -326,12 +341,36 @@ function Test-ApiReady {
     }
 }
 
+function Assert-ClaudeKey {
+    # On vérifie seulement la présence de la clé : sa valeur n'est jamais lue ni affichée.
+    if ((Get-UserSecretKeys) -notcontains 'Anthropic:ApiKey') {
+        Stop-WithError ("-Claude : clé Anthropic absente des user-secrets. Enregistre-la avec :`n" +
+            "    dotnet user-secrets set Anthropic:ApiKey <ta-clé> --project api/src/Api")
+    }
+    Write-Ok 'Clé Anthropic présente dans les user-secrets'
+}
+
 function Start-Api {
     Write-Step 'API'
 
     # device : écoute sur toutes les interfaces pour que le téléphone la joigne.
     $urls = if ($Target -eq 'device') { "http://0.0.0.0:$ApiPort" } else { "http://localhost:$ApiPort" }
-    $command = "`$Host.UI.RawUI.WindowTitle = 'API Leftly'; Set-Location '$ApiDir'; dotnet run --project src/Api --urls $urls"
+
+    # Réglages propres à cette fenêtre de l'API (variables d'environnement du processus lancé) :
+    # rien ne persiste dans le terminal, le prochain lancement repart des valeurs par défaut.
+    $settings = ''
+    $title = 'API Leftly'
+    if ($Claude) {
+        $settings += "`$env:Ai__Provider = 'Claude'; "
+        $title += ' (Claude : consomme du crédit)'
+        Write-Warn 'Mode Claude : chaque recette et chaque ticket consomment du crédit Anthropic.'
+    }
+    if ($ReceiptQuota) {
+        $settings += "`$env:Ai__DevelopmentReceiptDailyLimitPerUser = '$ReceiptQuota'; "
+        Write-Info "Quota de scans de ticket relevé à $ReceiptQuota par jour (Development seulement)."
+    }
+
+    $command = "`$Host.UI.RawUI.WindowTitle = '$title'; $settings Set-Location '$ApiDir'; dotnet run --project src/Api --urls $urls"
     Start-Process powershell -ArgumentList '-NoExit', '-NoProfile', '-Command', $command | Out-Null
     Write-Info "Démarrage dans une nouvelle fenêtre ($urls)..."
 
@@ -407,6 +446,9 @@ function Invoke-Start {
     Write-Step 'Configuration locale'
     Initialize-RootEnv
     Initialize-UserSecrets
+    if ($Claude) {
+        Assert-ClaudeKey
+    }
     $urlChanged = Initialize-MobileEnv
 
     Start-Database

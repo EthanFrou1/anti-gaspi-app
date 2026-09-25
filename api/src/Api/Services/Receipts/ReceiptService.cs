@@ -124,7 +124,7 @@ public sealed class ReceiptService(
     {
         var (start, end, _) = QuotaDay.Window(time.GetUtcNow(), Zone());
         var used = await db.ReceiptScans.CountAsync(r => r.UserId == userId && r.CreatedAt >= start, ct);
-        var limit = Settings.ReceiptDailyLimitPerUser;
+        var limit = Settings.ReceiptDailyLimitInEffect;
         return new ReceiptQuotaDto(used, limit, Math.Max(0, limit - used), end);
     }
 
@@ -152,7 +152,7 @@ public sealed class ReceiptService(
 
             // Les réservations en cours comptent : une lecture lancée occupe sa place.
             var usedByUser = await db.ReceiptScans.CountAsync(r => r.UserId == userId && r.CreatedAt >= start, ct);
-            if (usedByUser >= Settings.ReceiptDailyLimitPerUser)
+            if (usedByUser >= Settings.ReceiptDailyLimitInEffect)
             {
                 return (Result<Guid>)ReceiptErrors.DailyQuotaReached;
             }

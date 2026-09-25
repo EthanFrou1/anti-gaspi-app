@@ -2,7 +2,7 @@
 
 Tickets **fictifs** (enseignes, adresses, SIRET, cartes bancaire et de fidélité inventés) pour tester la lecture par l'IA. Images et articles attendus sont générés par `generate.py` à partir des mêmes données : ne pas modifier ce fichier à la main.
 
-Générés le 24/09/2026. L'API remplace une date d'achat de plus de 30 jours par la date du jour : pour tester la lecture de la date, régénérer d'abord :
+Générés le 25/09/2026. L'API remplace une date d'achat de plus de 30 jours par la date du jour : pour tester la lecture de la date, régénérer d'abord :
 
 ```
 python design/test-tickets/generate.py
@@ -14,6 +14,17 @@ python design/test-tickets/generate.py
 2. Frigo → Ticket → « Importer une image (photo ou capture d'écran) ».
 3. Comparer l'écran de validation avec les tableaux ci-dessous.
 
+## Évaluer automatiquement
+
+`evaluate.py` envoie les tickets à l'API locale avec le vrai modèle et compare le résultat aux tableaux ci-dessous (produits trouvés, oubliés ou inventés, catégories, quantités, lignes non alimentaires, date d'achat), puis affiche un score et le coût de l'exécution. Il **consomme du crédit Anthropic** (7 lectures, de l'ordre du centime chacune) : le lancer après un changement du prompt ou du modèle.
+
+```
+.\dev.cmd -Claude -ReceiptQuota 20        # API en Development, vrai modèle, quota relevé
+python design/test-tickets/evaluate.py    # dans un autre terminal (option --only, --save)
+```
+
+Les réponses « aussi accepté » de la colonne Remarque sont comptées justes (libellé ambigu).
+
 Règles du prompt rappelées : poids ou volume écrit sur le libellé (ou prix au kg) → quantité totale en g, kg, ml ou l (« 2 x » un paquet de 500 g → 1000 g) ; sinon nombre d'articles en pièces ; lignes non alimentaires écartées (l'app affiche « N articles ignorés ») ; remises, totaux, TVA, paiement et carte de fidélité jamais extraits.
 
 Pour tous les tickets : ni magasin, ni adresse, ni `************0000`, ni `0000 0000 00` ne doivent apparaître dans le résultat.
@@ -24,14 +35,14 @@ Ticket court et propre : libellés lisibles, un article par ligne.
 
 Images : `ticket-1-court.png`
 
-Date d'achat attendue : **2026-09-24** (imprimée « 24/09/2026 »).
+Date d'achat attendue : **2026-09-25** (imprimée « 25/09/2026 »).
 
 Produits attendus (6), dans l'ordre du ticket :
 
 | Libellé imprimé | Nom attendu | Catégorie | Quantité | Remarque |
 | --- | --- | --- | --- | --- |
 | `BAGUETTE TRADITION` | Baguette tradition | `bread` | 1 pièce(s) (`Piece`) |  |
-| `LAIT DEMI-ECREME 1L` | Lait demi-écrémé | `uht-milk` | 1 l (`Liter`) | fresh-milk acceptable (le libellé ne dit pas UHT) |
+| `LAIT DEMI-ECREME 1L` | Lait demi-écrémé | `uht-milk` | 1 l (`Liter`) | le libellé ne dit pas UHT ; aussi accepté : `fresh-milk` |
 | `OEUFS PLEIN AIR X6` | Œufs plein air | `eggs` | 6 pièce(s) (`Piece`) |  |
 | `POMMES GOLDEN 1KG` | Pommes Golden | `fruits` | 1 kg (`Kilogram`) |  |
 | `JAMBON BLANC X4` | Jambon blanc | `cold-cuts` | 4 pièce(s) (`Piece`) |  |
@@ -43,7 +54,7 @@ Abréviations typiques des caisses, date sur deux chiffres.
 
 Images : `ticket-2-abreviations.png`
 
-Date d'achat attendue : **2026-09-24** (imprimée « 24/09/26 »).
+Date d'achat attendue : **2026-09-25** (imprimée « 25/09/26 »).
 
 Produits attendus (12), dans l'ordre du ticket :
 
@@ -68,14 +79,14 @@ Alimentaire et non alimentaire mélangés, remises et bon de réduction.
 
 Images : `ticket-3-mixte-remises.png`
 
-Date d'achat attendue : **2026-09-23** (imprimée « 23/09/2026 »).
+Date d'achat attendue : **2026-09-24** (imprimée « 24/09/2026 »).
 
 Produits attendus (7), dans l'ordre du ticket :
 
 | Libellé imprimé | Nom attendu | Catégorie | Quantité | Remarque |
 | --- | --- | --- | --- | --- |
 | `PENNE RIGATE 500G` | Penne rigate | `dry-goods` | 500 g (`Gram`) |  |
-| `SAUCE TOMATE BASILIC 400G` | Sauce tomate au basilic | `condiments` | 400 g (`Gram`) | canned acceptable |
+| `SAUCE TOMATE BASILIC 400G` | Sauce tomate au basilic | `condiments` | 400 g (`Gram`) | aussi accepté : `canned` |
 | `POULET FERMIER PAC` | Poulet fermier prêt à cuire | `poultry` | 1 pièce(s) (`Piece`) |  |
 | `BANANES` | Bananes | `fruits` | 1,134 kg (`Kilogram`) |  |
 | `SODA COLA 1,5L` | Soda au cola | `drinks` | 3 l (`Liter`) | 2 bouteilles de 1,5 L |
@@ -94,13 +105,13 @@ Images : `ticket-4-long.png`, `ticket-4-long-partie-1.png`, `ticket-4-long-parti
 
 Les deux parties se suivent sans ligne commune : la partie 2 commence à `THON NATUREL 3X80G`. Elle n'a pas d'en-tête, donc pas de date : l'API y met la date du jour.
 
-Date d'achat attendue : **2026-09-22** (imprimée « 22/09/2026 »).
+Date d'achat attendue : **2026-09-23** (imprimée « 23/09/2026 »).
 
 Produits attendus (30), dans l'ordre du ticket :
 
 | Libellé imprimé | Nom attendu | Catégorie | Quantité | Remarque |
 | --- | --- | --- | --- | --- |
-| `LAIT DEMI ECR 1L` | Lait demi-écrémé | `uht-milk` | 6 l (`Liter`) |  |
+| `LAIT DEMI ECR 1L` | Lait demi-écrémé | `uht-milk` | 6 l (`Liter`) | aussi accepté : `fresh-milk` |
 | `BAGUETTE` | Baguette | `bread` | 1 pièce(s) (`Piece`) |  |
 | `PAIN DE MIE 500G` | Pain de mie | `bread` | 500 g (`Gram`) |  |
 | `CEREALES MUESLI 500G` | Muesli | `dry-goods` | 500 g (`Gram`) |  |
@@ -108,15 +119,15 @@ Produits attendus (30), dans l'ordre du ticket :
 | `BEURRE DEMI SEL 250G` | Beurre demi-sel | `butter` | 250 g (`Gram`) |  |
 | `OEUFS X12` | Œufs | `eggs` | 12 pièce(s) (`Piece`) |  |
 | `YAOURT FRUITS X8` | Yaourts aux fruits | `yogurts` | 8 pièce(s) (`Piece`) |  |
-| `FROMAGE BLANC 1KG` | Fromage blanc | `fresh-cheese` | 1 kg (`Kilogram`) |  |
+| `FROMAGE BLANC 1KG` | Fromage blanc | `fresh-cheese` | 1 kg (`Kilogram`) | aussi accepté : `yogurts` |
 | `COMTE 200G` | Comté | `hard-cheese` | 200 g (`Gram`) |  |
-| `CHEVRE BUCHE 180G` | Bûche de chèvre | `soft-cheese` | 180 g (`Gram`) |  |
+| `CHEVRE BUCHE 180G` | Bûche de chèvre | `soft-cheese` | 180 g (`Gram`) | aussi accepté : `fresh-cheese` |
 | `JAMBON CRU X6 TR` | Jambon cru | `cold-cuts` | 6 pièce(s) (`Piece`) | 6 tranches |
 | `LARDONS FUMES 2X100G` | Lardons fumés | `cold-cuts` | 200 g (`Gram`) |  |
 | `ESCALOPE DINDE X2` | Escalopes de dinde | `poultry` | 2 pièce(s) (`Piece`) |  |
 | `CUISSE POULET X4` | Cuisses de poulet | `poultry` | 4 pièce(s) (`Piece`) |  |
 | `FILET CABILLAUD 400G` | Filet de cabillaud | `fish-seafood` | 400 g (`Gram`) |  |
-| `THON NATUREL 3X80G` | Thon au naturel | `canned` | 240 g (`Gram`) |  |
+| `THON NATUREL 3X80G` | Thon au naturel | `canned` | 240 g (`Gram`) | aussi accepté : 3 pièce(s) (`Piece`) |
 | `LENTILLES VERTES 500G` | Lentilles vertes | `dry-goods` | 500 g (`Gram`) |  |
 | `RIZ BASMATI 1KG` | Riz basmati | `dry-goods` | 1 kg (`Kilogram`) |  |
 | `SPAGHETTI 500G` | Spaghetti | `dry-goods` | 1000 g (`Gram`) |  |
@@ -139,7 +150,7 @@ Quantités multiples (« 3 x ») et produits pesés (prix au kg), date sur deux 
 
 Images : `ticket-5-quantites-poids.png`
 
-Date d'achat attendue : **2026-09-21** (imprimée « 21/09/26 »).
+Date d'achat attendue : **2026-09-22** (imprimée « 22/09/26 »).
 
 Produits attendus (15), dans l'ordre du ticket :
 
@@ -150,13 +161,13 @@ Produits attendus (15), dans l'ordre du ticket :
 | `CAROTTES VRAC` | Carottes | `vegetables` | 1,03 kg (`Kilogram`) |  |
 | `POMMES GALA` | Pommes Gala | `fruits` | 1,264 kg (`Kilogram`) |  |
 | `RAISIN BLANC` | Raisin blanc | `fruits` | 0,512 kg (`Kilogram`) |  |
-| `COMTE AOP 18 MOIS` | Comté AOP 18 mois | `hard-cheese` | 0,285 kg (`Kilogram`) | 285 Gram acceptable |
+| `COMTE AOP 18 MOIS` | Comté AOP 18 mois | `hard-cheese` | 0,285 kg (`Kilogram`) |  |
 | `ROTI PORC` | Rôti de porc | `fresh-meat` | 0,954 kg (`Kilogram`) |  |
 | `SAUMON FUME 120G` | Saumon fumé | `fish-seafood` | 240 g (`Gram`) |  |
-| `YAOURT NAT X4` | Yaourt nature | `yogurts` | 12 pièce(s) (`Piece`) | 3 paquets de 4 ; 3 Piece acceptable |
+| `YAOURT NAT X4` | Yaourt nature | `yogurts` | 12 pièce(s) (`Piece`) | 3 paquets de 4 ; aussi accepté : 3 pièce(s) (`Piece`) |
 | `PENNE RIGATE 500G` | Penne rigate | `dry-goods` | 1500 g (`Gram`) |  |
 | `STEAK HACHE 15% X2` | Steak haché 15 % MG | `ground-meat` | 4 pièce(s) (`Piece`) |  |
 | `BEURRE DOUX 250G` | Beurre doux | `butter` | 500 g (`Gram`) |  |
 | `EAU MINERALE 6X1,5L` | Eau minérale | `drinks` | 9 l (`Liter`) |  |
-| `BIERE BLONDE 6X25CL` | Bière blonde | `drinks` | 1,5 l (`Liter`) | 1500 Milliliter acceptable |
+| `BIERE BLONDE 6X25CL` | Bière blonde | `drinks` | 1,5 l (`Liter`) |  |
 | `BAGUETTE` | Baguette | `bread` | 3 pièce(s) (`Piece`) |  |

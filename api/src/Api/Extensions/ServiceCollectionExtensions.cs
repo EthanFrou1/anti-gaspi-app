@@ -167,6 +167,8 @@ public static class ServiceCollectionExtensions
 
         services.AddOptions<AiOptions>()
             .Bind(configuration.GetSection(AiOptions.SectionName))
+            // Quota de tickets relevé (script d'évaluation) : seulement en Development.
+            .PostConfigure(ai => ai.ApplyEnvironment(environment.IsDevelopment()))
             .ValidateDataAnnotations()
             // Fuseau introuvable (ex. paquet tzdata absent de l'image Docker) : l'API refuse de
             // démarrer, plutôt que de planter au premier calcul de quota.
@@ -176,6 +178,8 @@ public static class ServiceCollectionExtensions
             .ValidateOnStart();
 
         services.AddHostedService<AiCleanupService>();
+        // Compteur des tokens consommés depuis le démarrage (lu par un outil de développement).
+        services.AddSingleton<AiUsageMeter>();
 
         if (provider == AiProvider.Fake)
         {

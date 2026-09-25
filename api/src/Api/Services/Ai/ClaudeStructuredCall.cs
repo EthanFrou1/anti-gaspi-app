@@ -16,7 +16,7 @@ public static class ClaudeStructuredCall
 
     /// <param name="operation">Nom de l'opération dans les journaux (ex. « Génération de recette »).</param>
     public static async Task<T> SendAsync<T>(
-        AnthropicClient client, MessageCreateParams parameters, ILogger logger, string operation, CancellationToken ct)
+        AnthropicClient client, MessageCreateParams parameters, AiUsageMeter meter, ILogger logger, string operation, CancellationToken ct)
         where T : class
     {
         Message response;
@@ -55,6 +55,14 @@ public static class ClaudeStructuredCall
             response.Usage.CacheReadInputTokens,
             response.Usage.OutputTokens,
             response.StopReason);
+        // Tout appel répondu est facturé, même un refus ou une réponse coupée : compté avant les contrôles.
+        meter.Record(
+            operation,
+            parameters.Model,
+            response.Usage.InputTokens,
+            response.Usage.CacheReadInputTokens ?? 0,
+            response.Usage.CacheCreationInputTokens ?? 0,
+            response.Usage.OutputTokens);
 
         // Décision du projet : un refus du modèle est une erreur (pas de repli sur un autre modèle).
         if (response.StopReason == StopReason.Refusal)
