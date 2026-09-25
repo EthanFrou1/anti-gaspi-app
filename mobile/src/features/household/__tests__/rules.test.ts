@@ -4,6 +4,8 @@
 
 import type { Household, HouseholdMember, Invitation } from '@/api/types';
 import {
+  activeInvitationHint,
+  canCreateInvitation,
   canRemoveMember,
   canRevokeInvitation,
   describeLeaveConsequence,
@@ -44,6 +46,24 @@ describe('canRevokeInvitation', () => {
 
   it('autorise le propriétaire à tout révoquer, même une invitation sans auteur', () => {
     expect(canRevokeInvitation(invitation(null), household('Owner', [owner, bob]), 'owner')).toBe(true);
+  });
+});
+
+describe('un seul code actif par foyer', () => {
+  it('propose de créer un code seulement s\'il n\'y en a aucun', () => {
+    expect(canCreateInvitation([])).toBe(true);
+    expect(canCreateInvitation([invitation('owner')])).toBe(false);
+  });
+
+  it('explique comment le remplacer à qui peut le révoquer', () => {
+    expect(activeInvitationHint(invitation('bob'), household('Member', [owner, bob]), 'bob')).toContain('révoque-le d\'abord');
+    expect(activeInvitationHint(invitation('bob'), household('Owner', [owner, bob]), 'owner')).toContain('révoque-le d\'abord');
+  });
+
+  it('dit aux autres membres qui peut le révoquer', () => {
+    expect(activeInvitationHint(invitation('owner'), household('Member', [owner, bob]), 'bob')).toContain(
+      'Seuls son créateur et le propriétaire peuvent le révoquer',
+    );
   });
 });
 

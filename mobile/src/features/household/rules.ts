@@ -16,6 +16,21 @@ export function canRevokeInvitation(invitation: Invitation, household: Household
   return household.myRole === 'Owner' || invitation.createdByUserId === myUserId;
 }
 
+/**
+ * Un seul code actif par foyer (règle de l'API) : le bouton de création n'est proposé que
+ * s'il n'y en a aucun. Sinon, on partage le code existant.
+ */
+export function canCreateInvitation(activeInvitations: Invitation[]): boolean {
+  return activeInvitations.length === 0;
+}
+
+/** Explique pourquoi on ne peut pas créer d'autre code, et qui peut remplacer l'actuel. */
+export function activeInvitationHint(invitation: Invitation, household: Household, myUserId: string): string {
+  return canRevokeInvitation(invitation, household, myUserId)
+    ? 'Un seul code à la fois : partage celui-ci. Pour en créer un nouveau, révoque-le d\'abord.'
+    : 'Un seul code à la fois : partage celui-ci. Seuls son créateur et le propriétaire peuvent le révoquer.';
+}
+
 /** Seul le propriétaire exclut, et jamais lui-même (pour lui, c'est « quitter »). */
 export function canRemoveMember(member: HouseholdMember, household: Household, myUserId: string): boolean {
   return household.myRole === 'Owner' && member.userId !== myUserId;

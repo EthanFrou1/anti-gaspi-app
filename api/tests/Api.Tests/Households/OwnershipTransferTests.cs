@@ -143,7 +143,8 @@ public class OwnershipTransferTests(DatabaseFixture database) : HouseholdTestBas
         var dave = await CreateUserAsync("Dave");
         var householdId = await CreateHouseholdAsync(owner);
         await AddMemberAsync(owner, householdId, bob);
-        var code = await CreateInvitationCodeAsync(owner, householdId);
+        // Le code actif, créé par le propriétaire pour faire entrer Bob.
+        var code = await ActiveInvitationCodeAsync(owner, householdId);
 
         await DeleteAccountAsync(owner);
         var join = await JoinAsync(dave, code);

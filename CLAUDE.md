@@ -53,7 +53,7 @@ Recette générée ← produits du foyer + profil(s) des personnes qui mangent
 ```
 
 - **Foyer** : l'inventaire appartient au foyer, pas à l'utilisateur. Un utilisateur peut inviter d'autres membres (code ou lien d'invitation). Au MVP, un utilisateur appartient à un seul foyer à la fois.
-- **Invitations** : tout membre peut créer un code (valable 7 jours, 10 actifs maximum par foyer). Un membre peut révoquer ses propres invitations, le propriétaire peut toutes les révoquer. Seul le propriétaire peut exclure un membre ; une exclusion révoque toutes les invitations actives du foyer (sinon l'exclu pourrait revenir avec un code connu). Quand le propriétaire part, les invitations restent valables.
+- **Invitations** : **un seul code actif par foyer** (valable 7 jours, utilisable par plusieurs personnes). Tout membre peut le créer quand il n'y en a pas ; tant qu'il est actif, tous les membres le voient et le partagent, et l'app ne propose pas d'en créer un autre (l'API le refuse aussi, verrou du foyer contre deux créations simultanées). Un membre peut révoquer ses propres invitations, le propriétaire peut toutes les révoquer. Seul le propriétaire peut exclure un membre ; une exclusion révoque toutes les invitations actives du foyer (sinon l'exclu pourrait revenir avec un code connu). Quand le propriétaire part, les invitations restent valables.
 - **Propriété du foyer** : si le propriétaire quitte le foyer ou supprime son compte, la propriété passe au membre le plus ancien (date d'arrivée dans le foyer). S'il n'y a plus aucun membre, le foyer et tout son contenu sont supprimés. Ces cas sont couverts par des tests.
 - **Produit** : nom, catégorie, quantité, unité, date d'achat, date de péremption (estimée ou saisie), code-barres optionnel, **propriétaire optionnel**. Propriétaire vide = produit commun au foyer ; renseigné = produit perso (cas des colocs).
 - **Produits perso** : visibles par tout le foyer, mais seul leur propriétaire peut les modifier, les marquer consommés/jetés ou les supprimer. Quand il quitte le foyer ou supprime son compte, ses produits deviennent communs (la nourriture reste dans le frigo).
@@ -168,6 +168,12 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Avec la vraie clé (`Ai__Provider=Claude`) sur un vrai ticket : lecture en moins d'une minute, noms lisibles, lessive et sacs écartés, date d'achat lue.
 - [ ] Avec la vraie clé, les 5 tickets fictifs de `design/test-tickets/` (régénérés à la date du jour) : résultat comparé aux articles attendus de leur README (automatiquement, côté API, par `evaluate.py` : voir ce README) ; dans l'app, le ticket long entier déclenche « Image très longue », ses deux parties se lisent en deux scans.
 - [ ] Charte : écran d'attente en carte sur fond assombri ; validation avec cartes, cases à cocher encre (cochée : fond mandarine et coche), ligne décochée atténuée, ligne en erreur bordée de rouge.
+
+### Invitation au foyer : un seul code actif
+
+- [ ] Sans code actif : « Créer et partager un code » crée le code et ouvre la feuille de partage ; le bouton disparaît ensuite, remplacé par « Code actif » et l'explication.
+- [ ] Un autre membre voit le même code (toucher pour partager), sans bouton de création ; « Seuls son créateur et le propriétaire peuvent le révoquer » s'il ne l'a pas créé.
+- [ ] Après « Révoquer », le bouton de création réapparaît.
 
 ### Android
 

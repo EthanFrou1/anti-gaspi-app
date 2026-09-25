@@ -33,6 +33,16 @@ public abstract class HouseholdTestBase(DatabaseFixture database) : DatabaseTest
         return result.Value.Code;
     }
 
+    /// <summary>
+    /// Code actif du foyer, créé s'il n'y en a pas (un seul code actif par foyer, comme dans l'app).
+    /// </summary>
+    protected async Task<string> ActiveInvitationCodeAsync(Guid actorId, Guid householdId)
+    {
+        var active = await WithServiceAsync<IInvitationService, IReadOnlyList<InvitationDto>>(s =>
+            s.ListActiveAsync(householdId, CancellationToken.None));
+        return active.Count > 0 ? active[0].Code : await CreateInvitationCodeAsync(actorId, householdId);
+    }
+
     protected Task<Result<HouseholdDto>> JoinAsync(Guid userId, string code) =>
         WithServiceAsync<IHouseholdService, Result<HouseholdDto>>(s =>
             s.JoinAsync(userId, code, CancellationToken.None));
@@ -43,7 +53,7 @@ public abstract class HouseholdTestBase(DatabaseFixture database) : DatabaseTest
     /// </summary>
     protected async Task AddMemberAsync(Guid ownerId, Guid householdId, Guid userId)
     {
-        var code = await CreateInvitationCodeAsync(ownerId, householdId);
+        var code = await ActiveInvitationCodeAsync(ownerId, householdId);
         Clock.Advance(TimeSpan.FromHours(1));
         var result = await JoinAsync(userId, code);
         Assert.True(result.IsSuccess, result.Error?.Message);

@@ -198,9 +198,14 @@ public class HouseholdServiceTests(DatabaseFixture database) : HouseholdTestBase
         var alice = await CreateUserAsync("Alice");
         var bob = await CreateUserAsync("Bob");
         var householdId = await CreateHouseholdAsync(alice);
-        // Bob connaît ce code : il l'a utilisé pour entrer (et un autre, créé par lui-même).
-        var code = await CreateInvitationCodeAsync(alice, householdId);
+        // Bob connaît deux codes : celui qui l'a fait entrer, puis celui qu'il a créé lui-même
+        // après la révocation du premier (un seul code actif à la fois).
+        var invitation = (await WithServiceAsync<IInvitationService, Result<InvitationDto>>(s =>
+            s.CreateAsync(alice, householdId, CancellationToken.None))).Value!;
+        var code = invitation.Code;
         Assert.True((await JoinAsync(bob, code)).IsSuccess);
+        await WithServiceAsync<IInvitationService, Result>(s =>
+            s.RevokeAsync(alice, householdId, invitation.Id, CancellationToken.None));
         var bobCode = await CreateInvitationCodeAsync(bob, householdId);
 
         await RemoveMemberAsync(alice, householdId, bob);
@@ -217,7 +222,7 @@ public class HouseholdServiceTests(DatabaseFixture database) : HouseholdTestBase
         var carol = await CreateUserAsync("Carol");
         var householdId = await CreateHouseholdAsync(alice);
         await AddMemberAsync(alice, householdId, bob);
-        var code = await CreateInvitationCodeAsync(alice, householdId);
+        var code = await ActiveInvitationCodeAsync(alice, householdId);
 
         await RemoveMemberAsync(bob, householdId, bob);
 

@@ -8,7 +8,7 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { Share2 } from '@/components/icons/lucide';
 import { APP_NAME } from '@/config';
 import { makeStyles, useTheme } from '@/theme';
-import { canRevokeInvitation, formatInvitationCode } from './rules';
+import { activeInvitationHint, canCreateInvitation, canRevokeInvitation, formatInvitationCode } from './rules';
 
 type Props = {
   household: Household;
@@ -19,12 +19,15 @@ export function InvitationsSection({ household, myUserId }: Props) {
   const theme = useTheme();
   const styles = useStyles();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  // Liste reçue au moins une fois : avant, on ne sait pas encore s'il existe un code actif.
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     try {
       setInvitations(await api.invitations.list(household.id));
+      setLoaded(true);
     } catch (e) {
       setError(asApiError(e));
     }
@@ -44,6 +47,8 @@ export function InvitationsSection({ household, myUserId }: Props) {
       await share(invitation);
     } catch (e) {
       setError(asApiError(e));
+      // Un autre membre a pu créer le code entre-temps : on l'affiche.
+      await load();
     } finally {
       setCreating(false);
     }
@@ -83,9 +88,13 @@ export function InvitationsSection({ household, myUserId }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>Inviter quelqu'un</Text>
       <ErrorBanner message={error?.message} />
-      <Button title="Créer et partager un code" onPress={() => void handleInvite()} loading={creating} />
+      {loaded && canCreateInvitation(invitations) ? (
+        <Button title="Créer et partager un code" onPress={() => void handleInvite()} loading={creating} />
+      ) : null}
 
-      {invitations.length > 0 ? <Text style={styles.subtitle}>Codes actifs</Text> : null}
+      {invitations.length > 0 ? (
+        <Text style={styles.subtitle}>{invitations.length === 1 ? 'Code actif' : 'Codes actifs'}</Text>
+      ) : null}
       {invitations.map((invitation) => (
         <View key={invitation.id} style={styles.row}>
           <Pressable
@@ -111,6 +120,9 @@ export function InvitationsSection({ household, myUserId }: Props) {
           ) : null}
         </View>
       ))}
+      {invitations[0] ? (
+        <Text style={styles.meta}>{activeInvitationHint(invitations[0], household, myUserId)}</Text>
+      ) : null}
     </View>
   );
 }

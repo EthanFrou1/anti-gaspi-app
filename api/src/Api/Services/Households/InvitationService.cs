@@ -29,8 +29,10 @@ public sealed class InvitationService(
 {
     public static readonly TimeSpan Validity = TimeSpan.FromDays(7);
 
-    // Évite qu'un foyer accumule des codes valides (chacun est une porte d'entrée).
-    public const int MaxActivePerHousehold = 10;
+    // Un seul code actif par foyer : chaque code est une porte d'entrée. Il sert à plusieurs
+    // personnes jusqu'à son expiration, et tous les membres le voient et peuvent le partager :
+    // un second code n'apporterait rien. Pour en changer, on révoque d'abord l'actuel.
+    public const int MaxActivePerHousehold = 1;
 
     private const int MaxGenerationAttempts = 5;
 

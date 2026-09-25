@@ -34,60 +34,45 @@ public class InvitationServiceTests(DatabaseFixture database) : HouseholdTestBas
     }
 
     [Fact]
-    public async Task Create_BeyondTenActiveInvitations_IsRejected()
+    public async Task Create_WhenACodeIsAlreadyActive_IsRejected_ForEveryMember()
     {
-        var alice = await CreateUserAsync("Alice");
-        var householdId = await CreateHouseholdAsync(alice);
-        for (var i = 0; i < InvitationService.MaxActivePerHousehold; i++)
-        {
-            Assert.True((await CreateAsync(alice, householdId)).IsSuccess);
-        }
+        var (owner, bob, householdId) = await CreateHouseholdWithMemberAsync();
+        Assert.True((await CreateAsync(owner, householdId)).IsSuccess);
 
-        var result = await CreateAsync(alice, householdId);
-
-        Assert.Equal(HouseholdErrors.InvitationLimitReached, result.Error);
+        // Un code est actif : ni Bob ni le propriétaire n'en créent un second, ils partagent celui-ci.
+        Assert.Equal(HouseholdErrors.InvitationLimitReached, (await CreateAsync(bob, householdId)).Error);
+        Assert.Equal(HouseholdErrors.InvitationLimitReached, (await CreateAsync(owner, householdId)).Error);
+        Assert.Single(await ListAsync(householdId));
     }
 
     [Fact]
-    public async Task Create_RevokedAndExpiredInvitationsDoNotCountTowardsTheLimit()
+    public async Task Create_AfterTheActiveCodeIsRevokedOrExpired_IsAllowed()
     {
         var alice = await CreateUserAsync("Alice");
         var householdId = await CreateHouseholdAsync(alice);
         var first = (await CreateAsync(alice, householdId)).Value!;
-        Clock.Advance(TimeSpan.FromDays(6));
-        for (var i = 1; i < InvitationService.MaxActivePerHousehold; i++)
-        {
-            await CreateAsync(alice, householdId);
-        }
 
-        Assert.Equal(HouseholdErrors.InvitationLimitReached, (await CreateAsync(alice, householdId)).Error);
+        // Un code révoqué libère la place…
+        await RevokeAsync(alice, householdId, first.Id);
+        var second = await CreateAsync(alice, householdId);
+        Assert.True(second.IsSuccess);
 
-        // Une invitation révoquée libère une place…
-        var mostRecent = (await ListAsync(householdId))[0];
-        await RevokeAsync(alice, householdId, mostRecent.Id);
-        Assert.True((await CreateAsync(alice, householdId)).IsSuccess);
-
-        // …tout comme une invitation expirée (la première, créée 8 jours plus tôt).
-        Clock.Advance(TimeSpan.FromDays(2));
-        Assert.DoesNotContain(await ListAsync(householdId), i => i.Id == first.Id);
+        // …tout comme un code expiré (7 jours).
+        Clock.Advance(TimeSpan.FromDays(7) + TimeSpan.FromMinutes(1));
+        Assert.Empty(await ListAsync(householdId));
         Assert.True((await CreateAsync(alice, householdId)).IsSuccess);
     }
 
     [Fact]
-    public async Task Create_ConcurrentRequests_NeverExceedTheLimit()
+    public async Task Create_ConcurrentRequests_CreateASingleCode()
     {
-        var alice = await CreateUserAsync("Alice");
-        var householdId = await CreateHouseholdAsync(alice);
-        for (var i = 0; i < InvitationService.MaxActivePerHousehold - 1; i++)
-        {
-            await CreateAsync(alice, householdId);
-        }
+        var (owner, bob, householdId) = await CreateHouseholdWithMemberAsync();
 
-        // Une seule place libre, deux demandes simultanées.
-        var results = await Task.WhenAll(CreateAsync(alice, householdId), CreateAsync(alice, householdId));
+        // Deux membres demandent un code au même moment : le verrou du foyer n'en laisse passer qu'un.
+        var results = await Task.WhenAll(CreateAsync(owner, householdId), CreateAsync(bob, householdId));
 
         Assert.Single(results, r => r.IsSuccess);
-        Assert.Equal(InvitationService.MaxActivePerHousehold, (await ListAsync(householdId)).Count);
+        Assert.Single(await ListAsync(householdId));
     }
 
     // ---------- Consultation ----------
@@ -97,12 +82,11 @@ public class InvitationServiceTests(DatabaseFixture database) : HouseholdTestBas
     {
         var alice = await CreateUserAsync("Alice");
         var householdId = await CreateHouseholdAsync(alice);
-        await CreateAsync(alice, householdId);
-        Clock.Advance(TimeSpan.FromDays(6));
         var revoked = (await CreateAsync(alice, householdId)).Value!;
-        var active = (await CreateAsync(alice, householdId)).Value!;
         await RevokeAsync(alice, householdId, revoked.Id);
-        Clock.Advance(TimeSpan.FromDays(2)); // la première invitation a maintenant expiré
+        await CreateAsync(alice, householdId);
+        Clock.Advance(TimeSpan.FromDays(8)); // ce deuxième code a maintenant expiré
+        var active = (await CreateAsync(alice, householdId)).Value!;
 
         var list = await ListAsync(householdId);
 
@@ -184,6 +168,11 @@ public class InvitationServiceTests(DatabaseFixture database) : HouseholdTestBas
         var bob = await CreateUserAsync("Bob");
         var householdId = await CreateHouseholdAsync(owner);
         await AddMemberAsync(owner, householdId, bob);
+        // Le code qui a fait entrer Bob est révoqué : chaque test part d'un foyer sans code actif.
+        foreach (var invitation in await ListAsync(householdId))
+        {
+            await RevokeAsync(owner, householdId, invitation.Id);
+        }
         return (owner, bob, householdId);
     }
 

@@ -33,5 +33,5 @@ public static class HouseholdErrors
     public static readonly Error InvitationLimitReached = new(
         ErrorType.Conflict,
         "invitation.limit_reached",
-        "Ce foyer a déjà 10 invitations actives. Révoque-en une avant d'en créer une nouvelle.");
+        "Ce foyer a déjà un code d'invitation actif : partage-le. Pour en créer un nouveau, il faut d'abord le révoquer.");
 }
