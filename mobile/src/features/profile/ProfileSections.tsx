@@ -1,8 +1,8 @@
-import { Pressable, Switch, Text, View } from 'react-native';
+import { Switch, Text, View } from 'react-native';
 import type { Profile } from '@/api/types';
 import { ChoiceChips } from '@/components/ChoiceChips';
 import { MultiChoiceChips } from '@/components/MultiChoiceChips';
-import { Minus, Plus } from '@/components/icons/lucide';
+import { Stepper } from '@/components/Stepper';
 import { makeStyles, useTheme } from '@/theme';
 import {
   ALLERGEN_OPTIONS,
@@ -94,42 +94,22 @@ export function BudgetSection({ profile, onChange }: SectionProps) {
 
 export function GoalSection({ profile, onChange }: SectionProps) {
   const styles = useStyles();
-  const setServings = (value: number) =>
-    onChange({ ...profile, defaultServings: Math.min(MAX_SERVINGS, Math.max(MIN_SERVINGS, value)) });
 
   return (
     <View style={styles.section}>
       <ChoiceChips options={GOAL_OPTIONS} value={profile.goal} onChange={(goal) => onChange({ ...profile, goal })} />
       <Text style={styles.subtitle}>Portions quand tu cuisines pour toi</Text>
-      <View style={styles.stepper}>
-        <StepperButton label="−" onPress={() => setServings(profile.defaultServings - 1)} disabled={profile.defaultServings <= MIN_SERVINGS} />
-        <Text style={styles.stepperValue} accessibilityLabel={`${profile.defaultServings} portions`}>
-          {profile.defaultServings}
-        </Text>
-        <StepperButton label="+" onPress={() => setServings(profile.defaultServings + 1)} disabled={profile.defaultServings >= MAX_SERVINGS} />
-      </View>
+      <Stepper
+        value={profile.defaultServings}
+        min={MIN_SERVINGS}
+        max={MAX_SERVINGS}
+        onChange={(defaultServings) => onChange({ ...profile, defaultServings })}
+        valueLabel={`${profile.defaultServings} portions`}
+        incrementLabel="Une portion de plus"
+        decrementLabel="Une portion de moins"
+      />
       <Text style={styles.help}>Choisis 2 si tu aimes cuisiner une fois pour deux repas.</Text>
     </View>
-  );
-}
-
-function StepperButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled: boolean }) {
-  const theme = useTheme();
-  const styles = useStyles();
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={label === '+' ? 'Une portion de plus' : 'Une portion de moins'}
-      style={[styles.stepperButton, disabled && styles.disabled]}
-    >
-      {label === '+' ? (
-        <Plus size={22} strokeWidth={2.5} color={theme.colors.ink} />
-      ) : (
-        <Minus size={22} strokeWidth={2.5} color={theme.colors.ink} />
-      )}
-    </Pressable>
   );
 }
 
@@ -139,17 +119,4 @@ const useStyles = makeStyles((t) => ({
   help: { ...t.type.caption, color: t.colors.ink3 },
   consent: { flexDirection: 'row', gap: t.space.md, alignItems: 'flex-start', marginTop: t.space.xs },
   consentText: { ...t.type.callout, flex: 1, color: t.colors.ink2 },
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: t.space.xl },
-  stepperButton: {
-    width: t.layout.minTouch,
-    height: t.layout.minTouch,
-    borderRadius: t.layout.minTouch / 2,
-    borderWidth: t.borderWidth.selected,
-    borderColor: t.colors.border,
-    backgroundColor: t.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepperValue: { ...t.type.title1, color: t.colors.ink, minWidth: 40, textAlign: 'center' },
-  disabled: { opacity: 0.4 },
 }));

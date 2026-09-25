@@ -213,10 +213,23 @@ export type Profile = {
 
 // ---------- Recettes (IA) ----------
 
+// Contraintes pour UN repas (invités) : jamais enregistrées. NoDairy = « Sans lactose (aucun produit laitier) ».
+export type MealRestriction =
+  | 'Vegetarian'
+  | 'NoPork'
+  | 'NotSpicy'
+  | 'NoTreeNuts'
+  | 'NoPeanuts'
+  | 'NoGluten'
+  | 'NoDairy';
+
 export type GenerateRecipeRequest = {
   // Membres du foyer qui mangent ; null = moi seul.
   dinerUserIds: string[] | null;
   servings: number | null;
+  // Invités hors du foyer, sans nom : une portion chacun.
+  guests?: number;
+  mealRestrictions?: MealRestriction[];
 };
 
 export type RecipeIngredient = {

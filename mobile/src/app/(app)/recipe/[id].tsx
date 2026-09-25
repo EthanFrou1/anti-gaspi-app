@@ -8,8 +8,10 @@ import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { CheckBox } from '@/components/CheckBox';
 import { ErrorBanner } from '@/components/ErrorBanner';
-import { Clock, Refrigerator, Share2, Star, TriangleAlert } from '@/components/icons/lucide';
+import { Clock, Refrigerator, Share2, Star } from '@/components/icons/lucide';
 import { Screen } from '@/components/Screen';
+import { WarningNote } from '@/components/WarningNote';
+import { allergyWarning, decodeRestrictions } from '@/features/recipes/meal';
 import { APP_NAME } from '@/config';
 import { canModifyItem } from '@/features/inventory/rules';
 import { refreshExpiryReminders } from '@/features/notifications/reminders';
@@ -25,7 +27,10 @@ import { makeStyles, useTheme } from '@/theme';
 export default function RecipeScreen() {
   const theme = useTheme();
   const styles = useStyles();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // restrictions : contraintes d'allergène du repas, passées par la navigation juste après la
+  // génération (jamais enregistrées : la recette rouverte plus tard n'en a pas).
+  const { id, restrictions } = useLocalSearchParams<{ id: string; restrictions?: string }>();
+  const reinforcedWarning = allergyWarning(decodeRestrictions(restrictions));
   const { state } = useAuth();
   const user = state.status === 'signedIn' ? state.user : null;
   const householdId = user?.householdId ?? null;
@@ -140,12 +145,11 @@ export default function RecipeScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.warning} accessibilityRole="alert">
-        <TriangleAlert size={20} strokeWidth={2} color={styles.warningText.color} />
-        <Text style={styles.warningText}>
-          Recette proposée par une IA : vérifie toujours les étiquettes, en particulier en cas d'allergie.
-        </Text>
-      </View>
+      {reinforcedWarning ? (
+        <WarningNote strong>{reinforcedWarning}</WarningNote>
+      ) : (
+        <WarningNote>Recette proposée par une IA : vérifie toujours les étiquettes, en particulier en cas d'allergie.</WarningNote>
+      )}
 
       <Text style={styles.heading}>Ingrédients</Text>
       {recipe.ingredients.map((ingredient, index) => (
@@ -240,16 +244,6 @@ const useStyles = makeStyles((t) => ({
   },
   actionButtonActive: { borderWidth: t.borderWidth.selected, borderColor: t.colors.border, backgroundColor: t.colors.primarySoft },
   actionText: { ...t.type.callout, color: t.colors.ink },
-  // Avertissement IA : fond citron doux, texte citron foncé (contraste AA).
-  warning: {
-    flexDirection: 'row',
-    gap: t.space.xs,
-    alignItems: 'flex-start',
-    backgroundColor: t.scheme === 'dark' ? t.palette.citron.darkSoft : t.palette.citron.soft,
-    padding: t.space.md,
-    borderRadius: t.radius.sm,
-  },
-  warningText: { ...t.type.callout, flex: 1, color: t.scheme === 'dark' ? t.palette.citron.darkText : t.palette.citron.text },
   heading: { ...t.type.title3, color: t.colors.ink, marginTop: t.space.md },
   ingredientRow: { flexDirection: 'row', alignItems: 'center', gap: t.space.xs },
   bullet: { width: 6, height: 6, borderRadius: 3, marginHorizontal: 6, backgroundColor: t.colors.ink3 },

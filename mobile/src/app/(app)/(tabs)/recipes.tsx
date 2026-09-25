@@ -1,10 +1,10 @@
 import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { asApiError } from '@/api/errors';
-import type { GenerateRecipeRequest, Profile, Recipe, RecipeQuota } from '@/api/types';
+import type { GenerateRecipeRequest, MealRestriction, Profile, Recipe, RecipeQuota } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -14,10 +14,23 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import { Bot, Star } from '@/components/icons/lucide';
 import { MultiChoiceChips } from '@/components/MultiChoiceChips';
 import { Screen } from '@/components/Screen';
+import { Stepper } from '@/components/Stepper';
 import { WaitingOverlay } from '@/components/WaitingOverlay';
+import { WarningNote } from '@/components/WarningNote';
 import { useHousehold } from '@/features/household/useHousehold';
+import { toggle } from '@/features/profile/onboarding';
 import { TastesSheet } from '@/features/profile/TastesSheet';
 import { loadTastesPromptSeen, markTastesPromptSeen, shouldAskTastes } from '@/features/profile/tastesPrompt';
+import {
+  allergyWarning,
+  encodeRestrictions,
+  guestsLabel,
+  loadLastDiners,
+  maxGuests,
+  MEAL_RESTRICTION_OPTIONS,
+  restoreDiners,
+  saveLastDiners,
+} from '@/features/recipes/meal';
 import { formatPrepTime, quotaLabel, toggleDiner } from '@/features/recipes/rules';
 import { makeStyles, useTheme } from '@/theme';
 import { formatShortDate } from '@/utils/dates';
@@ -48,6 +61,26 @@ export default function RecipesScreen() {
   const [tastesError, setTastesError] = useState<string | null>(null);
   // Recette à lancer une fois le panneau refermé (deux fenêtres à la fois posent problème sur iOS).
   const generateWhenHidden = useRef(false);
+  // Invités sans nom et contraintes pour ce repas : jamais mémorisés, remis à zéro après chaque recette.
+  const [guests, setGuests] = useState(0);
+  const [restrictions, setRestrictions] = useState<MealRestriction[]>([]);
+  const [restrictionsOpen, setRestrictionsOpen] = useState(false);
+
+  const userId = user?.id ?? null;
+  const memberIds = (household?.members ?? []).map((m) => m.userId);
+  const memberKey = memberIds.join(',');
+
+  // Dernière sélection de convives (sur ce téléphone), limitée aux membres actuels du foyer.
+  useEffect(() => {
+    if (!userId || !householdId) return;
+    let active = true;
+    void loadLastDiners(userId, householdId).then((saved) => {
+      if (active) setDiners(restoreDiners(saved, memberKey ? memberKey.split(',') : [], userId));
+    });
+    return () => {
+      active = false;
+    };
+  }, [userId, householdId, memberKey]);
 
   const load = useCallback(async () => {
     if (!householdId) return;
@@ -86,14 +119,38 @@ export default function RecipesScreen() {
     );
   }
 
-  const request: GenerateRecipeRequest = { dinerUserIds: diners, servings: null };
+  const request: GenerateRecipeRequest = { dinerUserIds: diners, servings: null, guests, mealRestrictions: restrictions };
+  const warning = allergyWarning(restrictions);
+
+  function toggleMealDiner(id: string) {
+    const next = toggleDiner(diners, id);
+    setDiners(next);
+    // Assez de place à table : les invités en trop sont retirés.
+    setGuests((current) => Math.min(current, maxGuests(next.length)));
+    void saveLastDiners(user!.id, householdId!, next);
+  }
+
+  function changeGuests(value: number) {
+    // Premier invité : les contraintes du repas se déplient d'elles-mêmes.
+    if (guests === 0 && value > 0) setRestrictionsOpen(true);
+    setGuests(value);
+  }
 
   async function generate() {
     setGenerating(true);
     setError(null);
     try {
       const recipe = await api.recipes.generate(householdId!, request);
-      router.push({ pathname: '/recipe/[id]', params: { id: recipe.id } });
+      // Contraintes d'allergène : transmises à l'écran de la recette pour l'avertissement renforcé,
+      // par la navigation seulement (jamais enregistrées).
+      router.push({
+        pathname: '/recipe/[id]',
+        params: warning ? { id: recipe.id, restrictions: encodeRestrictions(restrictions) } : { id: recipe.id },
+      });
+      // Repas suivant : de nouveau sans invités ni contraintes.
+      setGuests(0);
+      setRestrictions([]);
+      setRestrictionsOpen(false);
     } catch (e) {
       setError(asApiError(e).message);
     } finally {
@@ -170,20 +227,59 @@ export default function RecipesScreen() {
       <Text style={styles.title}>Qu'est-ce qu'on mange ?</Text>
       <Text style={styles.text}>Une recette avec les produits de ton frigo, en commençant par ceux qui périment bientôt.</Text>
 
-      {members.length > 1 ? (
-        <View style={styles.section}>
-          <Text style={styles.subtitle}>Qui mange ?</Text>
-          <MultiChoiceChips
-            options={members.map((m) => ({
-              value: m.userId,
-              label: m.userId === user.id ? `${m.displayName} (toi)` : m.displayName,
-            }))}
-            values={diners}
-            onToggle={(id) => setDiners((current) => toggleDiner(current, id))}
+      <View style={styles.section}>
+        <Text style={styles.subtitle}>Qui mange ?</Text>
+        {members.length > 1 ? (
+          <>
+            <MultiChoiceChips
+              options={members.map((m) => ({
+                value: m.userId,
+                label: m.userId === user.id ? `${m.displayName} (toi)` : m.displayName,
+              }))}
+              values={diners}
+              onToggle={toggleMealDiner}
+            />
+            <Text style={styles.hint}>Les régimes et allergies de chacun sont respectés, sans être dévoilés.</Text>
+          </>
+        ) : null}
+        <View style={styles.guestsRow}>
+          <View style={styles.guestsText}>
+            <Text style={styles.guestsLabel}>Invités</Text>
+            <Text style={styles.hint}>Sans nom : une portion de plus chacun.</Text>
+          </View>
+          <Stepper
+            value={guests}
+            min={0}
+            max={maxGuests(diners.length)}
+            onChange={changeGuests}
+            valueLabel={guestsLabel(guests)}
+            incrementLabel="Un invité de plus"
+            decrementLabel="Un invité de moins"
           />
-          <Text style={styles.hint}>Les régimes et allergies de chacun sont respectés, sans être dévoilés.</Text>
         </View>
-      ) : null}
+
+        <Pressable
+          onPress={() => setRestrictionsOpen((open) => !open)}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: restrictionsOpen }}
+          hitSlop={8}
+        >
+          <Text style={styles.link}>
+            Contraintes pour ce repas{restrictions.length > 0 ? ` (${restrictions.length})` : ''} {restrictionsOpen ? '▴' : '▾'}
+          </Text>
+        </Pressable>
+        {restrictionsOpen ? (
+          <>
+            <MultiChoiceChips
+              options={MEAL_RESTRICTION_OPTIONS}
+              values={restrictions}
+              onToggle={(value) => setRestrictions((current) => toggle(current, value))}
+            />
+            <Text style={styles.hint}>Pour ce repas seulement : rien n'est enregistré.</Text>
+          </>
+        ) : null}
+        {warning ? <WarningNote strong>{warning}</WarningNote> : null}
+      </View>
 
       <ErrorBanner message={error ?? undefined} />
 
@@ -280,6 +376,10 @@ const useStyles = makeStyles((t) => ({
   section: { gap: t.space.sm, marginTop: t.space.md },
   subtitle: { ...t.type.title3, color: t.colors.ink },
   hint: { ...t.type.caption, color: t.colors.ink3 },
+  guestsRow: { flexDirection: 'row', alignItems: 'center', gap: t.space.md },
+  guestsText: { flex: 1, gap: t.space.xxs },
+  guestsLabel: { ...t.type.bodyBold, color: t.colors.ink },
+  link: { ...t.type.callout, color: t.colors.primaryText },
   generateRow: { flexDirection: 'row', gap: t.space.sm, alignItems: 'flex-start' },
   generateButton: { flex: 1 },
   // Outil de développement : même hauteur que le bouton à côté (sans ombre, ce n'est pas une action).

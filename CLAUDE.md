@@ -185,6 +185,17 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Avec un colocataire qui n'aime pas un produit urgent du frigo (convive sélectionné) : la recette ne l'utilise pas, et son détail affiche « Non utilisé : … (préférences d'un convive) », aussi dans l'historique et les favoris.
 - [ ] Avec la vraie clé (`Ai__Provider=Claude`) : ail et « Pas épicé » cochés, plusieurs recettes sans ail ni piment ; en cas de rejet, message d'erreur et quota non décompté (événement `RecipeRejectedByPreferences` dans les journaux de l'API).
 
+### Invités et contraintes du repas
+
+- [ ] Recettes, seul dans le foyer : « Qui mange ? » affiche le compteur « Invités » (0 à 10) et le lien « Contraintes pour ce repas ».
+- [ ] Premier invité : les contraintes se déplient d'elles-mêmes ; « Sans lactose (aucun produit laitier) » est bien libellé.
+- [ ] 2 invités, « Végétarien » et « Sans gluten » : la recette est végétarienne, sans pâtes ni pain, pour 3 portions.
+- [ ] Une contrainte d'allergène cochée : avertissement renforcé (bord épais) sous les pastilles, puis sur la recette générée ; rouverte depuis l'historique, la recette n'a que l'avertissement habituel.
+- [ ] Après la recette : invités à 0, contraintes décochées et repliées.
+- [ ] En coloc : cocher un colocataire, fermer l'app, revenir : il est toujours coché (pas les invités). Un membre parti du foyer n'est plus coché.
+- [ ] 12 personnes au plus : avec 3 membres cochés, le compteur s'arrête à 9 invités.
+- [ ] VoiceOver : « 2 invités », « Un invité de plus », état déplié du lien.
+
 ### Invitation au foyer : un seul code actif
 
 - [ ] Sans code actif : « Créer et partager un code » crée le code et ouvre la feuille de partage ; le bouton disparaît ensuite, remplacé par « Code actif » et l'explication.
