@@ -14,7 +14,13 @@ public sealed record MealConstraints(
     MealBudget Budget,
     NutritionGoal Goal,
     int Servings,
-    IReadOnlyList<KitchenEquipment> Equipment);
+    IReadOnlyList<KitchenEquipment> Equipment)
+{
+    // Goûts des convives (aucun nom : on ne sait pas qui n'aime quoi).
+    public IReadOnlyList<DislikedFood> Dislikes { get; init; } = [];
+
+    public bool AvoidSpicy { get; init; }
+}
 
 /// <summary>
 /// Combine les profils des personnes qui mangent ensemble (règle « repas partagé » de CLAUDE.md).
@@ -62,7 +68,13 @@ public static class ProfileCombiner
             Budget: MostRestrictive(diners.Select(d => d.Budget), BudgetStrictness, strictestIsLast: false),
             Goal: CombineGoals(diners.Select(d => d.Goal).ToList()),
             Servings: servings ?? (diners.Count == 1 ? diners.First().DefaultServings : diners.Count),
-            Equipment: kitchenEquipment.Distinct().Order().ToList());
+            Equipment: kitchenEquipment.Distinct().Order().ToList())
+        {
+            // Union : ce qu'un convive n'aime pas n'est pas cuisiné pour la tablée.
+            Dislikes = diners.SelectMany(d => d.Dislikes).Distinct().Order().ToList(),
+            // Il suffit d'un convive qui ne supporte pas l'épicé.
+            AvoidSpicy = diners.Any(d => d.AvoidSpicy),
+        };
     }
 
     // Objectifs incompatibles entre eux (prise de muscle vs repas légers) : si tout le monde

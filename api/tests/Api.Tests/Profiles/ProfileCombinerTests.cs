@@ -88,6 +88,21 @@ public class ProfileCombinerTests
     }
 
     [Fact]
+    public void TastesOfEveryone_AreCombined_AndOneNotSpicyIsEnough()
+    {
+        var alice = new UserProfile { Dislikes = [DislikedFood.Olives, DislikedFood.Mushrooms], AvoidSpicy = true };
+        var bob = new UserProfile { Dislikes = [DislikedFood.Mushrooms, DislikedFood.Fish] };
+
+        var together = ProfileCombiner.Combine([alice, bob], Kitchen);
+        var bobAlone = ProfileCombiner.Combine([bob], Kitchen);
+
+        // Sans doublon, dans l'ordre de l'énumération.
+        Assert.Equal([DislikedFood.Mushrooms, DislikedFood.Olives, DislikedFood.Fish], together.Dislikes);
+        Assert.True(together.AvoidSpicy);
+        Assert.False(bobAlone.AvoidSpicy);
+    }
+
+    [Fact]
     public void ShortestCookingTimeAndLowestBudget_Win()
     {
         var constraints = ProfileCombiner.Combine(

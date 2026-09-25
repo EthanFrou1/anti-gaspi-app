@@ -72,6 +72,36 @@ public class ProfileServiceTests(DatabaseFixture database) : HouseholdTestBase(d
         Assert.Equal([IngredientExclusion.Pork, IngredientExclusion.Alcohol], saved.Value!.Exclusions);
     }
 
+    [Fact]
+    public async Task Tastes_AreSavedWithoutConsent_AndOptional()
+    {
+        var alice = await CreateUserAsync("Alice");
+
+        // Des goûts, pas des données de santé : aucun consentement demandé.
+        var saved = await SaveAsync(alice, Request() with
+        {
+            Dislikes = [DislikedFood.Olives, DislikedFood.Mushrooms, DislikedFood.Olives],
+            AvoidSpicy = true,
+        });
+        // Champs facultatifs : absents, le profil n'a aucun goût.
+        var withoutTastes = await SaveAsync(await CreateUserAsync("Bob"), Request());
+
+        Assert.Equal([DislikedFood.Mushrooms, DislikedFood.Olives], saved.Value!.Dislikes);
+        Assert.True(saved.Value.AvoidSpicy);
+        Assert.Empty(withoutTastes.Value!.Dislikes);
+        Assert.False(withoutTastes.Value.AvoidSpicy);
+    }
+
+    [Fact]
+    public async Task UnknownDislikedFood_IsRejected()
+    {
+        var alice = await CreateUserAsync("Alice");
+
+        var result = await SaveAsync(alice, Request() with { Dislikes = [(DislikedFood)999] });
+
+        Assert.Equal(ErrorType.Validation, result.Error?.Type);
+    }
+
     // ---------- Allergies : donnée de santé (RGPD, article 9) ----------
 
     [Fact]

@@ -32,6 +32,41 @@ public class RecipeValidatorTests
         Assert.Null(recipe.Ingredients[2].InventoryItemId);
     }
 
+    // ---------- Goûts des convives ----------
+
+    private static readonly RecipePrompt PromptWithTastes = RecipePromptBuilder.Build(
+        Constraints(time: CookingTime.Under30Minutes, servings: 2) with { Dislikes = [DislikedFood.Garlic], AvoidSpicy = true },
+        [Item("Courgette", "vegetables", 1), Item("Riz", "dry-goods", 200)],
+        Today);
+
+    [Theory]
+    [InlineData("Riz sauté à l'ail", null, null)]                          // titre
+    [InlineData(null, "Pesto", null)]                                      // ingrédient composé
+    [InlineData(null, null, "Ajouter une gousse d'ail écrasée.")]          // étape
+    [InlineData(null, "Piment d'Espelette", null)]                         // « Pas épicé »
+    public void RecipeWithADislikedFood_IsRejected(string? title, string? ingredient, string? step)
+    {
+        var draft = Draft(
+            title: title ?? "Riz sauté à la courgette",
+            ingredients: ingredient is null ? null : [new("Courgette", "1", "p1"), new(ingredient, "1 c. à soupe", null)],
+            steps: step is null ? null : ["Cuire le riz.", step]);
+
+        var error = Assert.Throws<RecipeRejectedByPreferencesException>(() => RecipeValidator.Validate(draft, PromptWithTastes));
+
+        // Toujours une AiUnavailableException : 503, quota non décompté.
+        Assert.IsAssignableFrom<AiUnavailableException>(error);
+    }
+
+    [Fact]
+    public void RecipeThatRespectsTheTastes_IsKept_WithTheExcludedProducts()
+    {
+        var recipe = RecipeValidator.Validate(Draft(steps: ["Cuire le riz sans ail.", "Faire sauter la courgette."]), PromptWithTastes);
+
+        // « sans ail » est une mention négative, pas un ingrédient.
+        Assert.Equal(2, recipe.Steps.Count);
+        Assert.Equal(PromptWithTastes.ExcludedByPreferences, recipe.ExcludedByPreferences);
+    }
+
     [Fact]
     public void InventedReference_IsRejected()
     {

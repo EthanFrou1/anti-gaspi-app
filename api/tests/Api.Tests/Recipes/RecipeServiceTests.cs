@@ -160,6 +160,41 @@ public class RecipeServiceTests(DatabaseFixture database) : HouseholdTestBase(da
         Assert.Equal(0, (await QuotaAsync(alice)).Used);
     }
 
+    // ---------- Goûts des convives ----------
+
+    [Fact]
+    public async Task ADinersTastes_KeepProductsAwayFromTheAi_AndAreReportedWithoutSayingWhose()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        var bob = await CreateUserAsync("Bob");
+        await AddMemberAsync(alice, householdId, bob);
+        await SaveTastesAsync(bob, [DislikedFood.Zucchini]);
+
+        var result = await GenerateAsync(alice, householdId, new GenerateRecipeRequest([alice, bob], null));
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.DoesNotContain(Generator.LastPrompt!.Items, i => i.Item.Name == "Courgette");
+        Assert.Equal(["Courgette"], result.Value.ExcludedByPreferences);
+        // Conservé avec la recette (historique, favoris), toujours sans nom de convive.
+        var stored = (await WithServiceAsync<IRecipeService, IReadOnlyList<RecipeDto>>(s =>
+            s.ListAsync(alice, householdId, CancellationToken.None))).Single();
+        Assert.Equal(["Courgette"], stored.ExcludedByPreferences);
+    }
+
+    [Fact]
+    public async Task RecipeWithADislikedFood_IsRejected_AndNotCounted()
+    {
+        var (alice, householdId) = await HouseholdWithFridgeAsync();
+        await SaveTastesAsync(alice, [DislikedFood.Garlic]);
+        // L'IA ignore la consigne « ne jamais utiliser » : le validateur rattrape.
+        Generator.Override = _ => new RecipeDraft("Pâtes à l'ail", 10, 1, [new("Pâtes", "200 g", "p2"), new("Ail", "2 gousses", null)], ["Cuire."]);
+
+        var result = await GenerateAsync(alice, householdId);
+
+        Assert.Equal(RecipeErrors.Unavailable, result.Error);
+        Assert.Equal(0, (await QuotaAsync(alice)).Used);
+    }
+
     [Fact]
     public async Task SimultaneousRequests_NeverExceedTheDailyQuota()
     {
@@ -434,6 +469,12 @@ public class RecipeServiceTests(DatabaseFixture database) : HouseholdTestBase(da
         WithServiceAsync<IProfileService, Result<ProfileDto>>(s => s.SaveAsync(userId,
             new SaveProfileRequest(CookingTime.Under30Minutes, MealBudget.Under2Euros, diet, [], allergens,
                 allergens.Length > 0, NutritionGoal.Balanced, 1),
+            CancellationToken.None));
+
+    private Task SaveTastesAsync(Guid userId, DislikedFood[] dislikes) =>
+        WithServiceAsync<IProfileService, Result<ProfileDto>>(s => s.SaveAsync(userId,
+            new SaveProfileRequest(CookingTime.Under30Minutes, MealBudget.Under2Euros, Diet.Omnivore, [], [],
+                false, NutritionGoal.Balanced, 1, dislikes),
             CancellationToken.None));
 
     private async Task<Result<RecipeDto>> GenerateAsync(

@@ -15,6 +15,9 @@ export const DEFAULT_PROFILE: Profile = {
   budget: 'Under2Euros',
   goal: 'SimpleAntiWaste',
   defaultServings: 1,
+  // Pas demandés à l'onboarding : proposés avant la première recette.
+  dislikes: [],
+  avoidSpicy: false,
 };
 
 export const MIN_SERVINGS = 1;

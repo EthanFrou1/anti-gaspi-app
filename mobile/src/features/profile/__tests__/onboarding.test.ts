@@ -21,14 +21,20 @@ const custom: Profile = {
   budget: 'NoLimit',
   goal: 'MuscleGain',
   defaultServings: 3,
+  dislikes: ['Olives'],
+  avoidSpicy: true,
 };
 
+// Volontairement hors de l'onboarding : proposés avant la première recette, et dans Profil.
+const TASTE_FIELDS = ['avoidSpicy', 'dislikes'];
+
 describe('ONBOARDING_STEPS', () => {
-  it('pose 5 questions qui couvrent tous les champs du profil, une seule fois chacun', () => {
+  it('pose 5 questions qui couvrent tous les champs du profil sauf les goûts, une seule fois chacun', () => {
     const fields = ONBOARDING_STEPS.flatMap((s) => [...s.fields]);
+    const expected = Object.keys(DEFAULT_PROFILE).filter((key) => !TASTE_FIELDS.includes(key));
 
     expect(ONBOARDING_STEPS).toHaveLength(5);
-    expect([...fields].sort()).toEqual(Object.keys(DEFAULT_PROFILE).sort());
+    expect([...fields].sort()).toEqual(expected.sort());
   });
 });
 

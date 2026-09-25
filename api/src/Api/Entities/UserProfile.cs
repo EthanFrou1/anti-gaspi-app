@@ -19,6 +19,12 @@ public class UserProfile
 
     public List<IngredientExclusion> Exclusions { get; set; } = [];
 
+    // Goûts : jamais utilisés dans une recette où cette personne mange.
+    public List<DislikedFood> Dislikes { get; set; } = [];
+
+    // « Pas épicé » : ni piment ni épice piquante.
+    public bool AvoidSpicy { get; set; }
+
     // Donnée de santé (RGPD, article 9) : vide tant qu'il n'y a pas de consentement.
     public List<Allergen> Allergens { get; set; } = [];
 

@@ -12,7 +12,9 @@ public sealed record ProfileDto(
     // true si l'utilisateur a consenti au stockage de ses allergies (donnée de santé).
     bool HealthDataConsent,
     NutritionGoal Goal,
-    int DefaultServings);
+    int DefaultServings,
+    IReadOnlyList<DislikedFood> Dislikes,
+    bool AvoidSpicy);
 
 /// <summary>
 /// Profil complet, à la création (fin de l'onboarding) comme à la modification.
@@ -27,4 +29,7 @@ public sealed record SaveProfileRequest(
     bool HealthDataConsent,
     NutritionGoal Goal,
     [Range(1, 12, ErrorMessage = "Le nombre de portions doit être compris entre 1 et 12.")]
-    int DefaultServings);
+    int DefaultServings,
+    // Facultatifs : l'onboarding ne les demande pas (proposés avant la première recette).
+    IReadOnlyList<DislikedFood>? Dislikes = null,
+    bool AvoidSpicy = false);

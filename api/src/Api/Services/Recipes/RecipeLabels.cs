@@ -48,6 +48,11 @@ public static class RecipeLabels
         _ => throw new ArgumentOutOfRangeException(nameof(allergen)),
     };
 
+    public static string Dislike(DislikedFood food) =>
+        FoodPreferences.Dislikes.TryGetValue(food, out var rule)
+            ? rule.Label
+            : throw new ArgumentOutOfRangeException(nameof(food));
+
     /// <summary>Temps maximal en minutes ; 240 pour « pas de limite » (borne de validation).</summary>
     public static int MaxMinutes(CookingTime time) => time switch
     {

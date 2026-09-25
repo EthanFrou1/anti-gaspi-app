@@ -93,6 +93,9 @@ public sealed class RecipeService(
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    // Recettes rejetées pour les goûts des convives : à compter dans les journaux (fréquence).
+    public static readonly EventId RejectedByPreferencesEvent = new(4201, "RecipeRejectedByPreferences");
+
     private AiOptions Settings => options.Value;
 
     public async Task<Result<RecipePromptPreviewDto>> PreviewPromptAsync(
@@ -142,6 +145,15 @@ public sealed class RecipeService(
         {
             var draft = await generator.GenerateAsync(prompt.Value, ct);
             recipe = RecipeValidator.Validate(draft, prompt.Value);
+        }
+        catch (RecipeRejectedByPreferencesException ex)
+        {
+            // Événement distinct, pour compter ces rejets dans les journaux : l'aliment seul,
+            // jamais le convive ni le foyer.
+            logger.LogWarning(RejectedByPreferencesEvent,
+                "Recette rejetée : aliment écarté par les préférences ({Preference})", ex.Preference);
+            await CancelReservationAsync(reservation.Value);
+            return RecipeErrors.Unavailable;
         }
         catch (AiUnavailableException ex)
         {
@@ -408,6 +420,7 @@ public sealed class RecipeService(
             recipe.Steps,
             row.CreatedAt,
             data.IsFavorite,
-            data.FavoriteCount);
+            data.FavoriteCount,
+            recipe.ExcludedByPreferences ?? []);
     }
 }

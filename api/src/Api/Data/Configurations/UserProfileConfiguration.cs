@@ -25,6 +25,7 @@ public class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
         // nécessaire pour quelques valeurs fermées.
         builder.PrimitiveCollection(p => p.Exclusions).ElementType().HasConversion<string>();
         builder.PrimitiveCollection(p => p.Allergens).ElementType().HasConversion<string>();
+        builder.PrimitiveCollection(p => p.Dislikes).ElementType().HasConversion<string>();
 
         builder.ToTable(t => t.HasCheckConstraint(
             "CK_UserProfiles_DefaultServings", "\"DefaultServings\" BETWEEN 1 AND 12"));

@@ -27,6 +27,7 @@ describe('formatRecipeForSharing', () => {
       createdAt: '2026-09-23T12:00:00Z',
       isFavorite: false,
       favoriteCount: 0,
+      excludedByPreferences: [],
     };
 
     expect(formatRecipeForSharing(recipe, 'Leftly')).toBe(

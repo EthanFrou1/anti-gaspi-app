@@ -125,5 +125,51 @@ public class RecipePromptBuilderTests
         foreach (var v in Enum.GetValues<NutritionGoal>()) Assert.NotEmpty(RecipeLabels.Goal(v));
         foreach (var v in Enum.GetValues<KitchenEquipment>()) Assert.NotEmpty(RecipeLabels.Equipment(v));
         foreach (var v in Enum.GetValues<QuantityUnit>()) Assert.NotEmpty(RecipeLabels.Unit(v));
+        foreach (var v in Enum.GetValues<DislikedFood>()) Assert.NotEmpty(RecipeLabels.Dislike(v));
+    }
+
+    // ---------- Goûts des convives ----------
+
+    [Fact]
+    public void DislikedFridgeProducts_AreNeverSentToTheAi_AndAreReportedWithTheRecipe()
+    {
+        var constraints = Constraints() with { Dislikes = [DislikedFood.Mushrooms, DislikedFood.Olives], AvoidSpicy = true };
+
+        var prompt = RecipePromptBuilder.Build(constraints, [
+            Item("Riz", "dry-goods", 200),
+            Item("Champignons de Paris", "vegetables", 1),
+            Item("Harissa", "condiments", 30),
+            Item("Huile d'olive", "condiments", 300), // exception : l'huile d'olive reste utilisable
+        ], Today);
+
+        Assert.Equal(["Riz", "Huile d'olive"], prompt.Items.Select(i => i.Item.Name));
+        Assert.DoesNotContain("Champignons", prompt.UserContent);
+        // Les plus urgents d'abord, sans dire à qui appartient ce goût.
+        Assert.Equal(["Champignons de Paris", "Harissa"], prompt.ExcludedByPreferences);
+    }
+
+    [Fact]
+    public void ExcludedProducts_AreLimitedToTheFiveMostUrgent()
+    {
+        var constraints = Constraints() with { Dislikes = [DislikedFood.Tomato] };
+        var tomatoes = Enumerable.Range(1, 8).Select(day => Item($"Tomates {day}", "vegetables", day)).ToList();
+
+        var prompt = RecipePromptBuilder.Build(constraints, tomatoes, Today);
+
+        Assert.Equal(Enumerable.Range(1, 5).Select(day => $"Tomates {day}"), prompt.ExcludedByPreferences);
+    }
+
+    [Fact]
+    public void UserContent_GivesTheTastesAsClosedLabels()
+    {
+        var constraints = Constraints() with { Dislikes = [DislikedFood.Fish, DislikedFood.Peas], AvoidSpicy = true };
+
+        var prompt = RecipePromptBuilder.Build(constraints, [Item("Riz", "dry-goods", 200)], Today);
+
+        using var document = JsonDocument.Parse(prompt.UserContent[prompt.UserContent.IndexOf('{')..]);
+        var meal = document.RootElement.GetProperty("meal");
+        Assert.Equal(["petits pois", "poisson"],
+            meal.GetProperty("dislikedIngredients").EnumerateArray().Select(e => e.GetString()).Order());
+        Assert.True(meal.GetProperty("notSpicy").GetBoolean());
     }
 }

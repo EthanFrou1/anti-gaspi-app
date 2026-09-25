@@ -42,6 +42,45 @@ public enum IngredientExclusion
     Alcohol,
 }
 
+// Aliments que l'on n'aime pas : une question de goût, pas de santé ni de conviction (aucun
+// consentement requis). Rien ne double les exclusions ci-dessus : ni porc, ni bœuf, ni abats,
+// ni fruits de mer, ni alcool. Les mots-clés de chaque aliment sont dans FoodPreferences.
+public enum DislikedFood
+{
+    Mushrooms,
+    Onion,
+    Garlic,
+    Leek,
+    BellPepper,
+    Eggplant,
+    Zucchini,
+    Cucumber,
+    Broccoli,
+    Cauliflower,
+    BrusselsSprouts,
+    Spinach,
+    Beetroot,
+    Celery,
+    Fennel,
+    Endive,
+    Radish,
+    Turnip,
+    Peas,
+    Tomato,
+    Avocado,
+    Olives,
+    Pickles,
+    Coriander,
+    Fish,
+    Lamb,
+    BlueCheese,
+    GoatCheese,
+    Legumes,
+    Tofu,
+    Coconut,
+    Raisins,
+}
+
 // Les 14 allergènes à déclaration obligatoire (règlement UE n° 1169/2011, annexe II).
 public enum Allergen
 {

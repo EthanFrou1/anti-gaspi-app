@@ -67,6 +67,8 @@ public sealed class ProfileService(AppDbContext db, TimeProvider time) : IProfil
         profile.Diet = request.Diet;
         // Distinct + tri : pas de doublon, et un ordre stable (comparaisons, prompt IA).
         profile.Exclusions = request.Exclusions.Distinct().Order().ToList();
+        profile.Dislikes = (request.Dislikes ?? []).Distinct().Order().ToList();
+        profile.AvoidSpicy = request.AvoidSpicy;
         profile.Goal = request.Goal;
         profile.DefaultServings = request.DefaultServings;
 
@@ -105,6 +107,7 @@ public sealed class ProfileService(AppDbContext db, TimeProvider time) : IProfil
         if (!Enum.IsDefined(request.Goal)) return ProfileErrors.UnknownValue(nameof(request.Goal));
         if (!request.Exclusions.All(Enum.IsDefined)) return ProfileErrors.UnknownValue(nameof(request.Exclusions));
         if (!request.Allergens.All(Enum.IsDefined)) return ProfileErrors.UnknownValue(nameof(request.Allergens));
+        if (!(request.Dislikes ?? []).All(Enum.IsDefined)) return ProfileErrors.UnknownValue(nameof(request.Dislikes));
         return null;
     }
 
@@ -116,5 +119,7 @@ public sealed class ProfileService(AppDbContext db, TimeProvider time) : IProfil
         p.Allergens,
         p.HealthDataConsentAt is not null,
         p.Goal,
-        p.DefaultServings);
+        p.DefaultServings,
+        p.Dislikes,
+        p.AvoidSpicy);
 }

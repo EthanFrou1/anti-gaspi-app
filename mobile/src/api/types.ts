@@ -157,6 +157,41 @@ export type Allergen =
   | 'Lupin'
   | 'Molluscs';
 
+// Aliments « Pas pour moi » : goûts, pas données de santé. Libellés et emojis : features/profile/dislikes.ts.
+export type DislikedFood =
+  | 'Mushrooms'
+  | 'Onion'
+  | 'Garlic'
+  | 'Leek'
+  | 'BellPepper'
+  | 'Eggplant'
+  | 'Zucchini'
+  | 'Cucumber'
+  | 'Broccoli'
+  | 'Cauliflower'
+  | 'BrusselsSprouts'
+  | 'Spinach'
+  | 'Beetroot'
+  | 'Celery'
+  | 'Fennel'
+  | 'Endive'
+  | 'Radish'
+  | 'Turnip'
+  | 'Peas'
+  | 'Tomato'
+  | 'Avocado'
+  | 'Olives'
+  | 'Pickles'
+  | 'Coriander'
+  | 'Fish'
+  | 'Lamb'
+  | 'BlueCheese'
+  | 'GoatCheese'
+  | 'Legumes'
+  | 'Tofu'
+  | 'Coconut'
+  | 'Raisins';
+
 export type NutritionGoal = 'Balanced' | 'MuscleGain' | 'LightMeals' | 'SimpleAntiWaste';
 
 export type KitchenEquipment = 'Hob' | 'Oven' | 'Microwave' | 'AirFryer' | 'Blender';
@@ -171,6 +206,9 @@ export type Profile = {
   healthDataConsent: boolean;
   goal: NutritionGoal;
   defaultServings: number;
+  dislikes: DislikedFood[];
+  // « Pas épicé » : ni piment ni épice piquante.
+  avoidSpicy: boolean;
 };
 
 // ---------- Recettes (IA) ----------
@@ -199,6 +237,8 @@ export type Recipe = {
   // Mon étoile, et le nombre d'étoiles dans le foyer (carnet commun).
   isFavorite: boolean;
   favoriteCount: number;
+  // Produits du frigo non utilisés à cause des goûts d'un convive (sans dire lequel).
+  excludedByPreferences: string[];
 };
 
 export type RecipeQuota = {

@@ -31,7 +31,14 @@ public sealed record RecipePrompt(
     string UserContent,
     IReadOnlyDictionary<string, JsonElement> OutputSchema,
     IReadOnlyList<PromptItemRef> Items,
-    MealConstraints Constraints);
+    MealConstraints Constraints)
+{
+    /// <summary>
+    /// Produits du frigo écartés à cause des goûts des convives (jamais envoyés à l'IA),
+    /// affichés avec la recette : « Non utilisés : champignons (préférences d'un convive) ».
+    /// </summary>
+    public IReadOnlyList<string> ExcludedByPreferences { get; init; } = [];
+}
 
 /// <summary>
 /// Réponse brute de l'IA (format imposé par le schéma JSON), avant validation.

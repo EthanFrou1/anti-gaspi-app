@@ -15,6 +15,8 @@ public static class RecipePromptBuilder
     // Au-delà, on coupe : le prompt reste court (coût) et ce qui périme en premier est en tête.
     public const int MaxItems = 40;
     public const int MaxNameLength = 100;
+    // Produits écartés par les goûts cités avec la recette (les plus urgents d'abord).
+    public const int MaxExcludedNames = 5;
 
     private static readonly string[] MeatCategories = ["ground-meat", "fresh-meat", "poultry", "cold-cuts"];
     private static readonly string[] FishCategories = ["fish-seafood"];
@@ -38,6 +40,9 @@ public static class RecipePromptBuilder
            (n'utilise aucun ingrédient qui en contient ; dans le doute, abstiens-toi),
            équipement disponible (n'utilise que celui-ci), temps de préparation maximal,
            budget par portion et nombre de portions.
+           Aliments non aimés (dislikedIngredients) : ne les utilise JAMAIS, sous aucune forme
+           (ni en sauce, ni en condiment, ni en garniture), et ne les mentionne pas.
+           Pas épicé (notSpicy) : ni piment ni épice piquante.
         3. En plus des produits du frigo, tu peux supposer disponibles uniquement : sel, poivre,
            huile, eau et épices sèches. Tout autre ingrédient doit rester simple et bon marché.
         4. Pour chaque ingrédient qui vient du frigo, renseigne inventoryRef avec sa référence
@@ -51,19 +56,29 @@ public static class RecipePromptBuilder
 
     public static RecipePrompt Build(MealConstraints constraints, IEnumerable<PromptItem> inventory, DateOnly today)
     {
-        var items = inventory
+        var candidates = inventory
             .Where(i => IsCompatible(i, constraints))
             // Un produit à DLC dépassée ne doit pas être cuisiné : inutile de le proposer.
             .Where(i => !(i.ExpiryKind == ExpiryKind.UseBy && i.ExpiresOn < today))
             .OrderBy(i => i.ExpiresOn)
             .ThenBy(i => i.Name, StringComparer.Ordinal)
+            .ToList();
+
+        // Goûts des convives : le code écarte lui-même les produits concernés, l'IA ne les voit pas.
+        var disliked = candidates.Where(i => FoodPreferences.FindIn(i.Name, constraints) is not null).ToList();
+
+        var items = candidates
+            .Except(disliked)
             .Take(MaxItems)
             .Select((item, index) => new PromptItemRef(
                 $"p{index + 1}", item with { Name = Sanitize(item.Name) }, item.ExpiresOn.DayNumber - today.DayNumber))
             .ToList();
 
         var userContent = BuildUserContent(constraints, items, today);
-        return new RecipePrompt(SystemPrompt, userContent, RecipeOutputSchema.Schema, items, constraints);
+        return new RecipePrompt(SystemPrompt, userContent, RecipeOutputSchema.Schema, items, constraints)
+        {
+            ExcludedByPreferences = disliked.Select(i => Sanitize(i.Name)).Distinct().Take(MaxExcludedNames).ToList(),
+        };
     }
 
     /// <summary>
@@ -102,6 +117,8 @@ public static class RecipePromptBuilder
                 diet = RecipeLabels.Diet(c.Diet),
                 excludedIngredients = c.Exclusions.Select(RecipeLabels.Exclusion),
                 allergensToAvoid = c.Allergens.Select(RecipeLabels.Allergen),
+                dislikedIngredients = c.Dislikes.Select(RecipeLabels.Dislike),
+                notSpicy = c.AvoidSpicy,
                 maxPreparationMinutes = RecipeLabels.MaxMinutes(c.CookingTime),
                 budgetPerServing = RecipeLabels.Budget(c.Budget),
                 goal = RecipeLabels.Goal(c.Goal),

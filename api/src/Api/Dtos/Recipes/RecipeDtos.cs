@@ -21,7 +21,9 @@ public sealed record RecipeDto(
     DateTimeOffset CreatedAt,
     // Étoile posée par l'utilisateur qui consulte, et nombre d'étoiles dans le foyer.
     bool IsFavorite,
-    int FavoriteCount);
+    int FavoriteCount,
+    // Produits du frigo non utilisés à cause des goûts d'un convive (sans dire lequel).
+    IReadOnlyList<string> ExcludedByPreferences);
 
 public sealed record RecipeQuotaDto(int Used, int Limit, int Remaining, DateTimeOffset ResetsAt);
 

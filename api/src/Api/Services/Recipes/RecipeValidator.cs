@@ -4,12 +4,17 @@ namespace Api.Services.Recipes;
 
 public sealed record ValidatedIngredient(string Name, string Quantity, Guid? InventoryItemId);
 
+/// <param name="ExcludedByPreferences">
+/// Produits du frigo écartés par les goûts des convives. Facultatif : les recettes
+/// enregistrées avant cette information n'en ont pas (lecture du JSON en base).
+/// </param>
 public sealed record ValidatedRecipe(
     string Title,
     int PrepMinutes,
     int Servings,
     IReadOnlyList<ValidatedIngredient> Ingredients,
-    IReadOnlyList<string> Steps);
+    IReadOnlyList<string> Steps,
+    IReadOnlyList<string>? ExcludedByPreferences = null);
 
 /// <summary>
 /// Vérifie la réponse de l'IA AVANT de l'utiliser (règle du projet). Le schéma imposé
@@ -60,8 +65,27 @@ public static class RecipeValidator
         Require(steps.Count is >= 1 and <= MaxSteps, "nombre d'étapes invalide");
         Require(steps.All(s => s.Length is > 0 and <= MaxStepLength), "étape vide ou trop longue");
 
+        RequireTastesRespected([title, .. validatedIngredients.Select(i => i.Name), .. steps], prompt);
+
         // Le nombre de portions fait foi côté demande : on ne laisse pas l'IA le changer.
-        return new ValidatedRecipe(title, draft.PrepMinutes, prompt.Constraints.Servings, validatedIngredients, steps);
+        return new ValidatedRecipe(
+            title, draft.PrepMinutes, prompt.Constraints.Servings, validatedIngredients, steps, prompt.ExcludedByPreferences);
+    }
+
+    /// <summary>
+    /// Goûts des convives : consigne « ne jamais utiliser » donnée à l'IA, vérifiée ici par
+    /// mots-clés sur le titre, les ingrédients et les étapes. Un seul aliment trouvé suffit à
+    /// rejeter la recette (503, quota non décompté).
+    /// </summary>
+    private static void RequireTastesRespected(IEnumerable<string> texts, RecipePrompt prompt)
+    {
+        foreach (var text in texts)
+        {
+            if (FoodPreferences.FindIn(text, prompt.Constraints) is { } preference)
+            {
+                throw new RecipeRejectedByPreferencesException(preference);
+            }
+        }
     }
 
     private static string Clean(string? value) => (value ?? string.Empty).Trim();

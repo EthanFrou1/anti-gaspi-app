@@ -4,5 +4,5 @@ namespace Api.Services.Ai;
 /// L'IA n'a pas pu fournir de réponse exploitable (panne, délai, refus, réponse coupée ou
 /// invalide…). L'API répond 503 et l'appel n'est pas décompté du quota (recettes, tickets).
 /// </summary>
-public sealed class AiUnavailableException(string reason, Exception? inner = null)
+public class AiUnavailableException(string reason, Exception? inner = null)
     : Exception(reason, inner);
