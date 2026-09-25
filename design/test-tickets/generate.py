@@ -405,8 +405,11 @@ def readme(generated: list[tuple[Ticket, dt.date, list[str], str | None]], base_
         "",
         "Les réponses « aussi accepté » de la colonne Remarque sont comptées justes (libellé ambigu).",
         "",
-        "Règles du prompt rappelées : poids ou volume écrit sur le libellé (ou prix au kg) → quantité totale en "
-        "g, kg, ml ou l (« 2 x » un paquet de 500 g → 1000 g) ; sinon nombre d'articles en pièces ; lignes non "
+        "Résultats des mesures et enseignements : `RESULTATS.md`.",
+        "",
+        "Quantités attendues sur l'écran de validation : le total calculé par l'API (exemplaires × lot × "
+        "contenu) ; poids ou volume écrit sur le libellé (ou prix au kg) → quantité totale en g, kg, ml ou l "
+        "(« 2 x » un paquet de 500 g → 1000 g, « 20CL » → 200 ml) ; sinon nombre d'articles en pièces ; lignes non "
         "alimentaires écartées (l'app affiche « N articles ignorés ») ; remises, totaux, TVA, paiement et carte de "
         "fidélité jamais extraits.",
         "",

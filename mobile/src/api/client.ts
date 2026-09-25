@@ -39,8 +39,11 @@ const REQUEST_TIMEOUT_MS = 15_000;
 // La génération d'une recette par IA peut prendre plusieurs dizaines de secondes.
 export const RECIPE_GENERATION_TIMEOUT_MS = 60_000;
 
-// Lecture d'un ticket : envoi de la photo, puis lecture par l'IA (même ordre de grandeur).
-export const RECEIPT_SCAN_TIMEOUT_MS = 60_000;
+// Lecture d'un ticket : envoi de la photo, puis lecture par l'IA (10 à 15 s mesurées). Pire cas
+// côté API : deux tentatives de 25 s (Ai:TimeoutSeconds, Ai:MaxRetries) et l'attente entre les
+// deux, soit environ 58 s. Le téléphone attend plus longtemps, pour recevoir la vraie réponse de
+// l'API (erreur 503, quota non décompté) plutôt qu'abandonner une lecture encore en cours.
+export const RECEIPT_SCAN_TIMEOUT_MS = 75_000;
 
 let accessToken: string | null = null;
 

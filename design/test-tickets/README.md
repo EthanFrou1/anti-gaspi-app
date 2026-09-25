@@ -25,7 +25,9 @@ python design/test-tickets/evaluate.py    # dans un autre terminal (option --onl
 
 Les réponses « aussi accepté » de la colonne Remarque sont comptées justes (libellé ambigu).
 
-Règles du prompt rappelées : poids ou volume écrit sur le libellé (ou prix au kg) → quantité totale en g, kg, ml ou l (« 2 x » un paquet de 500 g → 1000 g) ; sinon nombre d'articles en pièces ; lignes non alimentaires écartées (l'app affiche « N articles ignorés ») ; remises, totaux, TVA, paiement et carte de fidélité jamais extraits.
+Résultats des mesures et enseignements : `RESULTATS.md`.
+
+Quantités attendues sur l'écran de validation : le total calculé par l'API (exemplaires × lot × contenu) ; poids ou volume écrit sur le libellé (ou prix au kg) → quantité totale en g, kg, ml ou l (« 2 x » un paquet de 500 g → 1000 g, « 20CL » → 200 ml) ; sinon nombre d'articles en pièces ; lignes non alimentaires écartées (l'app affiche « N articles ignorés ») ; remises, totaux, TVA, paiement et carte de fidélité jamais extraits.
 
 Pour tous les tickets : ni magasin, ni adresse, ni `************0000`, ni `0000 0000 00` ne doivent apparaître dans le résultat.
 

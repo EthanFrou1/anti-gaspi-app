@@ -259,6 +259,25 @@ describe('client API : foyer', () => {
     expect(timeouts).toEqual([60_000, 15_000]);
   });
 
+  it('receipts.scan attend 75 s, au-delà du pire cas de l\'API (environ 58 s)', async () => {
+    const { api, RECEIPT_SCAN_TIMEOUT_MS } = setup(() =>
+      reply(200, { purchasedOn: '2026-09-25', purchaseDateFromReceipt: true, lines: [], skippedLineCount: 0 }),
+    );
+    const timeouts: number[] = [];
+    const spy = jest.spyOn(globalThis, 'setTimeout').mockImplementation(((fn: () => void, ms?: number) => {
+      timeouts.push(ms ?? 0);
+      return 0 as unknown as ReturnType<typeof setTimeout>;
+    }) as typeof setTimeout);
+    try {
+      await api.receipts.scan('h1', 'file:///ticket.jpg');
+    } finally {
+      spy.mockRestore();
+    }
+
+    expect(RECEIPT_SCAN_TIMEOUT_MS).toBe(75_000);
+    expect(timeouts).toEqual([75_000]);
+  });
+
   it('households.getMine propage les autres erreurs', async () => {
     const { api } = setup(() => reply(500));
 
