@@ -20,6 +20,7 @@ import { clearPendingScan, getPendingScan } from '@/features/receipts/pendingSca
 import {
   addButtonLabel,
   apiErrorsByLine,
+  copiesDetail,
   lineExpiresOn,
   skippedLabel,
   toRequests,
@@ -225,8 +226,9 @@ function LineCard({ line, category, categories, purchasedOn, today, expanded, er
   const styles = useStyles();
   const expiresOn = lineExpiresOn(line, purchasedOn, category);
   const quantity = parseQuantity(line.quantityText);
+  const detail = copiesDetail(line);
   const summary = [
-    quantity !== null ? formatQuantity(quantity, line.unit) : line.quantityText,
+    (quantity !== null ? formatQuantity(quantity, line.unit) : line.quantityText) + (detail ? ` (${detail})` : ''),
     category?.name,
     expiresOn ? `avant le ${formatShortDate(expiresOn, today)}` : null,
   ]
@@ -268,6 +270,7 @@ function LineCard({ line, category, categories, purchasedOn, today, expanded, er
             unit={line.unit}
             onUnitChange={(unit) => onChange({ unit })}
           />
+          {detail ? <Text style={styles.hint}>Lu sur le ticket : {detail}</Text> : null}
           {expiresOn ? (
             <DateField
               label="À consommer avant"

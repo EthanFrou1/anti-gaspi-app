@@ -115,7 +115,8 @@ public sealed class ReceiptService(
             receipt.PurchasedOn,
             receipt.PurchaseDateFromReceipt,
             receipt.Lines
-                .Select(l => new ReceiptLineDto(l.ReceiptText, l.Name, l.CategoryId, l.Quantity, l.Unit, l.ExpiresOn, l.ExpiryKind))
+                .Select(l => new ReceiptLineDto(
+                    l.ReceiptText, l.Name, l.CategoryId, l.Quantity, l.Unit, l.Copies, l.QuantityPerCopy, l.ExpiresOn, l.ExpiryKind))
                 .ToList(),
             receipt.SkippedLineCount);
     }

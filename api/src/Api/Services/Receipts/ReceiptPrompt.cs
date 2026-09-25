@@ -22,13 +22,20 @@ public sealed record ReceiptPrompt(
 /// </summary>
 public sealed record ReceiptDraft(string? PurchaseDate, IReadOnlyList<ReceiptDraftLine>? Lines);
 
+/// <param name="Quantity">Contenu d'UN exemplaire (« 1 » pour « LAIT 1L »), dans l'unité Unit.</param>
+/// <param name="Copies">
+/// Nombre d'exemplaires achetés : le modèle le lit, l'API calcule le total (ReceiptValidator).
+/// Décimal et facultatif, pour qu'une valeur inattendue (« 2.5 », absente) ne fasse pas
+/// échouer toute la lecture : le validateur la ramène à 1.
+/// </param>
 public sealed record ReceiptDraftLine(
     string? ReceiptText,
     string? Name,
     string? Category,
     decimal Quantity,
     string? Unit,
-    bool IsFood);
+    bool IsFood,
+    decimal? Copies = null);
 
 /// <summary>
 /// Point d'entrée unique vers l'IA pour les tickets : changer de fournisseur = écrire une

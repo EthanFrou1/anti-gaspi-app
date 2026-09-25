@@ -22,7 +22,7 @@ public class ClaudeReceiptReaderTests
     private static readonly ReceiptImage Image = new([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3], "image/jpeg");
 
     private const string ReceiptJson =
-        """{"purchaseDate":"2026-09-23","lines":[{"receiptText":"COURGETTE","isFood":true,"name":"Courgette","category":"vegetables","quantity":0.5,"unit":"Kilogram"}]}""";
+        """{"purchaseDate":"2026-09-23","lines":[{"receiptText":"COURGETTE","isFood":true,"name":"Courgette","category":"vegetables","copies":2,"quantity":0.5,"unit":"Kilogram"}]}""";
 
     [Fact]
     public async Task SendsTheImage_TheReceiptModel_AndTheImposedJsonFormat()
@@ -70,7 +70,22 @@ public class ClaudeReceiptReaderTests
         Assert.Equal("Courgette", line.Name);
         Assert.Equal(0.5m, line.Quantity);
         Assert.Equal("Kilogram", line.Unit);
+        Assert.Equal(2m, line.Copies);
         Assert.True(line.IsFood);
+    }
+
+    [Theory]
+    [InlineData("\"copies\":2.5,")]   // valeur inattendue malgré le schéma
+    [InlineData("")]                  // champ absent
+    public async Task UnexpectedCopies_DoNotMakeTheWholeReadingFail(string copies)
+    {
+        // Le validateur ramène la ligne à 1 exemplaire ; la lecture n'est pas perdue (pas de 503).
+        var json = $$"""{"purchaseDate":null,"lines":[{"receiptText":"PAIN","isFood":true,"name":"Pain","category":"bread",{{copies}}"quantity":1,"unit":"Piece"}]}""";
+        var (reader, _) = Create(_ => Message(json, "end_turn"));
+
+        var draft = await reader.ReadAsync(Image, Prompt, CancellationToken.None);
+
+        Assert.Equal(copies == "" ? null : 2.5m, Assert.Single(draft.Lines!).Copies);
     }
 
     [Fact]

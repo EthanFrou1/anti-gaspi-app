@@ -271,7 +271,9 @@ def evaluate(case: Case, categories: dict[int, str]) -> Evaluation:
         if any(same_quantity(got, ok) for ok in accepted):
             ev.quantity_ok += 1
         else:
-            ev.problems.append(f"quantité    {item.label} : {got[0]:g} {got[1]} (attendu {e.quantity} {e.unit})")
+            # Exemplaires et contenu lus par le modèle (réponses de l'API depuis le champ copies).
+            read = f", lu {line['copies']} × {float(line['quantityPerCopy']):g}" if "copies" in line else ""
+            ev.problems.append(f"quantité    {item.label} : {got[0]:g} {got[1]}{read} (attendu {e.quantity} {e.unit})")
 
     for j, line in enumerate(lines):
         if j in used_lines:

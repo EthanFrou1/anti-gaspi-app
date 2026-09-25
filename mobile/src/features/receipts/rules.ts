@@ -1,6 +1,6 @@
 import type { ApiError } from '@/api/errors';
 import type { Category, QuantityUnit, ReceiptLine, ReceiptQuota, SaveInventoryItemRequest } from '@/api/types';
-import { estimateExpiry, parseQuantity } from '@/features/inventory/rules';
+import { estimateExpiry, formatQuantity, parseQuantity } from '@/features/inventory/rules';
 
 /**
  * Règles de la lecture de ticket, en fonctions pures (testables sans interface).
@@ -44,6 +44,8 @@ export type ReviewLine = {
   // Date choisie par l'utilisateur ; null = estimée d'après la catégorie et la date d'achat.
   manualExpiresOn: string | null;
   selected: boolean;
+  // Lecture du ticket, telle que renvoyée par l'API (pour le détail « 6 × 1 l »).
+  read: Pick<ReceiptLine, 'quantity' | 'unit' | 'copies' | 'quantityPerCopy'>;
 };
 
 export function toReviewLines(lines: ReceiptLine[]): ReviewLine[] {
@@ -57,7 +59,21 @@ export function toReviewLines(lines: ReceiptLine[]): ReviewLine[] {
     manualExpiresOn: null,
     // Tout est coché : l'utilisateur décoche ce qu'il ne veut pas ajouter.
     selected: true,
+    read: { quantity: line.quantity, unit: line.unit, copies: line.copies, quantityPerCopy: line.quantityPerCopy },
   }));
+}
+
+/**
+ * Détail de la quantité lue sur le ticket (« 6 × 1 l »), pour comprendre le total et le
+ * corriger. Seulement pour plusieurs exemplaires, et tant que l'utilisateur n'a changé ni la
+ * quantité ni l'unité : le détail ne correspondrait plus à la ligne.
+ */
+export function copiesDetail(line: ReviewLine): string | null {
+  const { read } = line;
+  if (read.copies <= 1 || line.unit !== read.unit || parseQuantity(line.quantityText) !== read.quantity) {
+    return null;
+  }
+  return `${read.copies} × ${formatQuantity(read.quantityPerCopy, read.unit)}`;
 }
 
 /**

@@ -225,8 +225,12 @@ export type ReceiptLine = {
   receiptText: string;
   name: string;
   categoryId: number;
+  // Quantité totale, celle qui va dans le frigo.
   quantity: number;
   unit: QuantityUnit;
+  // Détail lu sur le ticket (« 6 × 1 l ») : quantity = copies × quantityPerCopy.
+  copies: number;
+  quantityPerCopy: number;
   expiresOn: string;
   expiryKind: ExpiryKind;
 };

@@ -15,7 +15,8 @@ public sealed class FakeReceiptReader : IReceiptReader
             new("YAOURT NATURE X4", "Yaourt nature", "yogurts", 4, "Piece", IsFood: true),
             new("COURGETTE VRAC", "Courgette", "vegetables", 0.612m, "Kilogram", IsFood: true),
             new("PENNE RIGATE 500G", "Penne rigate", "dry-goods", 500, "Gram", IsFood: true),
-            new("LAIT DEMI ECR 1L", "Lait demi-écrémé", "uht-milk", 1, "Liter", IsFood: true),
+            // Pack acheté en plusieurs exemplaires : l'écran de validation affiche « 6 × 1 l ».
+            new("LAIT DEMI ECR 1L", "Lait demi-écrémé", "uht-milk", 1, "Liter", IsFood: true, Copies: 6),
             new("LESSIVE LIQ 2L", "Lessive liquide", "other", 1, "Piece", IsFood: false),
         ];
         // Date absente : la validation retient la date du jour.

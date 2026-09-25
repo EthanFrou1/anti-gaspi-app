@@ -19,8 +19,12 @@ public sealed record ReceiptLineDto(
     string ReceiptText,
     string Name,
     int CategoryId,
+    // Quantité totale, celle qui va dans le frigo.
     decimal Quantity,
     QuantityUnit Unit,
+    // Détail lu sur le ticket (« 6 × 1 l ») : Quantity = Copies × QuantityPerCopy.
+    int Copies,
+    decimal QuantityPerCopy,
     // Date estimée à partir de la catégorie et de la date d'achat.
     DateOnly ExpiresOn,
     ExpiryKind ExpiryKind);

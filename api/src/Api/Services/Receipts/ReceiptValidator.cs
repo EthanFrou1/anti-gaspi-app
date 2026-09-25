@@ -11,12 +11,15 @@ namespace Api.Services.Receipts;
 /// Ligne de ticket prête pour l'écran de validation : catégorie connue, quantité bornée,
 /// date de péremption estimée. Rien n'est encore enregistré dans le frigo.
 /// </summary>
+/// <param name="Quantity">Quantité totale (Copies × QuantityPerCopy) : celle qui va dans le frigo.</param>
 public sealed record ValidatedReceiptLine(
     string ReceiptText,
     string Name,
     int CategoryId,
     decimal Quantity,
     QuantityUnit Unit,
+    int Copies,
+    decimal QuantityPerCopy,
     DateOnly ExpiresOn,
     ExpiryKind ExpiryKind);
 
@@ -49,6 +52,8 @@ public static class ReceiptValidator
     // Mêmes bornes que la saisie d'un produit (SaveInventoryItemRequest).
     private const decimal MinQuantity = 0.001m;
     private const decimal MaxQuantity = 100_000m;
+    // Au-delà, sans doute un nombre mal lu (prix, code) plutôt qu'un achat.
+    public const int MaxCopies = 99;
 
     public static ValidatedReceipt Validate(ReceiptDraft draft, IReadOnlyList<CategoryDto> categories, DateOnly today)
     {
@@ -75,13 +80,15 @@ public static class ReceiptValidator
             }
 
             var category = line.Category is not null && byCode.TryGetValue(line.Category, out var found) ? found : fallback;
-            var (quantity, unit) = Quantity(line.Quantity, line.Unit);
+            var quantity = Quantities(line.Copies, line.Quantity, line.Unit);
             validated.Add(new ValidatedReceiptLine(
                 TextSanitizer.SingleLine(line.ReceiptText, MaxReceiptTextLength),
                 name,
                 category.Id,
-                quantity,
-                unit,
+                quantity.Total,
+                quantity.Unit,
+                quantity.Copies,
+                quantity.PerCopy,
                 ExpiryEstimator.Estimate(purchasedOn, category.DefaultShelfLifeDays),
                 category.ExpiryKind));
         }
@@ -101,7 +108,30 @@ public static class ReceiptValidator
     }
 
     /// <summary>
-    /// Unité inconnue ou quantité hors bornes : 1 pièce, que l'utilisateur corrigera.
+    /// Quantité totale = nombre d'exemplaires × contenu d'un exemplaire. Le modèle lit les deux
+    /// nombres, le code fait la multiplication : le modèle lit bien « 6 x » et « 1L », mais ne
+    /// les multiplie pas de façon fiable (évaluation de design/test-tickets). Le total garde
+    /// l'unité du contenu (3 × 400 g = 1 200 g). Total hors bornes : un seul exemplaire.
+    /// </summary>
+    public static (int Copies, decimal PerCopy, decimal Total, QuantityUnit Unit) Quantities(
+        decimal? copies, decimal quantity, string? unit)
+    {
+        var (perCopy, parsedUnit) = Quantity(quantity, unit);
+        var count = Copies(copies);
+        var total = Math.Round(count * perCopy, 3, MidpointRounding.AwayFromZero);
+        return total > MaxQuantity ? (1, perCopy, perCopy, parsedUnit) : (count, perCopy, total, parsedUnit);
+    }
+
+    /// <summary>
+    /// Nombre d'exemplaires : un entier de 1 à MaxCopies. Absent, décimal ou hors bornes :
+    /// 1 (l'article compte une fois, l'utilisateur corrige sur l'écran de validation).
+    /// </summary>
+    public static int Copies(decimal? copies) =>
+        copies is { } value && value == decimal.Truncate(value) && value >= 1 && value <= MaxCopies ? (int)value : 1;
+
+    /// <summary>
+    /// Contenu d'un exemplaire. Unité inconnue ou quantité hors bornes : 1 pièce, que
+    /// l'utilisateur corrigera.
     /// </summary>
     public static (decimal Quantity, QuantityUnit Unit) Quantity(decimal quantity, string? unit)
     {

@@ -47,18 +47,31 @@ public class ReceiptPromptBuilderTests
     // disparaît pas du prompt lors d'une réécriture.
 
     [Fact]
-    public void QuantityRule_MultipliesTheContentOfOneCopy_ByTheNumberOfCopies()
+    public void QuantityRule_AsksForTheCopies_AndTheContentOfOneCopy_WithoutMultiplying()
     {
-        var rule = Rule("6. quantity et unit", "7. purchaseDate");
+        var rule = Rule("6. copies, quantity et unit", "7. purchaseDate");
 
+        // Le modèle lit les deux nombres, l'API calcule le total (ReceiptValidator).
+        Assert.Contains("quantity et unit décrivent le contenu d'UN SEUL exemplaire", rule);
+        Assert.Contains("Ne multiplie pas par copies", rule);
         // Multiplicateur sur la ligne de l'article ou sur une ligne voisine, dans les deux ordres.
         Assert.Contains("sur sa ligne ou sur une ligne voisine", rule);
         Assert.Contains("« 3 x 1,20 »", rule);
         Assert.Contains("« 1,20 x 3 »", rule);
-        Assert.Contains("quantity = nombre d'exemplaires × contenu d'un exemplaire", rule);
-        // Lot acheté plusieurs fois : le multiplicateur s'ajoute au lot, il ne le remplace pas.
-        Assert.Contains("2 lots « X6 » donnent 12 Piece", rule);
-        Assert.Contains("Un multiplicateur s'applique toujours, même si le libellé indique déjà un lot", rule);
+        // Le code TVA imprimé après le prix avait été lu comme une quantité.
+        Assert.Contains("Un chiffre seul après le prix est un code de TVA, jamais une quantité", rule);
+    }
+
+    [Fact]
+    public void Schema_AsksForTheCopies_BeforeTheContent()
+    {
+        var items = ReceiptPromptBuilder.OutputSchema(Categories)["properties"].GetProperty("lines").GetProperty("items");
+        var order = items.GetProperty("properties").EnumerateObject().Select(p => p.Name).ToList();
+
+        Assert.Equal("integer", items.GetProperty("properties").GetProperty("copies").GetProperty("type").GetString());
+        Assert.Contains("copies", Strings(items.GetProperty("required")));
+        // Le modèle écrit les champs dans l'ordre du schéma.
+        Assert.True(order.IndexOf("copies") < order.IndexOf("quantity"));
     }
 
     [Fact]

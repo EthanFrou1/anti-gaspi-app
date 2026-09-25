@@ -158,6 +158,7 @@ Points volontairement reportés pendant le MVP, **bloquants pour une mise en pro
 - [ ] Capture d'écran d'un ticket numérique (app d'un magasin, PNG) : lue comme une photo, produits proposés à la validation.
 - [ ] Capture défilante très longue (deux écrans ou plus) : avertissement « Image très longue » avant l'envoi ; « Choisir une autre image » ne consomme pas de scan, « Envoyer quand même » lance la lecture.
 - [ ] En développement (lecteur Fake) : écran d'attente, puis validation avec 5 produits et « 1 article ignoré ».
+- [ ] Lait du lecteur Fake : « 6 l (6 × 1 l) » sur la carte, « Lu sur le ticket : 6 × 1 l » sous la quantité ; le détail disparaît si l'on change la quantité ou l'unité. Avec un vrai ticket, un article acheté en plusieurs exemplaires affiche le même détail.
 - [ ] Décocher une ligne ; corriger nom, catégorie (la date estimée suit), quantité « 0,5 » kg et date ; « Revenir à l'estimation » fonctionne.
 - [ ] Changer la date d'achat : les dates estimées se décalent, pas celles choisies à la main.
 - [ ] « Ajouter N produits au frigo » : retour au frigo avec les produits ; l'interrupteur « Produits perso » est respecté.
@@ -206,12 +207,15 @@ Format de sortie imposé (catégories et unités en listes fermées, construites
       "isFood": true,
       "name": "string (nom lisible)",
       "category": "code d'une catégorie de l'app (ex. ground-meat)",
+      "copies": 1,
       "quantity": 0,
       "unit": "Piece | Gram | Kilogram | Milliliter | Liter"
     }
   ]
 }
 ```
+
+`copies` est le nombre d'exemplaires achetés ; `quantity` et `unit`, le contenu d'**un** exemplaire. **Le modèle lit, l'API calcule** : le total (`copies × quantity`) est calculé par `ReceiptValidator`, car le modèle lit bien « 6 x » et « 1L » mais ne les multiplie pas de façon fiable (mesuré avec `design/test-tickets/evaluate.py`). Nombre d'exemplaires invalide (absent, décimal, hors 1 à 99) : 1. Le prompt précise qu'un chiffre seul après le prix est un code TVA, jamais une quantité. L'écran de validation affiche le détail (« 6 l (6 × 1 l) »), qui disparaît si l'utilisateur corrige la quantité ou l'unité.
 
 Règles :
 - **Ne jamais stocker l'image** après traitement (RGPD), ni la journaliser. Elle reste en mémoire pendant la requête : le contrôleur empêche ASP.NET Core de l'écrire dans un fichier temporaire (`MemoryBufferThreshold`), ce que vérifie un test qui surveille le dossier temporaire (`ReceiptPrivacyTests`).

@@ -10,6 +10,7 @@ import { resizeTarget } from '../image';
 import {
   addButtonLabel,
   apiErrorsByLine,
+  copiesDetail,
   lineExpiresOn,
   receiptQuotaLabel,
   skippedLabel,
@@ -26,6 +27,8 @@ const line = (overrides: Partial<ReceiptLine> = {}): ReceiptLine => ({
   categoryId: 1,
   quantity: 2,
   unit: 'Piece',
+  copies: 1,
+  quantityPerCopy: 2,
   expiresOn: '2026-09-25',
   expiryKind: 'UseBy',
   ...overrides,
@@ -58,6 +61,25 @@ describe('lignes à valider', () => {
   it('sont toutes cochées, avec une quantité au format français', () => {
     const [review] = toReviewLines([line({ quantity: 0.612, unit: 'Kilogram' })]);
     expect(review).toMatchObject({ selected: true, quantityText: '0,612', manualExpiresOn: null });
+  });
+
+  it('affichent le détail des exemplaires lus sur le ticket (« 6 × 1 l »)', () => {
+    const [milk, yogurts, single] = toReviewLines([
+      line({ quantity: 6, unit: 'Liter', copies: 6, quantityPerCopy: 1 }),
+      line({ quantity: 12, unit: 'Piece', copies: 3, quantityPerCopy: 4 }),
+      line(),
+    ]);
+    expect(copiesDetail(milk!)).toBe('6 × 1 l');
+    expect(copiesDetail(yogurts!)).toBe('3 × 4 pièces');
+    // Un seul exemplaire : rien à expliquer.
+    expect(copiesDetail(single!)).toBeNull();
+  });
+
+  it('retirent ce détail dès que l\'utilisateur change la quantité ou l\'unité', () => {
+    const [milk] = toReviewLines([line({ quantity: 1.5, unit: 'Liter', copies: 2, quantityPerCopy: 0.75 })]);
+    expect(copiesDetail({ ...milk!, quantityText: '1,5' })).toBe('2 × 0,75 l');
+    expect(copiesDetail({ ...milk!, quantityText: '1' })).toBeNull();
+    expect(copiesDetail({ ...milk!, unit: 'Kilogram' })).toBeNull();
   });
 
   it('la date estimée suit la date d\'achat, sauf si l\'utilisateur en a choisi une', () => {
